@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/coverage/**"],
+  "rules": {
+    "id-length": ["error", { "min": 1, "properties": "never" }],
+    "curly": ["error", "all"]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@focuspocus/core",
+  "version": "0.1.0",
+  "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
+  "keywords": [
+    "a11y",
+    "accessibility",
+    "focus",
+    "tab-order",
+    "tabbable",
+    "tabindex"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./overlay": {
+      "types": "./dist/overlay.d.ts",
+      "import": "./dist/overlay.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/overlay.ts --format esm --dts --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dom-accessibility-api": "^0.7.1",
+    "position-observer": "^1.0.3",
+    "tabbable": "^6.2.0"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^2.1.0",
+    "playwright": "^1.47.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@focuspocus/demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Interactive demo for focuspocus: edge cases + a deliberately broken page.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@focuspocus/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}

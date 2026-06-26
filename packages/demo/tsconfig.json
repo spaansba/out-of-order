@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@focuspocus/core": ["../core/src/index.ts"],
+      "@focuspocus/core/overlay": ["../core/src/overlay.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

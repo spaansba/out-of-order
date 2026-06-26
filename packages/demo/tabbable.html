@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>focuspocus: what's tabbable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>focuspocus</h1>
+      <nav>
+        <a href="./index.html">Rule violations</a>
+        <a href="./tabbable.html" aria-current="page">What's tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <button class="btn" id="toggle">Hide overlay</button>
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">What's tabbable</span>
+        <h2>What lands in the tab order</h2>
+        <p>
+          The tabbable edge cases worth knowing, and whether we count each in the tab order. The
+          overlay numbers what is tabbable; everything else gets no number. For the bugs the package
+          flags, see <a href="./index.html">Rule violations</a>.
+        </p>
+      </div>
+
+      <div id="demo">
+        <section class="group">
+          <h2>Standard focusable controls</h2>
+          <p class="note">The baseline: link, button, text input, select, textarea.</p>
+          <div class="row">
+            <a class="demo-link" href="#anchor">Link with href</a>
+            <button class="demo-btn" type="button">Button</button>
+            <label class="field"><span>Text</span><input type="text" placeholder="type…" /></label>
+            <label class="field"
+              ><span>Choose</span>
+              <select>
+                <option>One</option>
+                <option>Two</option>
+              </select>
+            </label>
+            <label class="field"><span>Notes</span><textarea></textarea></label>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Media &amp; embedded content</h2>
+          <p class="note">
+            A media element with <code>controls</code> is a single tab stop. What sits inside it,
+            like play, scrubber, and volume, is built by the browser itself, and every browser
+            arranges those differently, so there's no knowing how focus moves through them. That
+            doesn't matter here: we count the element as one stop, and that holds true whichever
+            browser you're in. An <code>&lt;iframe&gt;</code> is focusable too, but
+            <code>tabbable</code> deliberately leaves it out of the tab order (it can't reason about
+            the frame's own stops), so here it gets no number, even though browsers do tab into it.
+            Without <code>controls</code>, <code>&lt;audio&gt;</code>/<code>&lt;video&gt;</code>
+            aren't focusable at all.
+          </p>
+          <div class="row">
+            <audio class="demo-media" controls aria-label="audio with controls"></audio>
+            <video class="demo-media" controls aria-label="video with controls"></video>
+            <video class="demo-media" aria-label="video without controls (skipped)"></video>
+            <iframe
+              class="demo-frame"
+              title="Embedded document"
+              srcdoc="<body style='font:13px sans-serif;padding:8px;margin:0'>An iframe is its own document, one tab stop from out here.</body>"
+            ></iframe>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Disclosure: details / summary</h2>
+          <p class="note">
+            A <code>&lt;details&gt;</code> puts its <code>&lt;summary&gt;</code> in the tab order as
+            the toggle. While closed, the content is hidden and only the summary is tabbable; when
+            <code>open</code>, any focusable content inside joins the sequence too.
+          </p>
+          <div class="stack">
+            <details class="demo-details">
+              <summary>Closed disclosure, summary is the tab stop</summary>
+              <p class="note" style="margin: 8px 0 0">
+                This text is hidden while closed, so it adds nothing to the tab order.
+              </p>
+            </details>
+            <details class="demo-details" open>
+              <summary>Open disclosure</summary>
+              <div class="row" style="margin-top: 8px">
+                <a class="demo-link" href="#">Link inside open details</a>
+                <button class="demo-btn" type="button">Button inside</button>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Image-map areas</h2>
+          <p class="note">
+            An <code>&lt;area&gt;</code> with an <code>href</code> inside a
+            <code>&lt;map&gt;</code> is tabbable like a link. An <code>&lt;area&gt;</code> with no
+            href is not focusable, and one with <code>tabindex="-1"</code> is focusable but not
+            tabbable, so only the first region below gets a number.
+          </p>
+          <img
+            class="demo-imagemap"
+            width="320"
+            height="160"
+            usemap="#area-map"
+            alt="image map with three regions"
+            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMjAiIGhlaWdodD0iMTYwIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2Y0ZjRmNCIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMDYiIGhlaWdodD0iMTYwIiBmaWxsPSIjN2FhNmZmIi8+PGNpcmNsZSBjeD0iMTYwIiBjeT0iODAiIHI9IjM1IiBmaWxsPSIjYmRiZGJkIi8+PHJlY3QgeD0iMjE0IiB5PSIwIiB3aWR0aD0iMTA2IiBoZWlnaHQ9IjE2MCIgZmlsbD0iI2ZmZDI3YSIvPjx0ZXh0IHg9IjUzIiB5PSI4NSIgZm9udC1zaXplPSIxMyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzAwMCI+aHJlZjwvdGV4dD48dGV4dCB4PSIxNjAiIHk9Ijg0IiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMDAwIj5ubyBocmVmPC90ZXh0Pjx0ZXh0IHg9IjI2NyIgeT0iNzgiIGZvbnQtc2l6ZT0iMTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMwMDAiPnRhYmluZGV4PC90ZXh0Pjx0ZXh0IHg9IjI2NyIgeT0iOTIiIGZvbnQtc2l6ZT0iMTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMwMDAiPi0xPC90ZXh0Pjwvc3ZnPg=="
+          />
+          <map name="area-map">
+            <area shape="rect" coords="0,0,106,160" href="#href" alt="region with href" />
+            <area shape="circle" coords="160,80,35" alt="region with no href (skipped)" />
+            <area
+              shape="rect"
+              coords="214,0,320,160"
+              href="#negative"
+              tabindex="-1"
+              alt="region with negative tabindex (skipped)"
+            />
+          </map>
+        </section>
+
+        <section class="group">
+          <h2>Radio group with a selection: one tab stop</h2>
+          <p class="note">
+            Once a radio group has a checked option, it collapses to a <em>single</em> tab stop:
+            only the checked radio lands in the tab order, and the others are reached with the arrow
+            keys, so three radios below give one number. (A group with <em>no</em> selection is
+            different: <code>tabbable</code> keeps every radio in the order.)
+          </p>
+          <div class="row" style="align-items: flex-start; gap: 20px">
+            <fieldset class="radio-group">
+              <legend>Shipping</legend>
+              <label><input type="radio" name="ship" value="standard" checked /> Standard</label>
+              <label><input type="radio" name="ship" value="express" /> Express</label>
+              <label><input type="radio" name="ship" value="overnight" /> Overnight</label>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>tabindex variations</h2>
+          <p class="note">
+            <code>tabindex="0"</code> on a div makes it tabbable; <code>tabindex="-1"</code> is
+            focusable-but-not-tabbable (gets no number).
+          </p>
+          <div class="row">
+            <div class="demo-btn" tabindex="0" role="button">div[tabindex=0] role=button</div>
+            <div class="demo-btn" tabindex="-1">div[tabindex=-1] (skipped)</div>
+            <input
+              type="text"
+              tabindex="0"
+              aria-label="input tabindex 0"
+              placeholder="input[tabindex=0]"
+            />
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Focusable, but not tabbable</h2>
+          <p class="note">
+            <code>tabindex="-1"</code> keeps an element focusable by script or a mouse click, but
+            Tab steps over it. Even natively-tabbable controls drop out of the sequence, so every
+            element here gets no number.
+          </p>
+          <div class="row">
+            <button class="demo-btn" type="button" tabindex="-1">button[tabindex=-1]</button>
+            <input
+              type="text"
+              tabindex="-1"
+              aria-label="input tabindex -1"
+              value="input[tabindex=-1]"
+            />
+            <select tabindex="-1" aria-label="select tabindex -1">
+              <option>select (skipped)</option>
+            </select>
+            <a class="demo-link" href="#" tabindex="-1">a[href][tabindex=-1]</a>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Disabled &amp; inert (not tabbable)</h2>
+          <p class="note">
+            Disabled controls and the children of an <code>[inert]</code> subtree get no number.
+          </p>
+          <div class="row">
+            <button class="demo-btn" type="button" disabled>Disabled button</button>
+            <input type="text" disabled value="disabled input" />
+            <div inert>
+              <button class="demo-btn" type="button">inside [inert] (skipped)</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Disabled fieldset: the first legend stays live</h2>
+          <p class="note">
+            Everything inside a <code>disabled</code> <code>&lt;fieldset&gt;</code> drops out of the
+            tab order, <em>except</em> controls inside its first <code>&lt;legend&gt;</code>, which
+            stay enabled. So the legend button below is tabbable while the body field next to it is
+            not.
+          </p>
+          <fieldset disabled class="legend-demo">
+            <legend>
+              <button class="demo-btn" type="button">Legend button (stays tabbable)</button>
+            </legend>
+            <div class="row">
+              <label class="field"
+                ><span>Body field</span><input type="text" value="disabled, skipped"
+              /></label>
+              <button class="demo-btn" type="button">Body button (skipped)</button>
+            </div>
+          </fieldset>
+        </section>
+
+        <section class="group">
+          <h2>Hidden elements (not tabbable)</h2>
+          <p class="note">
+            <code>display:none</code>, <code>visibility:hidden</code> and the
+            <code>hidden</code> attribute remove an element from the tab order, so they get no
+            number. (Other ways of hiding that <em>don't</em>, such as opacity, off-screen, and
+            clipping, are bugs; see <a href="./index.html">Rule violations</a>.)
+          </p>
+          <div class="row">
+            <button class="demo-btn hidden-disp" type="button">display:none</button>
+            <button class="demo-btn hidden-vis" type="button">visibility:hidden</button>
+            <button class="demo-btn" type="button" hidden>hidden attr</button>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Links, readonly &amp; contenteditable</h2>
+          <p class="note">
+            A bare <code>&lt;a&gt;</code> with no href is not tabbable; readonly inputs and
+            contenteditable regions are.
+          </p>
+          <div class="row">
+            <a class="demo-link">Anchor without href (skipped)</a>
+            <a class="demo-link" href="#">Anchor with href</a>
+            <input
+              type="text"
+              readonly
+              aria-label="read-only field"
+              value="readonly (still tabbable)"
+            />
+            <div class="demo-btn" contenteditable="true" aria-label="editable region">
+              contenteditable region
+            </div>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>SVG &amp; shadow DOM</h2>
+          <p class="note">
+            A focusable <code>&lt;svg&gt;</code> link, plus a focusable element inside an open
+            shadow root (resolved via tabbable's <code>getShadowRoot</code>, injected by JS).
+          </p>
+          <div class="row">
+            <svg
+              width="120"
+              height="40"
+              role="img"
+              aria-label="svg link"
+              style="border: 1px solid var(--line); border-radius: 7px"
+            >
+              <a href="#" aria-label="svg anchor">
+                <text x="12" y="25" fill="#2563eb" font-size="13">SVG &lt;a&gt;</text>
+              </a>
+            </svg>
+            <div id="shadow-host"></div>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Keyboard-focusable scroll container (a tabbable blind spot)</h2>
+          <p class="note">
+            A scroll container with overflowing content and no focusable children is
+            keyboard-focusable in modern browsers, even without <code>tabindex</code>: you can tab
+            to it and scroll with the arrow keys. <code>tabbable</code> doesn't detect this, though,
+            so on this page it gets <em>no</em> number: a real tab stop the library can't see.
+          </p>
+          <div class="row">
+            <div
+              aria-label="scrollable region"
+              style="
+                width: 220px;
+                height: 80px;
+                overflow: auto;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 8px 10px;
+                color: var(--muted);
+                font-size: 13px;
+              "
+            >
+              This box scrolls. It has no buttons, links, or inputs inside, so the browser makes the
+              container itself keyboard-focusable so it can be scrolled with the arrow keys. Keep
+              reading to overflow it: lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+              do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+              veniam, quis nostrud exercitation ullamco laboris.
+            </div>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Virtual list: a tab order rewritten every frame</h2>
+          <p class="note">
+            1,000 rows, but only the visible handful are in the DOM. Scrolling recycles rows in and
+            out, rewriting the tab sequence every frame, and the overlay renumbers in step. Watch it
+            keep up with a DOM that never sits still.
+          </p>
+          <div class="vlist" id="vlist">
+            <div class="vlist-sizer" id="vlist-sizer"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
