@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@focuspocus/core": "workspace:*"
+    "@focuspocus/core": "workspace:*",
+    "@focuspocus/reveal": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

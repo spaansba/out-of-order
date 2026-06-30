@@ -1,14 +1,14 @@
 {
-  "name": "@focuspocus/core",
+  "name": "@focuspocus/reveal",
   "version": "0.1.0",
-  "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
+  "description": "Drop a visual overlay on any page: numbered tab stops, the path between them, and a11y findings ringed in place.",
   "keywords": [
     "a11y",
     "accessibility",
     "focus",
+    "overlay",
     "tab-order",
-    "tabbable",
-    "tabindex"
+    "visualizer"
   ],
   "license": "MIT",
   "files": [
@@ -31,8 +31,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@focuspocus/core": "workspace:*",
     "dom-accessibility-api": "^0.7.1",
-    "tabbable": "^6.2.0"
+    "position-observer": "^1.0.3"
   },
   "devDependencies": {
     "@vitest/browser": "^2.1.0",

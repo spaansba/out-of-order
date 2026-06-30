@@ -4,7 +4,7 @@
     "noEmit": true,
     "paths": {
       "@focuspocus/core": ["../core/src/index.ts"],
-      "@focuspocus/core/overlay": ["../core/src/overlay.ts"]
+      "@focuspocus/reveal": ["../reveal/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

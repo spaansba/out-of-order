@@ -1,7 +1,6 @@
-import { mountOverlay } from "@focuspocus/core/overlay";
+import { reveal } from "@focuspocus/reveal";
 import { wireOverlayControls } from "./controls.js";
 import { wireVirtualList } from "./virtual-list.js";
-import { analyzeTabOrder } from "@focuspocus/core";
 
 const host = document.getElementById("shadow-host");
 if (host && !host.shadowRoot) {
@@ -15,17 +14,19 @@ if (host && !host.shadowRoot) {
   `;
 }
 
-const overlay = mountOverlay();
+const overlay = reveal();
 // Collect a teardown for every side effect this module plants on the persistent
 // page DOM, so the HMR dispose can undo all of them - not just the overlay.
-const teardown = [() => overlay.destroy(), wireOverlayControls([overlay]), wireVirtualList()];
+const teardown = [
+  () => overlay.destroy(),
+  wireOverlayControls([overlay]),
+  wireVirtualList(),
+];
 
-// HMR boundary. A core edit (e.g. ../core/src/overlay-*.ts) bubbles up to this
+// HMR boundary. A reveal/core edit (e.g. ../reveal/src/*.ts) bubbles up to this
 // self-accepting module, which re-runs top to bottom. Undo every side effect on
 // dispose first, or each re-run stacks another overlay/listener on the page.
 if (import.meta.hot) {
   import.meta.hot.accept();
   import.meta.hot.dispose(() => teardown.forEach((fn) => fn()));
 }
-
-console.log(analyzeTabOrder(document));

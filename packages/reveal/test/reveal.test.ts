@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { mountOverlay, type OverlayHandle } from "../src/overlay.js";
+import { reveal, type RevealHandle } from "../src/index.js";
 
-let handle: OverlayHandle | null = null;
+let handle: RevealHandle | null = null;
 let root: HTMLElement;
 
 /** Mount a fresh, scoped overlay over `html`. */
-function mount(html: string): OverlayHandle {
+function mount(html: string): RevealHandle {
   root = document.createElement("div");
   root.innerHTML = html;
   document.body.appendChild(root);
-  handle = mountOverlay({ root });
+  handle = reveal({ root });
   return handle;
 }
 
@@ -23,7 +23,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("mountOverlay", () => {
+describe("reveal", () => {
   test("appends a tagged overlay layer", () => {
     mount("<button>A</button>");
     expect(layer().getAttribute("data-focuspocus-overlay")).toBe("");
@@ -73,7 +73,7 @@ describe("mountOverlay", () => {
     root = document.createElement("div");
     root.innerHTML = '<button>A</button><div id="ex"><button>B</button></div>';
     document.body.appendChild(root);
-    handle = mountOverlay({ root, exclude: root.querySelector("#ex") });
+    handle = reveal({ root, exclude: root.querySelector("#ex") });
     expect(numbered()).toHaveLength(1); // only the non-excluded button
   });
 

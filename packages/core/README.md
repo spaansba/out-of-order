@@ -69,24 +69,4 @@ Adding a rule is just a pure function `(sequence, ctx) => Finding[]` (a `Finding
 
 ## Live overlay
 
-The package also ships a framework-agnostic visual overlay on a separate entry point, so the pure `analyzeTabOrder` export stays dependency-light and page-evaluatable (e.g. for a Playwright adapter):
-
-```ts
-import { mountOverlay } from "@focuspocus/core/overlay";
-
-const overlay = mountOverlay({
-  root: document.getElementById("app"), // defaults to document
-  // exclude: someSubtree,             // skip a subtree owned by another overlay
-});
-
-overlay.refresh(); // re-analyze after the DOM changes
-overlay.reposition(); // re-place markers without re-analyzing
-overlay.setVisible(false);
-overlay.destroy();
-```
-
-It draws a numbered path through the tab sequence, outlines each tab stop (green when clean, amber on a warning, red on an error), shows per-stop details on hover and is fully framework agnostic
-
-Markers are drawn in viewport space and stay glued to their elements, including sticky/fixed ones, through scroll, resize, and CSS transforms. Tracking is hybrid: a frame-synced (`requestAnimationFrame`) capture scroll listener handles scrolling (IntersectionObserver-based tracking, including [`position-observer`](https://github.com/Shopify/position-observer), defers callbacks during active scroll in some browsers, notably Safari, so a scroll listener is needed for smooth tracking), while `position-observer` covers movement scrolling can't see: CSS transforms, ancestor/layout shifts, and resizes. Browser-only, like the analyzer.
-
-> Note: this dependency lives only on the `@focuspocus/core/overlay` entry. The main `@focuspocus/core` export (`analyzeTabOrder`) stays dependency-light apart from `tabbable`, so it remains easy to run inside `page.evaluate`.
+The visual overlay (a numbered path through the tab sequence, every finding ringed in place, details on hover) lives in its own package, [`@focuspocus/reveal`](../reveal), built on this analyzer. Keeping it separate is deliberate: `analyzeTabOrder` stays dependency-light apart from `tabbable`, so the core export remains easy to run inside `page.evaluate` (e.g. for a Playwright adapter).

@@ -1,10 +1,10 @@
-import { mountOverlay } from "@focuspocus/core/overlay";
+import { reveal } from "@focuspocus/reveal";
 import { wireOverlayControls } from "./controls.js";
 import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { analyzeTabOrder, formatViolations } from "@focuspocus/core";
 
-const overlay = mountOverlay();
+const overlay = reveal();
 
 // Collect a teardown for every side effect this module plants on the persistent
 // page DOM, so the HMR dispose can undo all of them - not just the overlay.
@@ -17,7 +17,7 @@ const teardown = [
   wireModal(),
 ];
 
-// HMR boundary. A core edit (e.g. ../core/src/overlay-*.ts) bubbles up to this
+// HMR boundary. A reveal/core edit (e.g. ../reveal/src/*.ts) bubbles up to this
 // self-accepting module, which re-runs top to bottom. Undo every side effect on
 // dispose first, or each re-run stacks another Fix button / snippet on every card.
 if (import.meta.hot) {

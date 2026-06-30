@@ -3,9 +3,9 @@ import {
   RING_CLASS,
   RING_BAD_CLASS,
   RING_WARN_CLASS,
-} from "./overlay-styles.js";
-import type { Severity } from "./types.js";
-import type { Tooltip, Tip } from "./overlay-tooltip.js";
+} from "./styles.js";
+import type { Severity } from "@focuspocus/core";
+import type { Tooltip, Tip } from "./tooltip.js";
 
 /** All three ring states, so a rebuild/destroy can strip whichever one is set. */
 const RING_CLASSES = [RING_CLASS, RING_WARN_CLASS, RING_BAD_CLASS];
@@ -59,11 +59,6 @@ export interface SegSpec {
 interface Marker {
   element: Element;
   group: SVGGElement;
-  circle: SVGCircleElement;
-  text: SVGTextElement;
-  /** Autofocus indicator pinned to the badge corner, or null when the element
-      has no `autofocus`. Repositioned alongside the badge as it moves. */
-  af: SVGGElement | null;
   /** Cached center, so the connecting segments can update from what moved. */
   centerX: number;
   centerY: number;
@@ -96,6 +91,9 @@ export class Renderer {
   private ringEls: Element[] = [];
   // The badge of the currently keyboard-focused element, filled in as a cursor.
   private focused: Marker | null = null;
+  // Last SVG size written; reset in clear() since each draw makes a fresh svg.
+  private sizeW = 0;
+  private sizeH = 0;
 
   constructor(
     private readonly layer: HTMLElement,
@@ -123,7 +121,10 @@ export class Renderer {
       const hit = svgEl("line", {
         class: back ? "fp-hit fp-hit--back" : "fp-hit",
       });
-      const line = svgEl("polyline", { class: "fp-seg" });
+      const line = svgEl("polyline", {
+        class: back ? "fp-seg fp-seg--back" : "fp-seg",
+        "marker-mid": back ? "url(#fp-arrow-back)" : "url(#fp-arrow)",
+      });
       segLayer.append(hit, line);
       this.segments.push({ from, toMarker, line, hit, back });
       if (back) {
@@ -189,6 +190,8 @@ export class Renderer {
     this.segments = [];
     this.byEl.clear();
     this.focused = null;
+    this.sizeW = 0;
+    this.sizeH = 0;
     for (const element of this.ringEls) {
       element.classList.remove(...RING_CLASSES);
     }
@@ -207,31 +210,29 @@ export class Renderer {
       cls += " fp-badge--off";
     }
 
+    // Children sit at the badge's local origin, so applyRect moves the whole group
+    // with one transform. y=4 centres the label baseline.
     const circle = svgEl("circle", { r: RADIUS });
-    const text = svgEl("text", { "text-anchor": "middle" });
+    const text = svgEl("text", { "text-anchor": "middle", y: 4 });
     text.textContent = spec.label;
     const group = svgEl("g", { class: cls }, circle, text);
     // Small "focus lands here" badge in the corner: a disc with a downward arrow.
-    // Informational (blue), not a violation, and translated into place each frame.
-    const af = spec.autofocus
-      ? svgEl(
+    // Informational (blue), not a violation.
+    if (spec.autofocus) {
+      group.appendChild(
+        svgEl(
           "g",
-          { class: "fp-af" },
+          { class: "fp-af", transform: `translate(${RADIUS}, ${-RADIUS})` },
           svgEl("circle", { r: 7 }),
           svgEl("path", { d: "M-3,-2 L3,-2 L0,2.5 Z" }),
-        )
-      : null;
-    if (af) {
-      group.appendChild(af);
+        ),
+      );
     }
     this.svg!.appendChild(group);
 
     const marker: Marker = {
       element: spec.element,
       group,
-      circle,
-      text,
-      af,
       centerX: 0,
       centerY: 0,
     };
@@ -265,14 +266,9 @@ export class Renderer {
     marker.centerX = rect.left + rect.width / 2;
     marker.centerY = rect.top + rect.height / 2;
     // Center the badge on the element; segments stop just outside it via SEG_PAD.
-    marker.circle.setAttribute("cx", String(marker.centerX));
-    marker.circle.setAttribute("cy", String(marker.centerY));
-    marker.text.setAttribute("x", String(marker.centerX));
-    marker.text.setAttribute("y", String(marker.centerY + 4));
-    // Pin the autofocus badge to the stop's top-right corner.
-    marker.af?.setAttribute(
+    marker.group.setAttribute(
       "transform",
-      `translate(${marker.centerX + RADIUS}, ${marker.centerY - RADIUS})`,
+      `translate(${marker.centerX}, ${marker.centerY})`,
     );
   }
 
@@ -309,14 +305,6 @@ export class Renderer {
         "points",
         `${startX},${startY} ${midX},${midY} ${endX},${endY}`,
       );
-      seg.line.setAttribute(
-        "class",
-        seg.back ? "fp-seg fp-seg--back" : "fp-seg",
-      );
-      seg.line.setAttribute(
-        "marker-mid",
-        seg.back ? "url(#fp-arrow-back)" : "url(#fp-arrow)",
-      );
     }
   }
 
@@ -324,14 +312,16 @@ export class Renderer {
     if (!this.svg) {
       return;
     }
-    this.svg.setAttribute(
-      "width",
-      String(document.documentElement.clientWidth),
-    );
-    this.svg.setAttribute(
-      "height",
-      String(document.documentElement.clientHeight),
-    );
+    // Scroll frames don't resize the viewport, so skip the write unless it changed.
+    const width = document.documentElement.clientWidth;
+    const height = document.documentElement.clientHeight;
+    if (width === this.sizeW && height === this.sizeH) {
+      return;
+    }
+    this.sizeW = width;
+    this.sizeH = height;
+    this.svg.setAttribute("width", String(width));
+    this.svg.setAttribute("height", String(height));
   }
 }
 
@@ -343,7 +333,6 @@ function buildDefs(): SVGDefsElement {
     ["fp-arrow", "#2f6a47"],
     ["fp-arrow-back", "#b3261e"],
   ] as const) {
-    // A slim notched chevron: enough to read direction without weighing the line.
     const path = svgEl("path", { d: "M3,2.5 L14,8 L3,13.5 L6.5,8 Z", fill });
     const marker = svgEl(
       "marker",

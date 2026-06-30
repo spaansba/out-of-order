@@ -1,14 +1,7 @@
 import type { ALL_RULES } from "./rules.js";
 
-/** How serious a finding is. `error` marks a real barrier (a control is
-    unreachable, unannounced, invisible, or trapped); `warning` marks dead/no-op
-    markup or a best-practice nit that doesn't actually block anyone. */
 export type Severity = "error" | "warning";
 
-/** One rule's setting in {@link AnalyzeOptions.rules}. Omit a rule to keep its
-    default (see `DEFAULT_SEVERITY`). Otherwise:
-    - `"error"` / `"warning"` — enable the rule, graded at that severity;
-    - `"off"` — disable the rule. */
 export type RuleSetting = Severity | "off";
 
 /** A single problem found with the tab order. */
@@ -60,7 +53,6 @@ export interface TabOrderResult {
 export interface AnalyzeOptions {
   /** Per-rule overrides. Every rule runs at its default severity unless listed
       here: set `"off"`/`false` to disable it, or `"error"`/`"warning"` to
-      re-grade it (e.g. demote a noisy rule to a warning, or promote one to fail
-      the build). See {@link RuleSetting}. */
+      re-grade it. See {@link RuleSetting}. */
   rules?: Partial<Record<RuleId, RuleSetting>>;
 }

@@ -1,16 +1,16 @@
 // The `.fp-*` selectors in the CSS below are written out literally for
-// readability; the class names the JS applies live in overlay-classes.ts and
-// share OVERLAY_CLASS_PREFIX, so they can't drift from this namespace.
+// readability; the class names the JS applies live in classes.ts and share its
+// prefix, so they can't drift from this namespace.
 export {
   RING_CLASS,
   RING_BAD_CLASS,
   RING_WARN_CLASS,
-} from "./overlay-classes.js";
+} from "./classes.js";
 
 const RING_CSS = `
 .fp-ring { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
-.fp-ring--warn { outline: 1.5px dashed rgba(180, 83, 9, 0.75); outline-offset: 2px; }
-.fp-ring--bad { outline: 1.5px solid rgba(179, 38, 30, 0.72); outline-offset: 2px; }
+.fp-ring--warn { outline: 1.5px dashed rgba(154, 125, 26, 0.8); outline-offset: 2px; }
+.fp-ring--bad { outline: 1.5px solid rgba(160, 31, 23, 0.74); outline-offset: 2px; }
 .fp-ring:focus-visible, .fp-ring--warn:focus-visible, .fp-ring--bad:focus-visible { outline: revert; }
 `;
 
@@ -18,9 +18,8 @@ const OVERLAY_CSS = `
 .fp-layer { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; }
 .fp-svg { position: absolute; top: 0; left: 0; overflow: visible; }
 .fp-seg { fill: none; stroke: #2f6a47; stroke-width: 2; opacity: 0.92;
-  stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 6;
-  filter: drop-shadow(0 1px 1px rgba(24, 25, 28, 0.12)); }
-.fp-seg--back { stroke: #b3261e; stroke-width: 2.25; }
+  stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 6; }
+.fp-seg--back { stroke: #a01f17; stroke-width: 2.25; }
 .fp-hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: none; cursor: help; }
 /* Only backward (red) hops are hoverable; forward (green) hops stay click-through. */
 .fp-hit--back { pointer-events: stroke; }
@@ -31,20 +30,20 @@ ${RING_CSS}
 /* Every badge is hoverable (auto) so its tooltip opens on hover (the layer itself
    is pointer-events:none). The badge is a small disc at the element's centre, so
    it only intercepts clicks dead-centre. */
-.fp-badge { pointer-events: auto; cursor: help; filter: drop-shadow(0 1px 2px rgba(24, 25, 28, 0.2)); }
-.fp-badge circle { fill: #fffefb; stroke: #2f6a47; stroke-width: 1.25;
+.fp-badge { pointer-events: auto; cursor: help; }
+.fp-badge circle { fill: #fffefb; stroke: #2f6a47; stroke-width: 1.5;
   transform-box: fill-box; transform-origin: center; }
 .fp-badge text { fill: #2f6a47;
   font: 500 11px "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
-.fp-badge--warn circle { stroke: #b45309; }
-.fp-badge--warn text { fill: #b45309; }
-.fp-badge--bad circle { stroke: #b3261e; }
-.fp-badge--bad text { fill: #b3261e; }
+.fp-badge--warn circle { stroke: #9a7d1a; }
+.fp-badge--warn text { fill: #9a7d1a; }
+.fp-badge--bad circle { stroke: #a01f17; }
+.fp-badge--bad text { fill: #a01f17; }
 .fp-badge--off text { font-size: 12px; }
 .fp-badge--on circle { fill: #2f6a47; stroke: #2f6a47; }
 .fp-badge--on text { fill: #fffefb; }
-.fp-badge--warn.fp-badge--on circle { fill: #b45309; stroke: #b45309; }
-.fp-badge--bad.fp-badge--on circle { fill: #b3261e; stroke: #b3261e; }
+.fp-badge--warn.fp-badge--on circle { fill: #9a7d1a; stroke: #9a7d1a; }
+.fp-badge--bad.fp-badge--on circle { fill: #a01f17; stroke: #a01f17; }
 
 /* Autofocus indicator: a small informational (blue, never red) disc with a
    downward arrow at the badge corner, marking where focus lands on page load. */
@@ -73,7 +72,7 @@ ${RING_CSS}
   padding-right: 10px; border-right: 1px solid #dcd9cd;
   font: 500 14px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.01em; color: #1f4e79; }
-.fp-tip-idx--off { color: #b45309; font-size: 15px; }
+.fp-tip-idx--off { color: #9a7d1a; font-size: 15px; }
 /* selector titles the card; muted so the accent index leads the eye */
 .fp-tip-sel { min-width: 0; font: 12px/1.45 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #34352d; word-break: break-word; }
@@ -94,8 +93,8 @@ ${RING_CSS}
 .fp-tip-item { display: block; }
 .fp-tip-rule { display: flex; align-items: center; gap: 5px; width: fit-content; margin-bottom: 3px;
   font: 600 10px/1.4 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.06em; text-transform: uppercase; color: #b3261e; text-decoration: none; }
-.fp-tip-rule--warn { color: #b45309; }
+  letter-spacing: 0.06em; text-transform: uppercase; color: #a01f17; text-decoration: none; }
+.fp-tip-rule--warn { color: #9a7d1a; }
 a.fp-tip-rule:hover > span { text-decoration: underline; text-underline-offset: 2px; }
 .fp-tip-rule-ic { flex: none; opacity: 0.55; }
 a.fp-tip-rule:hover .fp-tip-rule-ic { opacity: 1; }
@@ -106,7 +105,7 @@ a.fp-tip-rule:hover .fp-tip-rule-ic { opacity: 1; }
 .fp-tip-flag { flex: none;
   font: 600 10px/1.4 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.06em; text-transform: uppercase; color: #1f7a44; }
-.fp-tip-flag--back { color: #b3261e; }
+.fp-tip-flag--back { color: #a01f17; }
 .fp-tip-hop { font: 500 13px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #18191c; }
 

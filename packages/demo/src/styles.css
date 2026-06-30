@@ -1,6 +1,6 @@
 /*
  * Demo page styling only. The tab-order overlay is rendered (and styled) by
- * @focuspocus/core/overlay, so none of that lives here.
+ * @focuspocus/reveal, so none of that lives here.
  *
  * Visual language: a technical spec-sheet. No boxed cards — sections are split by
  * hairline rules with a numbered ledger margin down the left. Serif titles, a

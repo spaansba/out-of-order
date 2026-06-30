@@ -8,7 +8,7 @@ import type {
   RuleId,
 } from "./types.js";
 import { selectorFor } from "./dom.js";
-import { ALL_RULES, DEFAULT_SEVERITY } from "./rules.js";
+import { ALL_RULES, DEFAULT_SEVERITY, type Rule } from "./rules.js";
 
 /** Fold a rule's caller override against its default into a final decision: is it
     on, and at what severity? A missing override keeps the default; `"off"` disables
@@ -36,6 +36,7 @@ function resolveRule(
 export function analyzeTabOrder(
   root: ParentNode = document,
   options: AnalyzeOptions = {},
+  customRules: Rule[] = [],
 ): TabOrderResult {
   const container =
     root.nodeType === 9 /* Node.DOCUMENT_NODE */

@@ -157,14 +157,12 @@ export const visualOrderMismatch: Rule = (sequence) => {
       continue;
     }
 
-    const prevY = prev.rect.top + prev.rect.height / 2;
-    const curY = cur.rect.top + cur.rect.height / 2;
     const prevX = prev.rect.left + prev.rect.width / 2;
     const curX = cur.rect.left + cur.rect.width / 2;
-    // Backward hop: the element reached is on an earlier row, or on the same
-    // row but to the left of the one we came from.
-    const earlierRow = curY < prevY - ROW_TOLERANCE_PX;
-    const sameRow = Math.abs(curY - prevY) <= ROW_TOLERANCE_PX;
+
+    const earlierRow = cur.rect.bottom <= prev.rect.top + ROW_TOLERANCE_PX;
+    const sameRow =
+      !earlierRow && cur.rect.top < prev.rect.bottom - ROW_TOLERANCE_PX;
     const backwardHop = earlierRow || (sameRow && curX < prevX - 1);
     if (!backwardHop) {
       continue;
@@ -401,6 +399,9 @@ export const tabindexOnNoninteractive: Rule = (sequence) => {
       continue;
     } // implicitly focusable
     const element = entry.element as HTMLElement;
+    if (isNativelyFocusable(element)) {
+      continue;
+    }
     if (isInteractive(element)) {
       continue;
     }
