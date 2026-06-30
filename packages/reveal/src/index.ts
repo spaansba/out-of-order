@@ -1,24 +1,24 @@
-import { analyzeTabOrder } from "./analyze.js";
+import {
+  analyzeTabOrder,
+  type AnalyzeOptions,
+  type Severity,
+  type TabOrderResult,
+  type Violation,
+} from "@focuspocus/core";
 import {
   computeAccessibleName,
   computeAccessibleDescription,
   getRole,
 } from "dom-accessibility-api";
-import type {
-  AnalyzeOptions,
-  Severity,
-  TabOrderResult,
-  Violation,
-} from "./types.js";
-import { ensureStyles } from "./overlay-styles.js";
-import { Tooltip } from "./overlay-tooltip.js";
-import { Renderer, type StopSpec, type SegSpec } from "./overlay-render.js";
-import { Tracker } from "./overlay-track.js";
-import { Mutations } from "./overlay-mutations.js";
+import { ensureStyles } from "./styles.js";
+import { Tooltip } from "./tooltip.js";
+import { Renderer, type StopSpec, type SegSpec } from "./render.js";
+import { Tracker } from "./track.js";
+import { Mutations } from "./mutations.js";
 
 export type MotionMode = "auto" | "on" | "off";
 
-export interface OverlayOptions {
+export interface RevealOptions {
   /** Subtree to analyze. Defaults to document. */
   root?: ParentNode;
   /** Forwarded to analyzeTabOrder (rule toggles). */
@@ -30,7 +30,7 @@ export interface OverlayOptions {
   motion?: MotionMode;
 }
 
-export interface OverlayHandle {
+export interface RevealHandle {
   /** Re-run the analysis and redraw. Call after the DOM changes. */
   refresh(): void;
   /** Re-read every marker's rect and redraw (without re-analyzing). */
@@ -43,7 +43,7 @@ export interface OverlayHandle {
   result: TabOrderResult | null;
 }
 
-export function mountOverlay(options: OverlayOptions = {}): OverlayHandle {
+export function reveal(options: RevealOptions = {}): RevealHandle {
   ensureStyles();
 
   const layer = document.createElement("div");
@@ -81,7 +81,7 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayHandle {
   // tracked separately, so only sequence/violation changes need a redraw).
   let lastSig: string | null = null;
 
-  const handle: OverlayHandle = {
+  const handle: RevealHandle = {
     result: null,
     refresh: () => build(),
     reposition: () => renderer.seed(),
@@ -102,7 +102,22 @@ export function mountOverlay(options: OverlayOptions = {}): OverlayHandle {
 
   /** Re-analyze, turn the result into a draw model, render it, and (re)observe. */
   function build(): void {
-    const result = analyzeTabOrder(options.root ?? document, options.analyze);
+    const result = analyzeTabOrder(options.root ?? document, options.analyze, [
+      (sequence) => {
+        console.log(sequence);
+
+        return [
+          {
+            rule: "custom-rule",
+            message: "This is a custom rule violation.",
+            docs: "https://example.com/custom-rule-docs",
+            element: sequence[0]?.element ?? document.body,
+            selector: sequence[0]?.selector ?? "",
+          },
+        ];
+      },
+    ]);
+
     handle.result = result;
 
     // Nothing the overlay draws has changed, so skip the redraw and re-observe.

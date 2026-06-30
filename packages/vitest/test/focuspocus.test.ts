@@ -51,8 +51,14 @@ describe("toHaveValidTabOrder", () => {
         <button aria-label="B" style="position:absolute; top:0;    left:0;">B</button>
       </div>
     `;
+    // visual-order-mismatch defaults to "warning", which doesn't make the order
+    // invalid; promote it so .not.toHaveValidTabOrder() actually asserts detection.
     expect(document.body).not.toHaveValidTabOrder({
-      rules: { "missing-accessible-name": false, "no-positive-tabindex": false },
+      rules: {
+        "missing-accessible-name": false,
+        "no-positive-tabindex": false,
+        "visual-order-mismatch": "error",
+      },
     });
   });
 });

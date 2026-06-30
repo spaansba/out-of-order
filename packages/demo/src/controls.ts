@@ -3,9 +3,9 @@
 // re-analyze control: the overlay re-analyzes itself on every DOM mutation.)
 // Returns a teardown that detaches the listener, so an HMR re-run rewires the
 // (persistent) toggle once instead of stacking duplicate handlers.
-import type { OverlayHandle } from "@focuspocus/core/overlay";
+import type { RevealHandle } from "@focuspocus/reveal";
 
-export function wireOverlayControls(overlays: OverlayHandle[]): () => void {
+export function wireOverlayControls(overlays: RevealHandle[]): () => void {
   const toggle = document.getElementById("toggle") as HTMLButtonElement | null;
   if (!toggle) {
     return () => {};
@@ -20,4 +20,24 @@ export function wireOverlayControls(overlays: OverlayHandle[]): () => void {
   };
   toggle.addEventListener("click", onClick);
   return () => toggle.removeEventListener("click", onClick);
+}
+
+export function wireTopbarOffset(): () => void {
+  const topbar = document.querySelector<HTMLElement>(".topbar");
+  if (!topbar) {
+    return () => {};
+  }
+  const sync = (): void => {
+    document.documentElement.style.setProperty(
+      "--topbar-h",
+      `${topbar.offsetHeight - 1}px`,
+    );
+  };
+  sync();
+  const observer = new ResizeObserver(sync);
+  observer.observe(topbar);
+  return () => {
+    observer.disconnect();
+    document.documentElement.style.removeProperty("--topbar-h");
+  };
 }

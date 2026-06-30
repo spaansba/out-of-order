@@ -12,9 +12,10 @@ Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequ
 
 | Package                                   | What it is                                                                                                                                                                                              |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`@focuspocus/core`](./packages/core)     | Pure analyzer (`@focuspocus/core`) **plus** a framework-agnostic live overlay (`@focuspocus/core/overlay`). Wraps `tabbable`, applies rules, returns a plain result and/or draws the numbered tab path. |
+| [`@focuspocus/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result. No framework or test-runner deps, just the DOM.                                                                                  |
+| [`@focuspocus/reveal`](./packages/reveal) | Framework-agnostic live overlay built on the core analyzer: numbers the tab path, rings every finding in place, shows per-stop details on hover.                                                         |
 | [`@focuspocus/vitest`](./packages/vitest) | `expect(el).toHaveValidTabOrder()` matcher for Vitest Browser Mode, plus TypeScript augmentation.                                                                                                       |
-| [`@focuspocus/demo`](./packages/demo)     | Vite demo — an edge-cases page and a deliberately-broken page, both thin consumers of the core overlay.                                                                                                 |
+| [`@focuspocus/demo`](./packages/demo)     | Vite demo — an edge-cases page and a deliberately-broken page, both thin consumers of `@focuspocus/reveal`.                                                                                              |
 
 A Playwright matcher shares the same core and can be added later.
 
@@ -25,7 +26,7 @@ pnpm install
 pnpm --filter @focuspocus/demo dev
 ```
 
-Two pages: a tabbable edge-case gauntlet, and one where focus and keyboard access are clearly broken. Both just call `mountOverlay()` from the library.
+Two pages: a tabbable edge-case gauntlet, and one where focus and keyboard access are clearly broken. Both just call `reveal()` from the library.
 
 ## Quick start
 

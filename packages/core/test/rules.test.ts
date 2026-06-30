@@ -88,16 +88,13 @@ describe("visual-order-mismatch", () => {
       ).not.toContain("visual-order-mismatch");
     },
   );
-  test.fails(
-    "03 Tall sidebar beside short content link is valid (currently FAILS - CI-3 false positive)",
-    () => {
-      expect(
-        fired(
-          '<div style="display:flex; gap:10px; align-items:flex-start;"><a href="#" style="display:inline-block; height:300px;">Sidebar</a><a href="#" style="display:inline-block; height:20px;">MainTop</a></div>',
-        ),
-      ).not.toContain("visual-order-mismatch");
-    },
-  );
+  test("03 Tall sidebar beside short content link is valid", () => {
+    expect(
+      fired(
+        '<div style="display:flex; gap:10px; align-items:flex-start;"><a href="#" style="display:inline-block; height:300px;">Sidebar</a><a href="#" style="display:inline-block; height:20px;">MainTop</a></div>',
+      ),
+    ).not.toContain("visual-order-mismatch");
+  });
   test.fails(
     "04 Focusable container with a child near its top is valid (currently FAILS - CI-3 overlap variant)",
     () => {
@@ -774,14 +771,14 @@ describe("tabindex-on-noninteractive", () => {
       "tabindex-on-noninteractive",
     );
   });
-  test.fails("11 iframe with tabindex=0 should not be flagged", () => {
+  test("11 iframe with tabindex=0 should not be flagged", () => {
     expect(
       fired(
         '<iframe tabindex="0" title="Embedded report" style="width:200px;height:120px"></iframe>',
       ),
     ).not.toContain("tabindex-on-noninteractive");
   });
-  test.fails("12 video[controls] with tabindex=0 should not be flagged", () => {
+  test("12 video[controls] with tabindex=0 should not be flagged", () => {
     expect(
       fired(
         '<video controls tabindex="0" style="width:120px;height:80px"></video>',
@@ -951,9 +948,9 @@ describe("redundant-tabindex", () => {
     expect(fired('<input tabindex="0">')).toContain("redundant-tabindex");
   });
   test('05 flags <select> and <textarea> with tabindex="0"', () => {
-    expect(
-      fired('<select tabindex="0"><option>A</option></select>'),
-    ).toContain("redundant-tabindex");
+    expect(fired('<select tabindex="0"><option>A</option></select>')).toContain(
+      "redundant-tabindex",
+    );
     expect(fired('<textarea tabindex="0"></textarea>')).toContain(
       "redundant-tabindex",
     );

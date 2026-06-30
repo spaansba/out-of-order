@@ -1,6 +1,6 @@
 import { computeAccessibleName } from "dom-accessibility-api";
 import { isFocusable } from "tabbable";
-import type { RuleId, SequenceEntry, Severity, Violation } from "./types.js";
+import type { RuleId, SequenceEntry, Severity } from "./types.js";
 import {
   isInteractive,
   hasExplicitName,
@@ -19,64 +19,6 @@ import {
   isNativelyFocusable,
 } from "./dom.js";
 
-/** Spec link each rule is grounded in, carried on every violation (via
-    `entryViolation`) so a finding cites its authority. WCAG 2.2 "Understanding",
-    WAI-ARIA 1.2, or the ARIA APG. */
-export const RULE_DOCS: Record<RuleId, string> = {
-  "no-positive-tabindex":
-    "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
-  "visual-order-mismatch":
-    "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
-  "missing-accessible-name":
-    "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
-  "aria-hidden-focusable": "https://www.w3.org/TR/wai-aria-1.2/#aria-hidden",
-  "hidden-while-focusable":
-    "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
-  "clickable-not-focusable":
-    "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
-  "composite-roving-tabindex":
-    "https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/",
-  "focus-escapes-modal":
-    "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
-  "tabindex-on-noninteractive":
-    "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
-  "prefer-native-element": "https://www.w3.org/TR/using-aria/#firstrule",
-  "duplicate-autofocus":
-    "https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute",
-  "autofocus-not-focusable":
-    "https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute",
-  "nested-interactive":
-    "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
-  "redundant-tabindex":
-    "https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex",
-};
-
-/** The severity each rule fires at unless the caller overrides it via
-    `AnalyzeOptions.rules`. `error` = a real barrier (unreachable, unannounced,
-    invisible, trapped); `warning` = dead/no-op markup or a best-practice nit that
-    doesn't block a keyboard or screen-reader user. */
-export const DEFAULT_SEVERITY: Record<RuleId, Severity> = {
-  "no-positive-tabindex": "error",
-  "visual-order-mismatch": "warning",
-  "missing-accessible-name": "error",
-  "aria-hidden-focusable": "error",
-  "hidden-while-focusable": "error",
-  "clickable-not-focusable": "error",
-  "composite-roving-tabindex": "warning",
-  "focus-escapes-modal": "error",
-  "tabindex-on-noninteractive": "error",
-  "prefer-native-element": "warning",
-  "duplicate-autofocus": "warning",
-  "autofocus-not-focusable": "warning",
-  "nested-interactive": "error",
-  "redundant-tabindex": "warning",
-};
-
-/** px tolerance for treating two stops as the same visual row. Elements on one row
-    rarely share an exact vertical center (height/padding/baseline differ), and below
-    ~8px a sighted user doesn't perceive a row break. */
-const ROW_TOLERANCE_PX = 8;
-
 /** Everything a rule may need beyond the sequence itself. */
 export interface RuleContext {
   /** The analyzed root element (lets rules look beyond the tab sequence). */
@@ -85,44 +27,57 @@ export interface RuleContext {
   inSequence: Set<Element>;
 }
 
-/** A rule's output before grading: a Violation minus its `severity`, which
-    `analyzeTabOrder` stamps on from `DEFAULT_SEVERITY` (or the caller's override).
-    Keeping severity out of the rules means a rule never has to know how serious it
-    is, and a re-grade lives in exactly one place. */
-export type Finding = Omit<Violation, "severity">;
-
-/** Takes the computed tab sequence (plus context) and returns any findings. Pure. */
-export type Rule = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
-
-function entryViolation(
-  rule: RuleId,
-  entry: SequenceEntry,
-  message: string,
-): Finding {
-  return {
-    rule,
-    message,
-    docs: RULE_DOCS[rule],
-    element: entry.element,
-    selector: entry.selector,
-    orderIndex: entry.orderIndex,
-  };
+/** What a rule reports for a single occurrence. The rule's id, docs link, and
+    graded severity are uniform across all of its findings, so `analyzeTabOrder`
+    stamps those on (from the owning {@link Rule}); a Finding carries only what
+    varies per hit. */
+export interface Finding {
+  /** Human-readable description of what's wrong. */
+  message: string;
+  /** What the finding points at. A tab stop is passed as its {@link SequenceEntry}
+      (so the analyzer reuses the entry's orderIndex and precomputed selector);
+      anything off the tab sequence is passed as a bare Element. */
+  target: SequenceEntry | Element;
+  /** Other elements with the same root cause. Ringed alongside `target` but not
+      reported as separate findings, so one missing fix doesn't become N violations. */
+  relatedElements?: Element[];
 }
 
-export const noPositiveTabIndex: Rule = (sequence) => {
+/** Detector half of a rule: takes the computed tab sequence (plus context) and
+    returns any findings. Pure. */
+export type RuleRun = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
+
+/** A rule: its static identity/config plus its detector. `docs` and
+    `defaultSeverity` are constant across the rule's findings, so they live here,
+    not on each {@link Finding}. Custom rules handed to `analyzeTabOrder` are this
+    shape; built-ins are stored the same way in {@link ALL_RULES}, keyed by `id`. */
+export interface Rule {
+  /** Stable rule identifier, surfaced on every Violation it produces. */
+  id: string;
+  /** Spec link the rule is grounded in (WCAG, WAI-ARIA, or ARIA APG). */
+  docs: string;
+  /** Severity the rule fires at unless the caller overrides it via
+      `AnalyzeOptions.rules`. */
+  defaultSeverity: Severity;
+  run: RuleRun;
+}
+
+/** px tolerance for treating two stops as the same visual row. Elements on one row
+    rarely share an exact vertical center (height/padding/baseline differ), and below
+    ~8px a sighted user doesn't perceive a row break. */
+const ROW_TOLERANCE_PX = 8;
+
+const noPositiveTabIndex: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     if (entry.tabIndex <= 0) {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "no-positive-tabindex",
-        entry,
-        `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile; use 0 or restructure the DOM.`,
-      ),
-    );
+    out.push({
+      message: `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile; use 0 or restructure the DOM.`,
+      target: entry,
+    });
   }
 
   return out;
@@ -134,7 +89,7 @@ export const noPositiveTabIndex: Rule = (sequence) => {
  * stops when the second one sits visually *before* the first (an earlier row,
  * or the same row but to its left), i.e. Tab makes a backward hop.
  */
-export const visualOrderMismatch: Rule = (sequence) => {
+const visualOrderMismatch: RuleRun = (sequence) => {
   // Each element's floating ancestor, computed once (it walks the tree calling
   // getComputedStyle); the adjacent-pair loop below would otherwise recompute
   // every element's twice, as the "cur" of one pair and the "prev" of the next.
@@ -157,33 +112,28 @@ export const visualOrderMismatch: Rule = (sequence) => {
       continue;
     }
 
-    const prevY = prev.rect.top + prev.rect.height / 2;
-    const curY = cur.rect.top + cur.rect.height / 2;
     const prevX = prev.rect.left + prev.rect.width / 2;
     const curX = cur.rect.left + cur.rect.width / 2;
-    // Backward hop: the element reached is on an earlier row, or on the same
-    // row but to the left of the one we came from.
-    const earlierRow = curY < prevY - ROW_TOLERANCE_PX;
-    const sameRow = Math.abs(curY - prevY) <= ROW_TOLERANCE_PX;
+
+    const earlierRow = cur.rect.bottom <= prev.rect.top + ROW_TOLERANCE_PX;
+    const sameRow =
+      !earlierRow && cur.rect.top < prev.rect.bottom - ROW_TOLERANCE_PX;
     const backwardHop = earlierRow || (sameRow && curX < prevX - 1);
     if (!backwardHop) {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "visual-order-mismatch",
-        cur,
-        `"${cur.selector}" comes after "${prev.selector}" in the tab order, but sits visually before it (reading order is top→bottom, left→right). Tab makes a backward hop here.`,
-      ),
-    );
+    out.push({
+      message: `"${cur.selector}" comes after "${prev.selector}" in the tab order, but sits visually before it (reading order is top→bottom, left→right). Tab makes a backward hop here.`,
+      target: cur,
+    });
   }
 
   return out;
 };
 
 /** Focusable interactive elements must expose an accessible name. */
-export const missingAccessibleName: Rule = (sequence) => {
+const missingAccessibleName: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     if (!isInteractive(entry.element)) {
@@ -199,13 +149,10 @@ export const missingAccessibleName: Rule = (sequence) => {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "missing-accessible-name",
-        entry,
-        `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`,
-      ),
-    );
+    out.push({
+      message: `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`,
+      target: entry,
+    });
   }
 
   return out;
@@ -213,20 +160,17 @@ export const missingAccessibleName: Rule = (sequence) => {
 
 /** aria-hidden hides from the a11y tree but NOT from the tab order: a keyboard +
     screen-reader user focuses a control their SR refuses to announce. */
-export const ariaHiddenFocusable: Rule = (sequence) => {
+const ariaHiddenFocusable: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     if (!inAriaHidden(entry.element)) {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "aria-hidden-focusable",
-        entry,
-        `"${entry.selector}" is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce. Add tabindex="-1"/inert, or remove aria-hidden.`,
-      ),
-    );
+    out.push({
+      message: `"${entry.selector}" is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce. Add tabindex="-1"/inert, or remove aria-hidden.`,
+      target: entry,
+    });
   }
 
   return out;
@@ -234,7 +178,7 @@ export const ariaHiddenFocusable: Rule = (sequence) => {
 
 /** In the tab order but invisible: opacity:0, zero size, off-screen, or clipped.
     The user can tab to something they can't see. */
-export const hiddenWhileFocusable: Rule = (sequence) => {
+const hiddenWhileFocusable: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     const reason = hiddenReason(entry.element, entry.rect);
@@ -243,23 +187,17 @@ export const hiddenWhileFocusable: Rule = (sequence) => {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "hidden-while-focusable",
-        entry,
-        `"${entry.selector}" is tabbable but ${reason}. Hide it from the tab order too (display:none, the hidden attribute, or tabindex="-1").`,
-      ),
-    );
+    out.push({
+      message: `"${entry.selector}" is tabbable but ${reason}. Hide it from the tab order too (display:none, the hidden attribute, or tabindex="-1").`,
+      target: entry,
+    });
   }
   return out;
 };
 
 /** Something interactive to the mouse (role/onclick) that the
     keyboard can never reach because it isn't focusable. */
-export const clickableNotFocusable: Rule = (
-  _sequence,
-  { container, inSequence },
-) => {
+const clickableNotFocusable: RuleRun = (_sequence, { container, inSequence }) => {
   // Every ancestor-or-self of a tab stop, collected once. A clickable element
   // that's in this set merely wraps a real focusable control, so the keyboard
   // can still get in, so skip it.
@@ -307,11 +245,8 @@ export const clickableNotFocusable: Rule = (
     } // not rendered / no target
     const selector = selectorFor(element);
     out.push({
-      rule: "clickable-not-focusable",
       message: `"${selector}" looks interactive (role or onclick) but is not in the tab order, so keyboard users can't reach it. Use a <button>/<a>, or add tabindex="0" plus Enter/Space handlers.`,
-      docs: RULE_DOCS["clickable-not-focusable"],
-      element,
-      selector,
+      target: element,
     });
   }
 
@@ -320,7 +255,7 @@ export const clickableNotFocusable: Rule = (
 
 /** A composite widget (toolbar, tablist, menu, …) should be a single tab stop and
     move between items with the arrow keys (roving tabindex), not N tab stops. */
-export const compositeRovingTabindex: Rule = (sequence) => {
+const compositeRovingTabindex: RuleRun = (sequence) => {
   const groups = new Map<Element, SequenceEntry[]>();
   for (const entry of sequence) {
     const container = compositeAncestor(entry.element);
@@ -340,13 +275,10 @@ export const compositeRovingTabindex: Rule = (sequence) => {
 
     const role = container.getAttribute("role");
     for (const member of members) {
-      out.push(
-        entryViolation(
-          "composite-roving-tabindex",
-          member,
-          `${members.length} items inside role="${role}" are separate tab stops. A ${role} should expose one tab stop and move between items with the arrow keys (roving tabindex).`,
-        ),
-      );
+      out.push({
+        message: `${members.length} items inside role="${role}" are separate tab stops. A ${role} should expose one tab stop and move between items with the arrow keys (roving tabindex).`,
+        target: member,
+      });
     }
   }
 
@@ -355,7 +287,7 @@ export const compositeRovingTabindex: Rule = (sequence) => {
 
 /** While a modal dialog is open, content behind it must be inert. If background
     controls stay tabbable, focus leaks out of the dialog. */
-export const focusEscapesModal: Rule = (sequence, { container }) => {
+const focusEscapesModal: RuleRun = (sequence, { container }) => {
   const modal = openModal(container);
   if (!modal) {
     return [];
@@ -377,11 +309,8 @@ export const focusEscapesModal: Rule = (sequence, { container }) => {
 
   return [
     {
-      ...entryViolation(
-        "focus-escapes-modal",
-        first,
-        `A modal dialog is open, but ${subject}, so focus can leak behind the dialog. Mark background content inert (or aria-hidden + remove it from the tab order).`,
-      ),
+      message: `A modal dialog is open, but ${subject}, so focus can leak behind the dialog. Mark background content inert (or aria-hidden + remove it from the tab order).`,
+      target: first,
       // One finding, anchored on the first leaked control, but every other leaked
       // control shares the root cause (background not inert) and is ringed too.
       relatedElements: leaked.slice(1).map((entry) => entry.element),
@@ -391,7 +320,7 @@ export const focusEscapesModal: Rule = (sequence, { container }) => {
 
 /** tabindex="0" on a plain, role-less, non-interactive element turns decorative
     content into a dead tab stop. Scrollable containers are intentionally exempt. */
-export const tabindexOnNoninteractive: Rule = (sequence) => {
+const tabindexOnNoninteractive: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     if (entry.tabIndex !== 0) {
@@ -401,6 +330,9 @@ export const tabindexOnNoninteractive: Rule = (sequence) => {
       continue;
     } // implicitly focusable
     const element = entry.element as HTMLElement;
+    if (isNativelyFocusable(element)) {
+      continue;
+    }
     if (isInteractive(element)) {
       continue;
     }
@@ -415,13 +347,10 @@ export const tabindexOnNoninteractive: Rule = (sequence) => {
     if (isScrollContainer(element)) {
       continue;
     }
-    out.push(
-      entryViolation(
-        "tabindex-on-noninteractive",
-        entry,
-        `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control). If it's decorative, remove the tabindex, since it adds a dead stop to the tab order; if it's meant to be a control, give it a real role (or use a <button>).`,
-      ),
-    );
+    out.push({
+      message: `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control). If it's decorative, remove the tabindex, since it adds a dead stop to the tab order; if it's meant to be a control, give it a real role (or use a <button>).`,
+      target: entry,
+    });
   }
   return out;
 };
@@ -429,7 +358,7 @@ export const tabindexOnNoninteractive: Rule = (sequence) => {
 /** A generic element (<div>, <span>, …) reimplementing a native control via an
     interactive role rather than using the native element. The native one brings
     focus, keyboard activation, and SR semantics for free; the "first rule of ARIA". */
-export const preferNativeElement: Rule = (sequence) => {
+const preferNativeElement: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     const native = nativeReplacement(entry.element);
@@ -438,13 +367,10 @@ export const preferNativeElement: Rule = (sequence) => {
     }
     const tag = entry.element.tagName.toLowerCase();
     const role = entry.element.getAttribute("role");
-    out.push(
-      entryViolation(
-        "prefer-native-element",
-        entry,
-        `"${entry.selector}" is a <${tag}> with role="${role}". Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`,
-      ),
-    );
+    out.push({
+      message: `"${entry.selector}" is a <${tag}> with role="${role}". Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`,
+      target: entry,
+    });
   }
   return out;
 };
@@ -452,7 +378,7 @@ export const preferNativeElement: Rule = (sequence) => {
 /** autofocus applies to any *focusable* element (even tabindex="-1" non-stops), and
     the browser focuses the first in *document* order — so scan the whole container,
     not `sequence`. The first focusable one wins; the rest are dead intent. */
-export const duplicateAutofocus: Rule = (_sequence, { container }) => {
+const duplicateAutofocus: RuleRun = (_sequence, { container }) => {
   const focusableAutofocus = Array.from(
     container.querySelectorAll("[autofocus]"),
   ).filter((element) => isFocusable(element, { getShadowRoot: true }));
@@ -464,11 +390,8 @@ export const duplicateAutofocus: Rule = (_sequence, { container }) => {
     const selector = selectorFor(element);
 
     return {
-      rule: "duplicate-autofocus",
       message: `"${selector}" also has autofocus, but a page can autofocus only one element; the first focusable one in document order wins, so this one is silently ignored. Remove the extra autofocus.`,
-      docs: RULE_DOCS["duplicate-autofocus"],
-      element,
-      selector,
+      target: element,
     };
   });
 };
@@ -476,7 +399,7 @@ export const duplicateAutofocus: Rule = (_sequence, { container }) => {
 /** `autofocus` on an element that isn't focusable (a bare <div>, no tabindex, not a
     form control) does nothing on load — dead markup. Flag it so it's removed or the
     element is made focusable. */
-export const autofocusNotFocusable: Rule = (_sequence, { container }) => {
+const autofocusNotFocusable: RuleRun = (_sequence, { container }) => {
   const out: Finding[] = [];
   for (const element of container.querySelectorAll("[autofocus]")) {
     if (isFocusable(element, { getShadowRoot: true })) {
@@ -485,11 +408,8 @@ export const autofocusNotFocusable: Rule = (_sequence, { container }) => {
 
     const selector = selectorFor(element);
     out.push({
-      rule: "autofocus-not-focusable",
       message: `"${selector}" has autofocus but isn't focusable (no tabindex, not a form control), so it's ignored on load. Remove the autofocus, or make the element focusable (e.g. tabindex="-1").`,
-      docs: RULE_DOCS["autofocus-not-focusable"],
-      element,
-      selector,
+      target: element,
     });
   }
 
@@ -500,7 +420,7 @@ export const autofocusNotFocusable: Rule = (_sequence, { container }) => {
     <a href>, or a control inside a tabindex'd wrapper). Two stacked tab stops land
     on the same spot, and screen readers may merge or drop the inner control's role
     and name. */
-export const nestedInteractive: Rule = (sequence, { container }) => {
+const nestedInteractive: RuleRun = (sequence, { container }) => {
   const stop = container.parentElement;
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -513,13 +433,10 @@ export const nestedInteractive: Rule = (sequence, { container }) => {
         continue;
       }
 
-      out.push(
-        entryViolation(
-          "nested-interactive",
-          entry,
-          `"${entry.selector}" is focusable but nested inside another focusable element ("${selectorFor(node)}"). Nesting interactive controls stacks two tab stops in one place and can hide the inner control's role/name from screen readers; don't put a focusable element inside another.`,
-        ),
-      );
+      out.push({
+        message: `"${entry.selector}" is focusable but nested inside another focusable element ("${selectorFor(node)}"). Nesting interactive controls stacks two tab stops in one place and can hide the inner control's role/name from screen readers; don't put a focusable element inside another.`,
+        target: entry,
+      });
 
       break;
     }
@@ -533,7 +450,7 @@ export const nestedInteractive: Rule = (sequence, { container }) => {
     redundant markup that adds noise and invites a positive value to creep in later.
     tabindex="-1" (removed from the sequence) and positive values (no-positive-tabindex)
     aren't redundant and never reach here. */
-export const redundantTabindex: Rule = (sequence) => {
+const redundantTabindex: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
     if (entry.tabIndex !== 0) {
@@ -548,30 +465,101 @@ export const redundantTabindex: Rule = (sequence) => {
       continue;
     }
 
-    out.push(
-      entryViolation(
-        "redundant-tabindex",
-        entry,
-        `"${entry.selector}" is already focusable, so its tabindex="0" is redundant. Remove the attribute; the element stays in the tab order on its own.`,
-      ),
-    );
+    out.push({
+      message: `"${entry.selector}" is already focusable, so its tabindex="0" is redundant. Remove the attribute; the element stays in the tab order on its own.`,
+      target: entry,
+    });
   }
   return out;
 };
 
+/** Every built-in rule, keyed by its id. Each entry bundles the rule's spec link,
+    default severity, and detector, so a rule's whole identity lives in one place.
+    The id is the key (and the {@link RuleId} source); `analyzeTabOrder` reattaches
+    it when it grades findings.
+
+    `defaultSeverity`: `error` = a real barrier (unreachable, unannounced, invisible,
+    trapped); `warning` = dead/no-op markup or a best-practice nit that doesn't block
+    a keyboard or screen-reader user. */
 export const ALL_RULES = {
-  "no-positive-tabindex": noPositiveTabIndex,
-  "visual-order-mismatch": visualOrderMismatch,
-  "missing-accessible-name": missingAccessibleName,
-  "aria-hidden-focusable": ariaHiddenFocusable,
-  "hidden-while-focusable": hiddenWhileFocusable,
-  "clickable-not-focusable": clickableNotFocusable,
-  "composite-roving-tabindex": compositeRovingTabindex,
-  "focus-escapes-modal": focusEscapesModal,
-  "tabindex-on-noninteractive": tabindexOnNoninteractive,
-  "prefer-native-element": preferNativeElement,
-  "duplicate-autofocus": duplicateAutofocus,
-  "autofocus-not-focusable": autofocusNotFocusable,
-  "nested-interactive": nestedInteractive,
-  "redundant-tabindex": redundantTabindex,
-} as const;
+  "no-positive-tabindex": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+    defaultSeverity: "error",
+    run: noPositiveTabIndex,
+  },
+  "visual-order-mismatch": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+    defaultSeverity: "warning",
+    run: visualOrderMismatch,
+  },
+  "missing-accessible-name": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+    defaultSeverity: "error",
+    run: missingAccessibleName,
+  },
+  "aria-hidden-focusable": {
+    docs: "https://www.w3.org/TR/wai-aria-1.2/#aria-hidden",
+    defaultSeverity: "error",
+    run: ariaHiddenFocusable,
+  },
+  "hidden-while-focusable": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+    defaultSeverity: "error",
+    run: hiddenWhileFocusable,
+  },
+  "clickable-not-focusable": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+    defaultSeverity: "error",
+    run: clickableNotFocusable,
+  },
+  "composite-roving-tabindex": {
+    docs: "https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/",
+    defaultSeverity: "warning",
+    run: compositeRovingTabindex,
+  },
+  "focus-escapes-modal": {
+    docs: "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
+    defaultSeverity: "error",
+    run: focusEscapesModal,
+  },
+  "tabindex-on-noninteractive": {
+    docs: "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
+    defaultSeverity: "error",
+    run: tabindexOnNoninteractive,
+  },
+  "prefer-native-element": {
+    docs: "https://www.w3.org/TR/using-aria/#firstrule",
+    defaultSeverity: "warning",
+    run: preferNativeElement,
+  },
+  "duplicate-autofocus": {
+    docs: "https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute",
+    defaultSeverity: "warning",
+    run: duplicateAutofocus,
+  },
+  "autofocus-not-focusable": {
+    docs: "https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute",
+    defaultSeverity: "warning",
+    run: autofocusNotFocusable,
+  },
+  "nested-interactive": {
+    docs: "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+    defaultSeverity: "error",
+    run: nestedInteractive,
+  },
+  "redundant-tabindex": {
+    docs: "https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex",
+    defaultSeverity: "warning",
+    run: redundantTabindex,
+  },
+} satisfies Record<string, Omit<Rule, "id">>;
+
+/** Per-rule spec links, derived from {@link ALL_RULES}. */
+export const RULE_DOCS = Object.fromEntries(
+  Object.entries(ALL_RULES).map(([id, rule]) => [id, rule.docs]),
+) as Record<RuleId, string>;
+
+/** Per-rule default severities, derived from {@link ALL_RULES}. */
+export const DEFAULT_SEVERITY = Object.fromEntries(
+  Object.entries(ALL_RULES).map(([id, rule]) => [id, rule.defaultSeverity]),
+) as Record<RuleId, Severity>;

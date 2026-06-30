@@ -8,23 +8,49 @@ import type {
   RuleId,
 } from "./types.js";
 import { selectorFor } from "./dom.js";
-import { ALL_RULES, DEFAULT_SEVERITY } from "./rules.js";
+import { ALL_RULES, type Finding, type Rule } from "./rules.js";
 
 /** Fold a rule's caller override against its default into a final decision: is it
     on, and at what severity? A missing override keeps the default; `"off"` disables
     it; a severity string re-grades it. */
 function resolveRule(
   options: AnalyzeOptions,
-  rule: RuleId,
+  rule: Rule,
 ): { enabled: boolean; severity: Severity } {
-  const setting = options.rules?.[rule];
+  // Custom rule ids aren't in the RuleId union; the lookup is still safe (a miss
+  // returns undefined, i.e. "use the default").
+  const setting = options.rules?.[rule.id as RuleId];
   if (setting === undefined) {
-    return { enabled: true, severity: DEFAULT_SEVERITY[rule] };
+    return { enabled: true, severity: rule.defaultSeverity };
   }
   if (setting === "off") {
-    return { enabled: false, severity: DEFAULT_SEVERITY[rule] };
+    return { enabled: false, severity: rule.defaultSeverity };
   }
   return { enabled: true, severity: setting };
+}
+
+/** Expand a rule's {@link Finding} into a full {@link Violation}: stamp the rule's
+    id and docs plus the graded severity, and resolve `target` into element/selector/
+    orderIndex. A tab stop arrives as its SequenceEntry (reuse its selector and
+    orderIndex); anything off the sequence arrives as a bare Element. */
+function toViolation(
+  finding: Finding,
+  rule: Rule,
+  severity: Severity,
+): Violation {
+  const { target } = finding;
+  const entry = "orderIndex" in target ? target : null;
+  const element = entry ? entry.element : target;
+  return {
+    rule: rule.id,
+    severity,
+    message: finding.message,
+    docs: rule.docs,
+    element,
+    selector: entry ? entry.selector : selectorFor(element),
+    orderIndex: entry?.orderIndex,
+    relatedElements: finding.relatedElements,
+  };
 }
 
 /**
@@ -36,6 +62,7 @@ function resolveRule(
 export function analyzeTabOrder(
   root: ParentNode = document,
   options: AnalyzeOptions = {},
+  customRules: Rule[] = [],
 ): TabOrderResult {
   const container =
     root.nodeType === 9 /* Node.DOCUMENT_NODE */
