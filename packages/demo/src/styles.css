@@ -78,6 +78,9 @@ code {
   background: var(--paper);
   border-bottom: 1px solid var(--line-2);
 }
+.topbar a {
+  scroll-margin-top: -51px;
+}
 .topbar h1 {
   margin: 0;
   font: 600 14px/1 var(--font-mono);
@@ -843,6 +846,34 @@ fieldset.radio-group label {
 }
 .modal-overlay .dialog .row {
   gap: 8px;
+}
+
+/* Card J's fix: a native <dialog> opened with showModal(). Styled to match the
+   custom dialog above. Its backdrop is kept near-transparent on purpose, so the
+   overlay's (false) leak rings on the inert page behind stay visible through it. */
+dialog.modal-native {
+  background: var(--surface);
+  color: inherit;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(24, 25, 28, 0.18);
+}
+dialog.modal-native[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 220px;
+  padding: 0.9rem 1rem;
+}
+dialog.modal-native strong {
+  font-size: 13px;
+}
+dialog.modal-native .row {
+  display: flex;
+  gap: 8px;
+}
+dialog.modal-native::backdrop {
+  background: rgba(24, 25, 28, 0.08);
 }
 
 /* green flash on an entry when its Fix button clears the violation */

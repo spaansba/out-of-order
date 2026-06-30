@@ -21,6 +21,8 @@ afterEach(() => {
   handle?.destroy();
   handle = null;
   document.body.innerHTML = "";
+  // Panel state persists in sessionStorage; clear it so tests don't leak into each other.
+  sessionStorage.clear();
 });
 
 describe("reveal", () => {
@@ -61,20 +63,20 @@ describe("reveal", () => {
     expect(layer().classList.contains("fp-hidden")).toBe(false);
   });
 
-  test("the panel's show/hide button toggles the overlay and relabels", () => {
+  test("the overlay switch toggles visibility and tracks state", () => {
     mount("<button>A</button>");
-    const vis = layer().querySelector(".fp-panel-vis") as HTMLButtonElement;
-    expect(vis.textContent).toBe("Hide overlay");
-    expect(vis.classList.contains("fp-panel-btn--on")).toBe(false);
+    const vis = layer().querySelector(".fp-switch--vis") as HTMLButtonElement;
+    // Starts on (overlay shown).
+    expect(vis.getAttribute("aria-checked")).toBe("true");
+    expect(vis.classList.contains("fp-switch--on")).toBe(true);
     vis.click();
     expect(handle!.visible).toBe(false);
     expect(layer().classList.contains("fp-hidden")).toBe(true);
-    expect(vis.textContent).toBe("Show overlay");
-    // Lit accent while hidden, mirroring the peek button's active state.
-    expect(vis.classList.contains("fp-panel-btn--on")).toBe(true);
+    expect(vis.getAttribute("aria-checked")).toBe("false");
+    expect(vis.classList.contains("fp-switch--on")).toBe(false);
     vis.click();
     expect(handle!.visible).toBe(true);
-    expect(vis.textContent).toBe("Hide overlay");
+    expect(vis.getAttribute("aria-checked")).toBe("true");
   });
 
   const tapAlt = (): void => {
@@ -91,39 +93,45 @@ describe("reveal", () => {
     expect(layer().dataset.fpPeek).toBe("off");
   });
 
-  test("the panel's peek button is non-tabbable and toggles peek on click", () => {
+  test("the peek switch is non-tabbable and toggles click-through on click", () => {
     mount("<button>A</button>");
-    const peek = layer().querySelector(".fp-panel-peek") as HTMLButtonElement;
+    const peek = layer().querySelector(".fp-switch--peek") as HTMLButtonElement;
     expect(peek).not.toBeNull();
     // Kept out of the page's own tab order, so the analyzer never numbers it.
     expect(peek.tabIndex).toBe(-1);
-    expect(peek.textContent!.toLowerCase()).toContain("click");
+    expect(peek.getAttribute("aria-checked")).toBe("false");
     peek.click();
     expect(layer().dataset.fpPeek).toBe("on");
-    expect(peek.classList.contains("fp-panel-btn--on")).toBe(true);
+    expect(peek.getAttribute("aria-checked")).toBe("true");
+    expect(peek.classList.contains("fp-switch--on")).toBe(true);
     peek.click();
     expect(layer().dataset.fpPeek).toBe("off");
   });
 
-  test("hiding the overlay disables the peek button", () => {
+  test("hiding the overlay disables the peek switch", () => {
     mount("<button>A</button>");
-    const peek = layer().querySelector(".fp-panel-peek") as HTMLButtonElement;
+    const peek = layer().querySelector(".fp-switch--peek") as HTMLButtonElement;
     expect(peek.disabled).toBe(false);
     handle!.setVisible(false);
-    // Peek is meaningless with nothing drawn, so it's disabled while hidden.
+    // Click-through is meaningless with nothing drawn, so it's disabled while hidden.
     expect(peek.disabled).toBe(true);
+    // And the modifier tap is a no-op while hidden.
+    tapAlt();
+    expect(layer().dataset.fpPeek).toBe("off");
     handle!.setVisible(true);
     expect(peek.disabled).toBe(false);
   });
 
-  test("the header collapses and expands the panel", () => {
+  test("the title collapses and expands the panel", () => {
     mount("<button>A</button>");
     const panel = layer().querySelector(".fp-panel") as HTMLElement;
-    const head = layer().querySelector(".fp-panel-head") as HTMLButtonElement;
+    const title = panel.querySelector(".fp-panel-title") as HTMLButtonElement;
+    // Starts open with the switches visible.
     expect(panel.dataset.open).toBe("1");
-    head.click();
+    expect(title.tabIndex).toBe(-1);
+    title.click();
     expect(panel.dataset.open).toBe("0");
-    head.click();
+    title.click();
     expect(panel.dataset.open).toBe("1");
   });
 
@@ -143,6 +151,22 @@ describe("reveal", () => {
     window.dispatchEvent(new PointerEvent("pointerdown"));
     window.dispatchEvent(new KeyboardEvent("keyup", { key: "Alt", altKey: false }));
     expect(layer().dataset.fpPeek).toBe("off");
+  });
+
+  test("panel state survives a remount (i.e. a page navigation)", () => {
+    mount("<button>A</button>");
+    (layer().querySelector(".fp-switch--peek") as HTMLButtonElement).click();
+    expect(layer().dataset.fpPeek).toBe("on");
+    // A full page load on the multi-page docs site destroys and re-creates the
+    // overlay; the saved peek state must come back so the nav click doesn't reset it.
+    handle!.destroy();
+    handle = reveal({ root });
+    expect(layer().dataset.fpPeek).toBe("on");
+    expect(
+      (layer().querySelector(".fp-switch--peek") as HTMLButtonElement).getAttribute(
+        "aria-checked",
+      ),
+    ).toBe("true");
   });
 
   test("destroy removes the layer and un-rings elements", () => {

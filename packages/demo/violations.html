@@ -586,7 +586,11 @@
             Open this <code>aria-modal="true"</code> dialog and the page behind
             it is never made <code>inert</code>, so Tab keeps reaching every
             control underneath: the overlay lights up the whole page as a focus
-            leak. Flags <code>focus-escapes-modal</code>. See the ARIA APG's
+            leak. Flags <code>focus-escapes-modal</code>. The fix swaps it for a
+            native <code>&lt;dialog&gt;</code> opened with
+            <code>showModal()</code>, which traps focus for real, yet the warning
+            stays: a false positive, since <code>tabbable</code> ignores the top
+            layer's implicit inertness. See the ARIA APG's
             <a
               href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
               target="_blank"
@@ -603,9 +607,9 @@
       </div>
     </main>
 
-    <!-- Card K's dialog: a real, body-level full-page modal so the page behind it
-         can be made inert (the fix) without inert-ing the dialog itself. Hidden
-         until the card's button opens it. -->
+    <!-- The modal card's dialog: a body-level aria-modal overlay that never inerts
+         the page behind it (the planted leak). The fix swaps it for a native
+         <dialog> built in modal.ts. Hidden until the card's button opens it. -->
     <div class="modal-overlay" id="modal-demo" hidden>
       <div
         class="dialog"

@@ -17,6 +17,7 @@ import { Renderer, type StopSpec, type SegSpec } from "./render.js";
 import { Tracker } from "./track.js";
 import { Mutations } from "./mutations.js";
 import { badgeTip, segTip } from "./tip-content.js";
+import { setupControls, loadPanelState, patchPanelState } from "./controls.js";
 
 export type MotionMode = "auto" | "on" | "off";
 
@@ -54,6 +55,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
 
   const layer = document.createElement("div");
   layer.className = "fp-layer";
+  layer.dataset.fpPeek = "off";
   // Marks every node in this overlay so the analyzer's "is it covered?" check can
   // ignore our own badges/lines instead of mistaking them for an obscuring layer.
   layer.setAttribute("data-focuspocus-overlay", "");
@@ -88,23 +90,54 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   // tracked separately, so only sequence/violation changes need a redraw).
   let lastSig: string | null = null;
 
+  // reveal() owns both pieces of overlay state and all their side effects; the
+  // panel is pure UI that flips them through callbacks and mirrors them through the
+  // sync* methods. That keeps the two controls symmetric and the tooltip-hiding in
+  // one place (any change that removes hoverable badges closes an open tooltip).
+  // State is persisted per-tab so it survives a same-tab page navigation: the docs
+  // site is multi-page, so without this a nav-link click would reset peek/hide.
+  const saved = loadPanelState();
   let visible = true;
-  let syncControls: (shown: boolean) => void = () => {};
+  let peeking = false;
   const setVisible = (next: boolean): void => {
     visible = next;
     // Hide only the drawing (badges + arrows) and the rings; the control panel
-    // shares this layer and must survive so "Show overlay" stays reachable.
+    // shares this layer and must survive so the overlay can be shown again.
     layer.classList.toggle("fp-hidden", !next);
     renderer.setRingsVisible(next);
-    syncControls(next);
+    if (!next) {
+      tooltip.hide();
+    }
+    controls.syncVisible(next);
+    patchPanelState({ visible: next });
+  };
+  const setPeek = (next: boolean): void => {
+    peeking = next;
+    layer.dataset.fpPeek = next ? "on" : "off";
+    if (next) {
+      tooltip.hide();
+    }
+    controls.syncPeek(next);
+    patchPanelState({ peek: next });
   };
 
-  // The panel owns both controls (peek + show/hide); it reports visibility back
-  // through syncControls so its button label tracks programmatic setVisible too.
-  const controls = setupControls(layer, tooltip, options.peekKey ?? "Alt", () =>
-    setVisible(!visible),
-  );
-  syncControls = controls.syncVisible;
+  const controls = setupControls(layer, {
+    peekKey: options.peekKey ?? "Alt",
+    open: saved.open ?? true,
+    onToggleVisible: () => setVisible(!visible),
+    // Peek does nothing with the overlay hidden, so ignore the toggle then.
+    onTogglePeek: () => visible && setPeek(!peeking),
+    onToggleOpen: (open) => patchPanelState({ open }),
+  });
+
+  // Replay the persisted state now the panel exists to mirror it. Peek is moot (and
+  // disabled) while hidden, so only restore it when the overlay is shown.
+  if (saved.visible === false) {
+    setVisible(false);
+  }
+  if (saved.peek === true && visible) {
+    setPeek(true);
+  }
 
   const handle: RevealHandle = {
     result: null,
@@ -211,137 +244,6 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   tracker.listen();
   mutations.observe(options.root ?? document);
   return handle;
-}
-
-const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
-  Alt: "Alt",
-  Control: "Ctrl",
-  Shift: "Shift",
-  Meta: "Meta",
-};
-
-interface Controls {
-  /** Update the show/hide button to match the overlay's current visibility. */
-  syncVisible(shown: boolean): void;
-  /** Drop every listener and remove the panel. */
-  teardown(): void;
-}
-
-function setupControls(
-  layer: HTMLElement,
-  tooltip: Tooltip,
-  peekKey: ModifierKey,
-  onToggleVisible: () => void,
-): Controls {
-  const abort = new AbortController();
-  const signal = abort.signal;
-  const label = PEEK_KEY_LABEL[peekKey];
-
-  // Native <button>s so the analyzer leaves them alone; tabindex=-1 keeps the
-  // panel out of the very tab order it's measuring (the peek modifier is the
-  // keyboard path in). Styled to match the demo chrome (see styles.ts).
-  const panel = document.createElement("div");
-  panel.className = "fp-panel";
-  panel.dataset.open = "1";
-
-  const button = (cls: string, parent: HTMLElement): HTMLButtonElement => {
-    const el = document.createElement("button");
-    el.type = "button";
-    el.tabIndex = -1;
-    el.className = cls;
-    // Swallow mousedown so a click never steals focus from the inspected control.
-    el.addEventListener("mousedown", (event) => event.preventDefault(), { signal });
-    parent.appendChild(el);
-    return el;
-  };
-
-  // Collapsible header: clicking it folds the panel down to just this bar, so it
-  // can be tucked out of the way without losing the controls.
-  const head = button("fp-panel-head", panel);
-  head.innerHTML = `Focus Pocus<span class="fp-panel-chev" aria-hidden="true"></span>`;
-  head.addEventListener(
-    "click",
-    () => (panel.dataset.open = panel.dataset.open === "1" ? "0" : "1"),
-    { signal },
-  );
-
-  const body = document.createElement("div");
-  body.className = "fp-panel-body";
-  panel.appendChild(body);
-
-  // Fixed-width labels: the button text doesn't grow the panel (CSS pins the
-  // width); colour, not length, carries the state - both buttons light up accent
-  // when they sit in their non-default position (hidden / peeking).
-  const visBtn = button("fp-panel-btn fp-panel-vis", body);
-  visBtn.textContent = "Hide overlay";
-  visBtn.addEventListener("click", onToggleVisible, { signal });
-
-  const peekBtn = button("fp-panel-btn fp-panel-peek", body);
-  let peeking = false;
-  const setPeek = (next: boolean): void => {
-    peeking = next;
-    layer.dataset.fpPeek = next ? "on" : "off";
-    peekBtn.classList.toggle("fp-panel-btn--on", next);
-    peekBtn.textContent = next ? "Click-through on" : "Click through";
-    if (next) {
-      tooltip.hide();
-    }
-  };
-  setPeek(false);
-  peekBtn.addEventListener("click", () => setPeek(!peeking), { signal });
-
-  const hint = document.createElement("p");
-  hint.className = "fp-panel-hint";
-  hint.textContent = `tap ${label} to peek`;
-  body.appendChild(hint);
-
-  layer.appendChild(panel);
-
-  // A "lone tap" of the modifier toggles peek: armed when it goes down by itself,
-  // disarmed the moment any other key or a click joins in (so combos like Alt+Tab,
-  // Ctrl+C, or a hold-and-click never toggle), fired on its release.
-  let armed = false;
-  window.addEventListener(
-    "keydown",
-    (event) => {
-      if (event.key !== peekKey) {
-        armed = false;
-      } else if (!event.repeat) {
-        armed = true;
-      }
-    },
-    { signal },
-  );
-
-  window.addEventListener(
-    "keyup",
-    (event) => {
-      if (event.key !== peekKey || !armed) {
-        return;
-      }
-      armed = false;
-      setPeek(!peeking);
-    },
-    { signal },
-  );
-
-  window.addEventListener("pointerdown", () => (armed = false), { signal });
-  window.addEventListener("blur", () => (armed = false), { signal });
-
-  return {
-    syncVisible: (shown) => {
-      visBtn.textContent = shown ? "Hide overlay" : "Show overlay";
-      // Accent the button while hidden (its non-default state), matching how the
-      // peek button lights up while click-through is on.
-      visBtn.classList.toggle("fp-panel-btn--on", !shown);
-      // Peek is meaningless with nothing drawn, so disable it while hidden.
-      peekBtn.disabled = !shown;
-    },
-    teardown: () => {
-      abort.abort();
-      panel.remove();
-    },
-  };
 }
 
 // A stable per-element id. Keys the signature on element identity, not selector:

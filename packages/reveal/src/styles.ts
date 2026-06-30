@@ -27,40 +27,54 @@ ${RING_CSS}
    is pointer-events:none). The badge is a small disc at the element's centre, so
    it only intercepts clicks dead-centre. */
 .fp-badge { pointer-events: auto; cursor: help; }
-.fp-layer[data-fp-peek="on"] .fp-svg { opacity: 0.22; }
+/* "Peek": turn the overlay click-through (badges + backward hit-lines stop
+   intercepting) and fade the drawing back, so the page beneath stays usable. Scoped
+   to .fp-svg so the control panel, which reports the state, stays legible. */
+.fp-layer[data-fp-peek="on"] .fp-svg { opacity: 0.25; }
 .fp-layer[data-fp-peek="on"] .fp-badge,
 .fp-layer[data-fp-peek="on"] .fp-hit--back { pointer-events: none; }
 
+/* "Overlay" off hides the drawing + hit-lines but leaves the panel (the way back)
+   in place; the renderer hides the on-page rings separately. */
 .fp-layer.fp-hidden .fp-svg { display: none; }
+
+/* Control panel: a fixed-width card pinned to a corner, styled to match the demo
+   chrome. It holds two identical on/off switches (overlay + click-through). Palette
+   inlined: the overlay mounts on arbitrary pages and can't reach the demo's vars. */
 .fp-panel, .fp-panel * { box-sizing: border-box; }
 .fp-panel { position: fixed; left: 12px; bottom: 12px; z-index: 1;
-  width: 190px; pointer-events: auto; margin: 0;
+  width: 188px; pointer-events: auto; margin: 0; padding: 10px;
+  display: flex; flex-direction: column; gap: 9px;
   background: #f5f4ef; border: 1px solid #c6c2b4; border-radius: 3px;
   box-shadow: 0 10px 30px -12px rgba(24, 25, 28, 0.32), 0 1px 2px rgba(24, 25, 28, 0.08);
   font: 500 12px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
-.fp-panel-head { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0;
-  padding: 9px 10px; border: 0; background: transparent; cursor: pointer;
-  font: 600 13px/1 inherit; color: #18191c; letter-spacing: 0.01em; text-align: left; }
-.fp-panel-head:hover { color: #000; }
-.fp-panel[data-open="1"] .fp-panel-head { border-bottom: 1px solid #dcd9cd; }
-.fp-panel-chev { margin-left: auto; width: 0; height: 0;
-  border-left: 4px solid transparent; border-right: 4px solid transparent;
-  border-top: 5px solid #74756d; transition: transform 0.15s ease; }
-.fp-panel[data-open="0"] .fp-panel-chev { transform: rotate(-90deg); }
-.fp-panel-body { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px 10px; }
+/* Title doubles as the collapse toggle: full-width button, +/- sign on the right
+   tells which way it folds. Reset the UA button look back to the card's type. */
+.fp-panel-title { display: flex; align-items: center; width: 100%; margin: 0;
+  padding: 0 0 9px; border: 0; border-bottom: 1px solid #dcd9cd; background: none;
+  font: 600 13px/1 inherit; color: #18191c; letter-spacing: 0.01em;
+  text-align: left; cursor: pointer; }
+.fp-panel-title::after { content: "\\2212"; margin-left: auto; padding-left: 12px;
+  color: #74756d; font-size: 14px; }
+.fp-panel-title:hover { color: #000; }
+.fp-panel-title:hover::after { color: #18191c; }
+.fp-panel-body { display: flex; flex-direction: column; gap: 9px; }
+/* Collapsed: fold the body away, leave the bare title bar (no divider, +/- flips). */
+.fp-panel[data-open="0"] .fp-panel-title { padding-bottom: 0; border-bottom: 0; }
+.fp-panel[data-open="0"] .fp-panel-title::after { content: "+"; }
 .fp-panel[data-open="0"] .fp-panel-body { display: none; }
-.fp-panel-btn { display: block; width: 100%; margin: 0; text-align: left;
-  font: inherit; cursor: pointer; padding: 7px 9px; color: #18191c;
-  background: #fffefb; border: 1px solid #c6c2b4; border-radius: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease; }
-.fp-panel-btn:hover { border-color: #18191c; }
-/* Active state: the demo's "current page" treatment - accent ink on a soft wash.
-   Both buttons use it so they read consistently (overlay hidden / peek on). */
-.fp-panel-btn--on { color: #1f4e79; border-color: #1f4e79;
-  background: rgba(31, 78, 121, 0.09); }
-.fp-panel-btn:disabled { cursor: default; opacity: 0.4; }
-.fp-panel-btn:disabled:hover { border-color: #c6c2b4; }
+.fp-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fp-row-label { color: #34352d; }
+/* Toggle switch: a pill track with a sliding knob; accent track + knob right when on. */
+.fp-switch { flex: none; position: relative; width: 32px; height: 18px; margin: 0; padding: 0;
+  border: 1px solid #c6c2b4; border-radius: 999px; background: #e7e4da; cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease; }
+.fp-switch-knob { position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+  border-radius: 50%; background: #fffefb; box-shadow: 0 1px 2px rgba(24, 25, 28, 0.3);
+  transition: transform 0.14s ease; }
+.fp-switch--on { background: #1f4e79; border-color: #1f4e79; }
+.fp-switch--on .fp-switch-knob { transform: translateX(14px); }
+.fp-switch:disabled { cursor: default; opacity: 0.4; }
 .fp-panel-hint { margin: 1px 0 0; color: #74756d; font-size: 10.5px; letter-spacing: 0.01em; }
 .fp-badge circle { fill: #fffefb; stroke: #2f6a47; stroke-width: 1.5;
   transform-box: fill-box; transform-origin: center; }
@@ -76,18 +90,13 @@ ${RING_CSS}
 .fp-badge--warn.fp-badge--on circle { fill: #9a7d1a; stroke: #9a7d1a; }
 .fp-badge--bad.fp-badge--on circle { fill: #a01f17; stroke: #a01f17; }
 
-/* Autofocus indicator: a small informational (blue, never red) disc with a
-   downward arrow at the badge corner, marking where focus lands on page load. */
+/* Autofocus indicator */
 .fp-af circle { fill: #1f4e79; stroke: #fffefb; stroke-width: 1.5; }
 .fp-af path { fill: #fffefb; }
 
-/* 0x0 point slid under the pointer; every tooltip anchors to it (see Tooltip),
-   so showing one never writes to page DOM. */
 .fp-tip-cursor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; anchor-name: --fp-tip-anchor; }
 
-/* Spec-sheet index card, CSS-anchored to the cursor proxy (margin = badge radius
-   11px + 8px gap, so it clears a badge) and flips at the viewport edge. Palette
-   inlined: the overlay mounts on arbitrary pages. */
+
 .fp-tip { position: fixed; position-anchor: --fp-tip-anchor;
   inset: auto; top: anchor(center); left: anchor(center); margin: 19px 0 0 -11px;
   position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
@@ -99,17 +108,14 @@ ${RING_CSS}
   box-shadow: 0 18px 48px -14px rgba(24,25,28,0.34), 0 2px 5px rgba(24,25,28,0.08); }
 
 .fp-tip-head { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
-/* hanging index, split off by a full-height ledger hairline */
 .fp-tip-idx { flex: none; align-self: stretch; display: flex; align-items: center;
   padding-right: 10px; border-right: 1px solid #dcd9cd;
   font: 500 14px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: -0.01em; color: #1f4e79; }
 .fp-tip-idx--off { color: #9a7d1a; font-size: 15px; }
-/* selector titles the card; muted so the accent index leads the eye */
 .fp-tip-sel { min-width: 0; font: 12px/1.45 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #34352d; word-break: break-word; }
 
-/* two-column ledger: uppercase mono term, value on the right */
 .fp-tip-fields { margin: 0; padding: 8px 12px; border-top: 1px solid #dcd9cd;
   display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
 .fp-tip-fields dt { margin: 0;

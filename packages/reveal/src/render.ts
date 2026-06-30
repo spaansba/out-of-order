@@ -1,4 +1,9 @@
-import { ensureRingStyles, RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./styles.js";
+import {
+  ensureRingStyles,
+  RING_CLASS,
+  RING_BAD_CLASS,
+  RING_WARN_CLASS,
+} from "./styles.js";
 import type { Severity } from "@focuspocus/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
@@ -12,7 +17,7 @@ const RADIUS = 11;
 const SEG_PAD = RADIUS + 5;
 /** Below this in both dimensions an element is too small to host a centered
     badge, so it gets pinned off the top-right corner instead. */
-const SMALL_SIZE = 50;
+const SMALL_SIZE = 30;
 
 /** Create an SVG element with attributes and children in one call, dropping the
     repetitive createElementNS + setAttribute boilerplate. */
@@ -144,7 +149,9 @@ export class Renderer {
       All rect reads run before any SVG writes, so a scroll frame triggers a
       single layout flush instead of one reflow per marker (read→write→read…). */
   seed(): void {
-    const rects = this.markers.map((marker) => marker.element.getBoundingClientRect());
+    const rects = this.markers.map((marker) =>
+      marker.element.getBoundingClientRect(),
+    );
     this.syncSize();
     this.markers.forEach((marker, idx) => this.applyRect(marker, rects[idx]!));
     this.updateSegments();
@@ -152,7 +159,9 @@ export class Renderer {
 
   /** Apply fresh rects for the elements the position observer saw move, then
       refresh the connecting segments. */
-  applyMoved(moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>): void {
+  applyMoved(
+    moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>,
+  ): void {
     this.syncSize();
     for (const { target, rect } of moved) {
       const marker = this.byEl.get(target);
@@ -256,7 +265,11 @@ export class Renderer {
       clean, amber on a warning, red on an error. */
   private markRing(element: Element, severity: Severity | null): void {
     const ringClass =
-      severity === "error" ? RING_BAD_CLASS : severity === "warning" ? RING_WARN_CLASS : RING_CLASS;
+      severity === "error"
+        ? RING_BAD_CLASS
+        : severity === "warning"
+          ? RING_WARN_CLASS
+          : RING_CLASS;
     // Keep the class off while hidden so a rebuild mid-hide doesn't repaint the ring.
     if (this.ringsVisible) {
       element.classList.add(ringClass);
@@ -280,7 +293,10 @@ export class Renderer {
       marker.centerX = rect.left + rect.width / 2;
       marker.centerY = rect.top + rect.height / 2;
     }
-    marker.group.setAttribute("transform", `translate(${marker.centerX}, ${marker.centerY})`);
+    marker.group.setAttribute(
+      "transform",
+      `translate(${marker.centerX}, ${marker.centerY})`,
+    );
   }
 
   /** Redraw every hop: shorten it to the badge edges and drop the arrow at the
@@ -312,7 +328,10 @@ export class Renderer {
       seg.hit.setAttribute("x2", String(endX));
       seg.hit.setAttribute("y2", String(endY));
       // A midpoint vertex carries the marker-mid arrowhead, oriented along the hop.
-      seg.line.setAttribute("points", `${startX},${startY} ${midX},${midY} ${endX},${endY}`);
+      seg.line.setAttribute(
+        "points",
+        `${startX},${startY} ${midX},${midY} ${endX},${endY}`,
+      );
     }
   }
 

@@ -7,7 +7,7 @@
 // the flagged markup up front, then morphs to the fixed markup on Solve and
 // highlights the exact attribute that changed.
 
-import { setModalTrapsFocus } from "./modal.js";
+import { setModalUsesNativeDialog } from "./modal.js";
 
 type Attr = { name: string; value: string; changed: boolean };
 // body is null for a void element, which renders as just `>`. Otherwise it's the
@@ -231,9 +231,10 @@ function collectSolvers(
       ),
     },
     // J · the dialog is a real full-page modal that never inerts the page behind
-    // it, so focus leaks to every background control. The fix is behavioural (wire
-    // the open handler to inert the background), handled in modal.ts.
-    { anchor: queryOne("#open-modal"), fix: trapFocusFix() },
+    // it, so focus leaks to every background control. The fix swaps it for a native
+    // <dialog> opened with showModal() (handled in modal.ts), which traps focus for
+    // real but still trips focus-escapes-modal: a false positive this card surfaces.
+    { anchor: queryOne("#open-modal"), fix: nativeDialogFix() },
     // K · each generic element reimplements a native control; swap them all for the
     // native elements, where focus + keyboard activation + semantics come for free,
     // so the role and tabindex fall away. One combined fix for the whole showcase.
@@ -520,21 +521,25 @@ function buildReimplDemos(): { pairs: ReimplPair[]; created: Element[] } {
   return { pairs, created };
 }
 
-// J's fix isn't a static attribute edit but a behavioural one: the modal's open
-// handler is wired to make the page behind it inert (see modal.ts). The snippet
-// illustrates the effect - inert landing on the page's main content while open.
-function trapFocusFix(): Fix {
+// J's fix isn't a static attribute edit but a behavioural one: the custom
+// aria-modal overlay is swapped for a native <dialog> opened with showModal() (see
+// modal.ts). The snippet morphs the reimplemented dialog into the native element;
+// the card stays flagged because focus-escapes-modal fires on it anyway.
+function nativeDialogFix(): Fix {
   return {
-    apply: () => setModalTrapsFocus(true),
-    revert: () => setModalTrapsFocus(false),
-    before: [{ name: "main", attrs: [], body: "…" }],
-    after: [
+    apply: () => setModalUsesNativeDialog(true),
+    revert: () => setModalUsesNativeDialog(false),
+    before: [
       {
-        name: "main",
-        attrs: [{ name: "inert", value: "", changed: true }],
+        name: "div",
+        attrs: [
+          { name: "role", value: "dialog", changed: true },
+          { name: "aria-modal", value: "true", changed: true },
+        ],
         body: "…",
       },
     ],
+    after: [{ name: "dialog", attrs: [], body: "…" }],
   };
 }
 
