@@ -750,9 +750,14 @@ describe("tabindex-on-noninteractive", () => {
       fired('<div role="tabpanel" tabindex="0">Panel body text</div>'),
     ).not.toContain("tabindex-on-noninteractive");
   });
-  test.fails("08 role=presentation with tabindex=0 should be flagged", () => {
+  test("08 role=presentation with tabindex=0 is flagged", () => {
     expect(
       fired('<div role="presentation" tabindex="0">Decorative</div>'),
+    ).toContain("tabindex-on-noninteractive");
+  });
+  test("08b role=none with tabindex=0 is flagged", () => {
+    expect(
+      fired('<div role="none" tabindex="0">Decorative</div>'),
     ).toContain("tabindex-on-noninteractive");
   });
   test.fails(
@@ -924,6 +929,11 @@ describe("nested-interactive", () => {
     );
     expect(nested).toHaveLength(1);
     expect(nested[0]!.element.tagName).toBe("BUTTON");
+  });
+  test('07 passes: a tabindex="-1" focus-target wrapper is not a tab stop', () => {
+    expect(
+      fired('<div tabindex="-1"><button>Close</button></div>'),
+    ).not.toContain("nested-interactive");
   });
 });
 

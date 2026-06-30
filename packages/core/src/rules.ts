@@ -342,7 +342,8 @@ const tabindexOnNoninteractive: RuleRun = (sequence) => {
     if (element.isContentEditable) {
       continue;
     }
-    if (element.getAttribute("role")) {
+    const role = element.getAttribute("role");
+    if (role && role !== "presentation" && role !== "none") {
       continue;
     }
     // A keyboard-scrollable region legitimately takes tabindex="0", even when it
@@ -426,7 +427,7 @@ const autofocusNotFocusable: RuleRun = (_sequence, { container }) => {
     <a href>, or a control inside a tabindex'd wrapper). Two stacked tab stops land
     on the same spot, and screen readers may merge or drop the inner control's role
     and name. */
-const nestedInteractive: RuleRun = (sequence, { container }) => {
+const nestedInteractive: RuleRun = (sequence, { container, inSequence }) => {
   const stop = container.parentElement;
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -435,7 +436,7 @@ const nestedInteractive: RuleRun = (sequence, { container }) => {
       node && node !== stop;
       node = node.parentElement
     ) {
-      if (!isFocusable(node, { getShadowRoot: true })) {
+      if (!inSequence.has(node) && !isInteractive(node)) {
         continue;
       }
 

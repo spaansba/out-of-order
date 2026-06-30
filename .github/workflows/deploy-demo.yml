@@ -1,0 +1,49 @@
+name: Deploy demo
+
+# Builds the @focuspocus/demo site (docs + interactive demos) and publishes it to
+# GitHub Pages. The demo's Vite build aliases @focuspocus/core and /reveal to their
+# TypeScript source, so no separate package build step is needed.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow this workflow to publish to Pages, but never let two runs deploy at once.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - uses: actions/configure-pages@v5
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @focuspocus/demo build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/demo/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

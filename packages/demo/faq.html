@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus Pocus: FAQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html">rules</a>
+        <a href="./api.html">api</a>
+        <a href="./recipes.html">recipes</a>
+        <a href="./faq.html" aria-current="page">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html">tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">FAQ</span>
+        <h2>Questions that come up</h2>
+        <p>
+          The short answers. For the longer ones, the
+          <a href="./concepts.html">concepts page</a> covers the model and the
+          <a href="./api.html">API page</a> covers the surface.
+        </p>
+      </div>
+
+      <section class="group">
+        <h2>Why won't it run under jsdom?</h2>
+        <p class="note">
+          Because <code>jsdom</code> has no layout engine, and the analysis needs
+          one. <code>tabbable</code> uses visibility to decide what is in the tab
+          order, and the visibility and visual-order rules read live bounding
+          rects. Under <code>jsdom</code> those reads are meaningless, so a green
+          result there would not tell you anything true. Run it in a real
+          browser, headless or not.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Does it work with shadow DOM?</h2>
+        <p class="note">
+          Yes, for open shadow roots. The analyzer asks <code>tabbable</code> to
+          descend into them (<code>getShadowRoot: true</code>), so focusable
+          elements inside an open shadow tree land in the sequence and get
+          numbered. Closed roots are opaque to everyone, including the browser's
+          own focus walk, so nothing can see into them. The
+          <a href="./tabbable.html">what's-tabbable demo</a> includes a live
+          shadow-DOM stop.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Why does a control have no number on the overlay?</h2>
+        <p class="note">
+          Because it isn't a tab stop. An element can be focusable by script or a
+          mouse click without being tabbable. A <code>tabindex="-1"</code>, a
+          <code>disabled</code> state, an <code>[inert]</code> ancestor, or being
+          hidden all drop it out of the order, so the overlay gives it no number.
+          A few things are tab stops in the browser but left out on purpose, like
+          an <code>&lt;iframe&gt;</code> or a focusable scroll container, and the
+          <a href="./tabbable.html">tabbable demo</a> walks every one of these
+          cases. If a control should be a stop and isn't, that is often the bug,
+          and a rule like <code>clickable-not-focusable</code> will flag it with
+          a <code>&#8856;</code>.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>How do I silence a rule?</h2>
+        <p class="note">
+          Switch it off in the per-rule overrides, the same place you would
+          re-grade one.
+        </p>
+        <pre class="code">analyzeTabOrder(document.body, {
+  rules: { "prefer-native-element": "off" },
+});
+
+// Or through the overlay.
+reveal({ analyze: { rules: { "prefer-native-element": "off" } } });</pre>
+      </section>
+
+      <section class="group">
+        <h2>Will warnings fail my build?</h2>
+        <p class="note">
+          No. Only <code>error</code>-severity findings flip
+          <code>result.valid</code>, and warnings are advisory. If you gate on
+          <code>valid</code>, warnings ride along in <code>violations</code>
+          without breaking the build. Promote a warning to an error (or demote an
+          error) per call if your policy differs. See
+          <a href="./concepts.html">error vs warning</a>.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Can I use it with React, Vue, or Svelte?</h2>
+        <p class="note">
+          Yes. <code>@focuspocus/reveal</code> touches nothing but the DOM.
+          Create it on mount, and call <code>destroy()</code> on unmount. The
+          <a href="./recipes.html">recipes page</a> has React and Vue snippets.
+          The analyzer itself is just a function over a DOM node, so it fits any
+          stack.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Does the overlay interfere with my page?</h2>
+        <p class="note">
+          It draws into its own layer and marks every node it owns, so the
+          analyzer skips its own badges instead of mistaking them for page
+          content. It reads your DOM but doesn't mutate it, and it redraws only
+          when the verdict actually changes (geometry is tracked separately), so
+          even a list that rewrites its rows every frame stays cheap.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Is there a test matcher or a Playwright adapter?</h2>
+        <p class="note">
+          In progress. Both share the same core analyzer, which is why it is kept
+          light on dependencies so it runs inside a headless browser or a
+          Playwright <code>page.evaluate</code>. Until they land, assert on the
+          result of <code>analyzeTabOrder</code> directly in a real-browser test
+          runner. The <a href="./recipes.html">recipes page</a> shows how.
+        </p>
+        <div class="cta">
+          <a class="btn" href="./getting-started.html">Back to start</a>
+          <a
+            class="btn"
+            href="https://github.com/focuspocusjs/focuspocus"
+            target="_blank"
+            rel="noopener"
+            >Open an issue on GitHub</a
+          >
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

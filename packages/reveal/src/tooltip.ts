@@ -1,11 +1,11 @@
-/** Tooltip content, either ready-made or built on first hover (so a redraw doesn't
-    pay for HTML the pointer never opens). */
-export type Tip = string | (() => string);
+/** Tooltip content, built on first hover so a redraw doesn't pay for HTML the
+    pointer never opens. */
+export type Tip = () => string;
 
 /** Resolve a Tip once and memoize. */
 function resolver(tip: Tip): () => string {
-  let html: string | null = typeof tip === "string" ? tip : null;
-  return () => (html ??= (tip as () => string)());
+  let html: string | null = null;
+  return () => (html ??= tip());
 }
 
 export class Tooltip {

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus Pocus: rules</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html" aria-current="page">rules</a>
+        <a href="./api.html">api</a>
+        <a href="./recipes.html">recipes</a>
+        <a href="./faq.html">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html">tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">Rules</span>
+        <h2>Every rule, and the clause behind it</h2>
+        <p>
+          All rules are on by default. The severity shown is the default grade,
+          and you can override any of them per call. The "layout" column marks
+          the rules that read live CSS layout, the ones that can only run in a
+          real browser. Every rule maps to a specific WCAG, WAI-ARIA, or
+          HTML-spec clause, linked at the end of its row.
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="./violations.html"
+            >See every rule fail (and get fixed) live</a
+          >
+        </div>
+      </div>
+
+      <section class="group">
+        <h2>The rule set</h2>
+        <table class="spec">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Default</th>
+              <th>Layout</th>
+              <th>What it catches</th>
+              <th>Clause</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>no-positive-tabindex</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>no</td>
+              <td><code>tabindex&nbsp;&gt;&nbsp;0</code>, which hijacks the natural order</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 2.4.3</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>visual-order-mismatch</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>yes</td>
+              <td>tab order that doesn't follow top&rarr;bottom, left&rarr;right reading order</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 2.4.3</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>missing-accessible-name</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>no</td>
+              <td>focusable interactive elements with no accessible name</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 4.1.2</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>aria-hidden-focusable</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>no</td>
+              <td>tabbable element inside <code>aria-hidden="true"</code></td>
+              <td>
+                <a
+                  href="https://www.w3.org/TR/wai-aria-1.2/#aria-hidden"
+                  target="_blank"
+                  rel="noopener"
+                  >WAI-ARIA</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>hidden-while-focusable</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>yes</td>
+              <td>tabbable but invisible (opacity:0, zero size, off-screen, clipped)</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 2.4.7</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>clickable-not-focusable</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>yes</td>
+              <td>mouse-only control (role/onclick) the keyboard can't reach</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 2.1.1</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>composite-roving-tabindex</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>no</td>
+              <td>composite widget (toolbar, tablist, ...) with one tab stop per item</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/"
+                  target="_blank"
+                  rel="noopener"
+                  >ARIA APG</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>focus-escapes-modal</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>no</td>
+              <td>background controls still tabbable while a modal is open</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+                  target="_blank"
+                  rel="noopener"
+                  >ARIA APG</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>tabindex-on-noninteractive</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>yes</td>
+              <td><code>tabindex="0"</code> on a role-less, non-interactive element</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/"
+                  target="_blank"
+                  rel="noopener"
+                  >ARIA APG</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>prefer-native-element</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>no</td>
+              <td>generic tag reimplementing a native control via an interactive role</td>
+              <td>
+                <a
+                  href="https://www.w3.org/TR/using-aria/#firstrule"
+                  target="_blank"
+                  rel="noopener"
+                  >First rule of ARIA</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>duplicate-autofocus</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>yes</td>
+              <td>more than one focusable <code>autofocus</code> (only the first ever wins)</td>
+              <td>
+                <a
+                  href="https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
+                  target="_blank"
+                  rel="noopener"
+                  >HTML spec</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>autofocus-not-focusable</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>yes</td>
+              <td><code>autofocus</code> on a non-focusable element (a no-op on load)</td>
+              <td>
+                <a
+                  href="https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
+                  target="_blank"
+                  rel="noopener"
+                  >HTML spec</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>nested-interactive</code></td>
+              <td><span class="sev is-error">error</span></td>
+              <td>no</td>
+              <td>a focusable control nested inside another focusable element</td>
+              <td>
+                <a
+                  href="https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+                  target="_blank"
+                  rel="noopener"
+                  >WCAG 4.1.2</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>redundant-tabindex</code></td>
+              <td><span class="sev is-warning">warning</span></td>
+              <td>no</td>
+              <td><code>tabindex="0"</code> on an already-focusable native control (a no-op)</td>
+              <td>
+                <a
+                  href="https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex"
+                  target="_blank"
+                  rel="noopener"
+                  >HTML spec</a
+                >
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          The defaults are exported as <code>DEFAULT_SEVERITY</code>, a
+          <code>Record&lt;RuleId, Severity&gt;</code>, so your own tooling can
+          read the same source of truth the analyzer uses.
+        </p>
+      </section>
+
+      <section class="group" id="changing">
+        <h2>Changing a rule's grade</h2>
+        <p class="note">
+          Pass per-rule overrides through <code>AnalyzeOptions.rules</code>. A
+          rule you do not list keeps its default. For any other rule, re-grade it
+          to <code>"error"</code> or <code>"warning"</code>, or switch it
+          <code>"off"</code>.
+        </p>
+        <pre class="code">analyzeTabOrder(document.body, {
+  rules: {
+    "visual-order-mismatch": "warning",
+    "redundant-tabindex": "error",
+    "prefer-native-element": "off",
+  },
+});</pre>
+        <p class="note">
+          Only <code>error</code>-severity findings flip
+          <code>result.valid</code>, so demoting a rule to a warning keeps it
+          reported without failing a gate. The same overrides reach the overlay
+          through <code>reveal({ analyze: { rules: ... } })</code>.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Adding your own rule</h2>
+        <p class="note">
+          A rule is just a pure function over the computed sequence. Write one
+          and pass it alongside the built-ins, and it shows up in the result and
+          on the overlay like any other. See the
+          <a href="./recipes.html#custom-rule">custom-rule recipe</a> and the
+          <a href="./api.html#rule">Rule type</a>.
+        </p>
+      </section>
+    </main>
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

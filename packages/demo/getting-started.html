@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus Pocus: getting started</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html" aria-current="page">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html">rules</a>
+        <a href="./api.html">api</a>
+        <a href="./recipes.html">recipes</a>
+        <a href="./faq.html">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html">tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">Getting started</span>
+        <h2>From clone to overlay in a minute</h2>
+        <p>
+          There are two ways in. You can run this site's interactive demos
+          locally to see the overlay at work, or you can drop the analyzer into
+          your own page. Both run in a real browser, which is the whole point.
+          The test-runner matcher is a separate package that is still in
+          progress, so it is not covered here yet.
+        </p>
+      </div>
+
+      <section class="group">
+        <h2>Run the demos locally</h2>
+        <p class="note">
+          The fastest way to understand the project is to run the two demo pages
+          and tab through them with the overlay on.
+        </p>
+        <pre class="code">git clone https://github.com/focuspocusjs/focuspocus
+cd focuspocus
+pnpm install
+pnpm --filter @focuspocus/demo dev</pre>
+        <p class="note">
+          Open the printed URL. You do not need to build
+          <code>@focuspocus/core</code> or <code>@focuspocus/reveal</code>
+          first. The demo's <code>vite.config.ts</code> aliases both packages to
+          their TypeScript source, so edits to the library hot-reload straight
+          into the page.
+        </p>
+        <div class="cta">
+          <a class="btn" href="./violations.html">Rule violations &rarr;</a>
+          <a class="btn" href="./tabbable.html">What's tabbable &rarr;</a>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Add the overlay to your page</h2>
+        <p class="note">
+          <code>@focuspocus/reveal</code> is the shipped, framework-agnostic
+          overlay. Import it and call <code>reveal()</code>, and you have
+          numbered tab stops, the path between them, and every finding ringed in
+          place.
+        </p>
+        <pre class="code">import { reveal } from "@focuspocus/reveal";
+
+// No options, so it analyzes the whole document.
+const overlay = reveal();
+
+// Later, tear it down. This removes the layer, observers, and listeners.
+overlay.destroy();</pre>
+        <p class="note">
+          The overlay re-analyzes itself on every DOM mutation, so most pages
+          need nothing beyond the mount. You can scope it to a subtree, hide and
+          show it, or feed it rule overrides through
+          <code>reveal(options)</code>. See the
+          <a href="./api.html#reveal">reveal API</a>.
+        </p>
+        <p class="note">
+          The packages target npm as <code>@focuspocus/core</code> and
+          <code>@focuspocus/reveal</code>. Until they are published, consume them
+          from the workspace (or a git install) as the demo does.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Analyze without the overlay</h2>
+        <p class="note">
+          The overlay is optional. <code>@focuspocus/core</code> gives you the
+          verdict as plain data, which is what you would assert in a test or feed
+          into your own UI.
+        </p>
+        <pre class="code">import { analyzeTabOrder, formatViolations } from "@focuspocus/core";
+
+const result = analyzeTabOrder(document.body);
+
+result.valid; // boolean, true when there are no error-severity violations
+result.sequence; // elements in tab order, each with tabIndex + rect
+result.violations; // [{ rule, severity, message, element, selector, ... }]
+
+if (!result.valid) {
+  console.log(formatViolations(result.violations));
+}</pre>
+        <p class="note">
+          <code>valid</code> only goes false on an <code>error</code>. Warnings
+          are advisory and never flip it, so they will not fail a build gate
+          unless you promote them. See <a href="./concepts.html">concepts</a> for
+          what that distinction means, and the
+          <a href="./api.html#core">core API</a> for every field.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Turn rules up, down, or off</h2>
+        <p class="note">
+          Every rule runs at a default severity. You can override any of them per
+          call. Re-grade a noisy one to a warning, promote another to an error,
+          or switch one off entirely.
+        </p>
+        <pre class="code">analyzeTabOrder(document.body, {
+  rules: {
+    "visual-order-mismatch": "warning", // re-grade
+    "redundant-tabindex": "error", // promote
+    "prefer-native-element": "off", // disable
+  },
+});
+
+// The same overrides reach the overlay through its `analyze` option.
+reveal({ analyze: { rules: { "prefer-native-element": "off" } } });</pre>
+        <p class="note">
+          The built-in defaults are exported as <code>DEFAULT_SEVERITY</code>.
+          The full list, with what each rule catches, is on the
+          <a href="./rules.html">rules page</a>.
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="./concepts.html">Next: concepts</a>
+          <a class="btn" href="./recipes.html">Recipes &amp; CI</a>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

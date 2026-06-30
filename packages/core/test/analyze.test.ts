@@ -40,6 +40,15 @@ describe("analyzeTabOrder", () => {
     expect(ids).toContain("probe");
   });
 
+  test("returns an empty result for a Document with no documentElement", () => {
+    const empty = document.implementation.createDocument(null, null, null);
+    expect(empty.documentElement).toBe(null);
+    const result = analyzeTabOrder(empty);
+    expect(result.valid).toBe(true);
+    expect(result.sequence).toHaveLength(0);
+    expect(result.violations).toHaveLength(0);
+  });
+
   test("pierces an open shadow root", () => {
     const host = document.createElement("div");
     document.body.appendChild(host);

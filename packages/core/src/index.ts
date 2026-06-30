@@ -2,6 +2,7 @@ export { analyzeTabOrder } from "./analyze.js";
 export { ALL_RULES, RULE_DOCS, DEFAULT_SEVERITY } from "./rules.js";
 export type { Rule, Finding } from "./rules.js";
 export { isInteractive, selectorFor } from "./dom.js";
+export { OVERLAY_CLASS_PREFIX } from "./overlay-classes.js";
 export type {
   AnalyzeOptions,
   RuleId,

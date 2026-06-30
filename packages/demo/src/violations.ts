@@ -1,5 +1,4 @@
 import { reveal } from "@focuspocus/reveal";
-import { wireOverlayControls } from "./controls.js";
 import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { restoreAutofocus, wireTriage } from "./triage.js";
@@ -12,7 +11,6 @@ const overlay = reveal();
 // fix just touches the DOM and that card's badges flip green on their own.
 const teardown = [
   () => overlay.destroy(),
-  wireOverlayControls([overlay]),
   wireTriage(),
   wireSolvers(),
   wireModal(),

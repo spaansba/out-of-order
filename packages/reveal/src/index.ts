@@ -16,8 +16,11 @@ import { Tooltip } from "./tooltip.js";
 import { Renderer, type StopSpec, type SegSpec } from "./render.js";
 import { Tracker } from "./track.js";
 import { Mutations } from "./mutations.js";
+import { badgeTip, segTip } from "./tip-content.js";
 
 export type MotionMode = "auto" | "on" | "off";
+
+export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
 
 export interface RevealOptions {
   /** Subtree to analyze. Defaults to document. */
@@ -26,18 +29,14 @@ export interface RevealOptions {
   analyze?: AnalyzeOptions;
   /** Extra custom rules, run alongside the built-ins on every analysis. */
   rules?: Rule[];
-  /** A subtree to skip (no badges/rings), e.g. because another overlay owns it, so
-      a region the main overlay also analyzes isn't numbered twice. */
-  exclude?: Element | null;
   /** Motion behaviour. Defaults to "auto". */
   motion?: MotionMode;
+  /** Tap this modifier to toggle the overlay click-through ("peek" at the page
+      beneath) without hiding it; tap again to restore. Defaults to "Alt". */
+  peekKey?: ModifierKey;
 }
 
 export interface RevealHandle {
-  /** Re-run the analysis and redraw. Call after the DOM changes. */
-  refresh(): void;
-  /** Re-read every marker's rect and redraw (without re-analyzing). */
-  reposition(): void;
   /** Whether the overlay is currently shown. */
   readonly visible: boolean;
   /** Show or hide the whole overlay: badges, arrows, and the element rings. */
@@ -73,6 +72,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   }
 
   const tooltip = new Tooltip(layer);
+
   const renderer = new Renderer(layer, tooltip);
   const tracker = new Tracker({
     onMoved: (moved) => renderer.applyMoved(moved),
@@ -89,25 +89,35 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   let lastSig: string | null = null;
 
   let visible = true;
+  let syncControls: (shown: boolean) => void = () => {};
   const setVisible = (next: boolean): void => {
     visible = next;
-    layer.style.display = next ? "" : "none";
+    // Hide only the drawing (badges + arrows) and the rings; the control panel
+    // shares this layer and must survive so "Show overlay" stays reachable.
+    layer.classList.toggle("fp-hidden", !next);
     renderer.setRingsVisible(next);
+    syncControls(next);
   };
+
+  // The panel owns both controls (peek + show/hide); it reports visibility back
+  // through syncControls so its button label tracks programmatic setVisible too.
+  const controls = setupControls(layer, tooltip, options.peekKey ?? "Alt", () =>
+    setVisible(!visible),
+  );
+  syncControls = controls.syncVisible;
 
   const handle: RevealHandle = {
     result: null,
     get visible() {
       return visible;
     },
-    refresh: () => build(),
-    reposition: () => renderer.seed(),
     setVisible,
     toggle: () => setVisible(!visible),
     destroy: () => {
       if (motion === "auto") {
         reduceQuery.removeEventListener("change", applyMotion);
       }
+      controls.teardown();
       tracker.destroy();
       mutations.destroy();
       tooltip.destroy();
@@ -133,14 +143,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     }
     lastSig = sig;
 
-    // Skip a subtree owned by another overlay (so it isn't numbered twice).
-    const excludeEl = options.exclude ?? null;
-    const excluded = (element: Element): boolean =>
-      !!excludeEl && (element === excludeEl || excludeEl.contains(element));
-
-    const sequence = result.sequence.filter(
-      (entry) => !excluded(entry.element),
-    );
+    const sequence = result.sequence;
     const inSeq = new Set(sequence.map((entry) => entry.element));
 
     // Group violations by element so a marker's tooltip can list every issue. A
@@ -148,9 +151,6 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     // cause) red, without counting as a separate finding - see Violation.relatedElements.
     const vById = new Map<Element, Violation[]>();
     const indexBy = (element: Element, violation: Violation): void => {
-      if (excluded(element)) {
-        return;
-      }
       const list = vById.get(element) ?? [];
       list.push(violation);
       vById.set(element, list);
@@ -163,30 +163,17 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     }
 
     // Numbered tab stops.
-    const stops: StopSpec[] = sequence.map((entry, idx) => {
-      const vios = vById.get(entry.element) ?? [];
-      const autofocus = entry.element.hasAttribute("autofocus");
-      return {
-        element: entry.element,
-        label: String(idx + 1),
-        severity: worstSeverity(vios),
-        inSeq: true,
-        autofocus,
-        // Built on hover: the dom-accessibility-api reads below are the costliest
-        // part of a redraw, and most badges are never hovered.
-        tip: () =>
-          badgeTip(
-            idx + 1,
-            entry.selector,
-            entry.tabIndex,
-            vios,
-            computeAccessibleName(entry.element).trim(),
-            getRole(entry.element) ?? "",
-            computeAccessibleDescription(entry.element).trim(),
-            autofocus,
-          ),
-      };
-    });
+    const stops: StopSpec[] = sequence.map((entry, idx) =>
+      makeStop(
+        entry.element,
+        String(idx + 1),
+        idx + 1,
+        entry.selector,
+        entry.tabIndex,
+        vById.get(entry.element) ?? [],
+        true,
+      ),
+    );
 
     // A hop between each pair of consecutive stops. It's "backward" exactly when
     // its destination stop is flagged visual-order-mismatch, read once here, not
@@ -207,25 +194,10 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
       if (inSeq.has(element)) {
         continue;
       }
-      offStops.push({
-        element,
-        label: "⊘",
-        severity: worstSeverity(vios),
-        inSeq: false,
-        // Off-sequence elements aren't focusable, so autofocus is moot here.
-        autofocus: false,
-        tip: () =>
-          badgeTip(
-            null,
-            vios[0]!.selector,
-            null,
-            vios,
-            computeAccessibleName(element).trim(),
-            getRole(element) ?? "",
-            computeAccessibleDescription(element).trim(),
-            false,
-          ),
-      });
+      // null number → ⊘ glyph; not a tab stop, so no tabindex/autofocus to show.
+      offStops.push(
+        makeStop(element, "⊘", null, vios[0]!.selector, null, vios, false),
+      );
     }
 
     renderer.draw(stops, segs, offStops);
@@ -239,6 +211,137 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   tracker.listen();
   mutations.observe(options.root ?? document);
   return handle;
+}
+
+const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
+  Alt: "Alt",
+  Control: "Ctrl",
+  Shift: "Shift",
+  Meta: "Meta",
+};
+
+interface Controls {
+  /** Update the show/hide button to match the overlay's current visibility. */
+  syncVisible(shown: boolean): void;
+  /** Drop every listener and remove the panel. */
+  teardown(): void;
+}
+
+function setupControls(
+  layer: HTMLElement,
+  tooltip: Tooltip,
+  peekKey: ModifierKey,
+  onToggleVisible: () => void,
+): Controls {
+  const abort = new AbortController();
+  const signal = abort.signal;
+  const label = PEEK_KEY_LABEL[peekKey];
+
+  // Native <button>s so the analyzer leaves them alone; tabindex=-1 keeps the
+  // panel out of the very tab order it's measuring (the peek modifier is the
+  // keyboard path in). Styled to match the demo chrome (see styles.ts).
+  const panel = document.createElement("div");
+  panel.className = "fp-panel";
+  panel.dataset.open = "1";
+
+  const button = (cls: string, parent: HTMLElement): HTMLButtonElement => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.tabIndex = -1;
+    el.className = cls;
+    // Swallow mousedown so a click never steals focus from the inspected control.
+    el.addEventListener("mousedown", (event) => event.preventDefault(), { signal });
+    parent.appendChild(el);
+    return el;
+  };
+
+  // Collapsible header: clicking it folds the panel down to just this bar, so it
+  // can be tucked out of the way without losing the controls.
+  const head = button("fp-panel-head", panel);
+  head.innerHTML = `Focus Pocus<span class="fp-panel-chev" aria-hidden="true"></span>`;
+  head.addEventListener(
+    "click",
+    () => (panel.dataset.open = panel.dataset.open === "1" ? "0" : "1"),
+    { signal },
+  );
+
+  const body = document.createElement("div");
+  body.className = "fp-panel-body";
+  panel.appendChild(body);
+
+  // Fixed-width labels: the button text doesn't grow the panel (CSS pins the
+  // width); colour, not length, carries the state - both buttons light up accent
+  // when they sit in their non-default position (hidden / peeking).
+  const visBtn = button("fp-panel-btn fp-panel-vis", body);
+  visBtn.textContent = "Hide overlay";
+  visBtn.addEventListener("click", onToggleVisible, { signal });
+
+  const peekBtn = button("fp-panel-btn fp-panel-peek", body);
+  let peeking = false;
+  const setPeek = (next: boolean): void => {
+    peeking = next;
+    layer.dataset.fpPeek = next ? "on" : "off";
+    peekBtn.classList.toggle("fp-panel-btn--on", next);
+    peekBtn.textContent = next ? "Click-through on" : "Click through";
+    if (next) {
+      tooltip.hide();
+    }
+  };
+  setPeek(false);
+  peekBtn.addEventListener("click", () => setPeek(!peeking), { signal });
+
+  const hint = document.createElement("p");
+  hint.className = "fp-panel-hint";
+  hint.textContent = `tap ${label} to peek`;
+  body.appendChild(hint);
+
+  layer.appendChild(panel);
+
+  // A "lone tap" of the modifier toggles peek: armed when it goes down by itself,
+  // disarmed the moment any other key or a click joins in (so combos like Alt+Tab,
+  // Ctrl+C, or a hold-and-click never toggle), fired on its release.
+  let armed = false;
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== peekKey) {
+        armed = false;
+      } else if (!event.repeat) {
+        armed = true;
+      }
+    },
+    { signal },
+  );
+
+  window.addEventListener(
+    "keyup",
+    (event) => {
+      if (event.key !== peekKey || !armed) {
+        return;
+      }
+      armed = false;
+      setPeek(!peeking);
+    },
+    { signal },
+  );
+
+  window.addEventListener("pointerdown", () => (armed = false), { signal });
+  window.addEventListener("blur", () => (armed = false), { signal });
+
+  return {
+    syncVisible: (shown) => {
+      visBtn.textContent = shown ? "Hide overlay" : "Show overlay";
+      // Accent the button while hidden (its non-default state), matching how the
+      // peek button lights up while click-through is on.
+      visBtn.classList.toggle("fp-panel-btn--on", !shown);
+      // Peek is meaningless with nothing drawn, so disable it while hidden.
+      peekBtn.disabled = !shown;
+    },
+    teardown: () => {
+      abort.abort();
+      panel.remove();
+    },
+  };
 }
 
 // A stable per-element id. Keys the signature on element identity, not selector:
@@ -269,129 +372,46 @@ function resultSignature(result: TabOrderResult): string {
   return `${order}#${vios}`;
 }
 
-function badgeTip(
+/** Build a badge spec for one element: its colour-driving severity and a tooltip.
+    The dom-accessibility-api reads are the costliest part of a redraw and most
+    badges are never hovered, so they run inside the tip thunk, not eagerly here. */
+function makeStop(
+  element: Element,
+  label: string,
   num: number | null,
   selector: string,
   tabIndex: number | null,
   violations: Violation[],
-  name: string,
-  role: string,
-  description: string,
-  autofocus: boolean,
-): string {
-  // Stop number, or ⊘ for an off-sequence (interactive-but-unreachable) marker.
-  const idx =
-    num !== null
-      ? `<span class="fp-tip-idx">${num}</span>`
-      : `<span class="fp-tip-idx fp-tip-idx--off">⊘</span>`;
-
-  // A labelled ledger of what the screen reader sees: accessible name, role, the
-  // optional description, and the tabindex. Name/role always show (— when absent);
-  // the usually-empty description and a non-default tabindex appear only when set.
-  const fields =
-    field("name", name ? escapeHtml(name) : null) +
-    field(
-      "role",
-      role ? `<span class="fp-tip-mono">${escapeHtml(role)}</span>` : null,
-    ) +
-    (description ? field("description", escapeHtml(description)) : "") +
-    (tabIndex && tabIndex !== 0
-      ? field("tabindex", `<span class="fp-tip-mono">${tabIndex}</span>`)
-      : "") +
-    // Informational, not a finding: this is where focus lands on page load.
-    (autofocus
-      ? field("autofocus", `<span class="fp-tip-mono">yes</span>`)
-      : "");
-
-  const body = violations.length
-    ? `<ul class="fp-tip-list">${violations
-        .map(
-          (violation) =>
-            `<li class="fp-tip-item">${ruleLabel(violation)}` +
-            `<span class="fp-tip-msg">${escapeHtml(stripSelectorPrefix(violation.message))}</span></li>`,
-        )
-        .join("")}</ul>`
-    : `<p class="fp-tip-ok">No issues found.</p>`;
-  return (
-    `<div class="fp-tip-head">${idx}<code class="fp-tip-sel">${escapeHtml(selector)}</code></div>` +
-    `<dl class="fp-tip-fields">${fields}</dl>` +
-    `<div class="fp-tip-body">${body}</div>`
-  );
-}
-
-// One ledger row (term + value). A null value renders a muted em dash, so a missing
-// accessible name or role reads as "absent" rather than silently dropping the row.
-function field(key: string, value: string | null): string {
-  return `<dt>${key}</dt><dd>${value ?? `<span class="fp-tip-dim">—</span>`}</dd>`;
-}
-
-// "Open in new tab" glyph, inherits the rule's colour via currentColor.
-const EXTERNAL_ICON =
-  `<svg class="fp-tip-rule-ic" viewBox="0 0 24 24" width="11" height="11" fill="none" ` +
-  `stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-  `<path d="M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>` +
-  `<path d="M15 4h5v5"/><path d="M20 4l-9 9"/></svg>`;
-
-// The rule id, linked to its spec doc when one is known (always, in practice).
-// tabindex="-1": the tooltip is a hover-only, invoker-less popover, so a keyboard
-// user can never open it to reach the link anyway. Keeping it out of the tab order
-// stops the analyzer (which reads the live DOM) from numbering it as a stray stop.
-function ruleLabel(violation: Violation): string {
-  // Amber for warnings, red (the default) for errors, matching badge and ring.
-  const cls =
-    violation.severity === "warning"
-      ? "fp-tip-rule fp-tip-rule--warn"
-      : "fp-tip-rule";
-  if (!violation.docs) {
-    return `<span class="${cls}">${violation.rule}</span>`;
-  }
-  return (
-    `<a class="${cls}" href="${escapeHtml(violation.docs)}" target="_blank" rel="noreferrer" tabindex="-1">` +
-    `<span>${violation.rule}</span>${EXTERNAL_ICON}</a>`
-  );
+  inSeq: boolean,
+): StopSpec {
+  // autofocus marks where load-focus lands; moot for off-sequence (unfocusable) marks.
+  const autofocus = inSeq && element.hasAttribute("autofocus");
+  return {
+    element,
+    label,
+    severity: worstSeverity(violations),
+    inSeq,
+    autofocus,
+    tip: () =>
+      badgeTip({
+        num,
+        selector,
+        tabIndex,
+        violations,
+        name: computeAccessibleName(element).trim(),
+        role: getRole(element) ?? "",
+        description: computeAccessibleDescription(element).trim(),
+        autofocus,
+      }),
+  };
 }
 
 /** The worst severity among an element's findings (error outranks warning), or
     null when it has none. Drives the badge/ring colour: one element, one colour,
     set by its most serious problem. */
 function worstSeverity(violations: Violation[]): Severity | null {
-  let worst: Severity | null = null;
-  for (const violation of violations) {
-    if (violation.severity === "error") {
-      return "error";
-    }
-    worst = "warning";
+  if (violations.some((violation) => violation.severity === "error")) {
+    return "error";
   }
-  return worst;
-}
-
-/** Tooltip for a hop between stops #from and #to. */
-function segTip(back: boolean, from: number, toStop: number): string {
-  const flag = back
-    ? `<span class="fp-tip-flag fp-tip-flag--back">↩ reverse</span>`
-    : `<span class="fp-tip-flag">→ forward</span>`;
-  const message = back
-    ? "Focus moves against the reading order — up, or right-to-left."
-    : "Forward in reading order.";
-  return (
-    `<div class="fp-tip-head">${flag}<span class="fp-tip-hop">#${from} → #${toStop}</span></div>` +
-    `<div class="fp-tip-body"><p class="fp-tip-msg">${message}</p></div>`
-  );
-}
-
-/** Messages start with the selector for log/test use; the tooltip already shows
-    it in the header, so trim a leading `"selector" ` to avoid repeating it. */
-function stripSelectorPrefix(message: string): string {
-  return message.replace(/^"[^"]*"\s*/, "");
-}
-
-const HTML_ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-};
-
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>"]/g, (char) => HTML_ESCAPES[char] ?? char);
+  return violations.length ? "warning" : null;
 }

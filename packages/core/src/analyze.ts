@@ -11,8 +11,8 @@ import { selectorFor } from "./dom.js";
 import { ALL_RULES, type Finding, type Rule } from "./rules.js";
 
 /** Fold a rule's caller override against its default into a final decision: is it
-    on, and at what severity? A missing override keeps the default; `"off"` disables
-    it; a severity string re-grades it. */
+    on, and at what severity? A missing override keeps the default; `"off"`
+    disables it; a severity string re-grades it. */
 function resolveRule(
   options: AnalyzeOptions,
   rule: Rule,
@@ -25,6 +25,7 @@ function resolveRule(
   if (setting === "off") {
     return { enabled: false, severity: rule.defaultSeverity };
   }
+
   return { enabled: true, severity: setting };
 }
 
@@ -68,6 +69,10 @@ export function analyzeTabOrder(
       ? (root as Document).documentElement
       : (root as Element);
 
+  if (!container) {
+    return { valid: true, sequence: [], violations: [] };
+  }
+
   const elements = tabbable(container, {
     getShadowRoot: true,
   });
@@ -102,9 +107,12 @@ export function analyzeTabOrder(
     }
   }
 
+  const hasErrors = violations.some(
+    (violation) => violation.severity === "error",
+  );
+
   return {
-    // Warnings are advisory: only an error means the tab order is invalid.
-    valid: !violations.some((violation) => violation.severity === "error"),
+    valid: !hasErrors,
     sequence,
     violations,
   };

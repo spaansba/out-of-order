@@ -51,12 +51,98 @@ describe("reveal", () => {
     expect(numbered()).toHaveLength(0);
   });
 
-  test("setVisible toggles the layer", () => {
+  test("setVisible hides the drawing but keeps the panel", () => {
     mount("<button>A</button>");
     handle!.setVisible(false);
-    expect(layer().style.display).toBe("none");
+    expect(layer().classList.contains("fp-hidden")).toBe(true);
+    // The control panel shares the layer and stays put, so "Show overlay" is reachable.
+    expect(layer().querySelector(".fp-panel")).not.toBeNull();
     handle!.setVisible(true);
-    expect(layer().style.display).toBe("");
+    expect(layer().classList.contains("fp-hidden")).toBe(false);
+  });
+
+  test("the panel's show/hide button toggles the overlay and relabels", () => {
+    mount("<button>A</button>");
+    const vis = layer().querySelector(".fp-panel-vis") as HTMLButtonElement;
+    expect(vis.textContent).toBe("Hide overlay");
+    expect(vis.classList.contains("fp-panel-btn--on")).toBe(false);
+    vis.click();
+    expect(handle!.visible).toBe(false);
+    expect(layer().classList.contains("fp-hidden")).toBe(true);
+    expect(vis.textContent).toBe("Show overlay");
+    // Lit accent while hidden, mirroring the peek button's active state.
+    expect(vis.classList.contains("fp-panel-btn--on")).toBe(true);
+    vis.click();
+    expect(handle!.visible).toBe(true);
+    expect(vis.textContent).toBe("Hide overlay");
+  });
+
+  const tapAlt = (): void => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Alt", altKey: true }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Alt", altKey: false }));
+  };
+
+  test("tapping the peek modifier toggles click-through, then back", () => {
+    mount("<button>A</button>");
+    // Default peek key is Alt: a lone tap turns the overlay click-through.
+    tapAlt();
+    expect(layer().dataset.fpPeek).toBe("on");
+    tapAlt();
+    expect(layer().dataset.fpPeek).toBe("off");
+  });
+
+  test("the panel's peek button is non-tabbable and toggles peek on click", () => {
+    mount("<button>A</button>");
+    const peek = layer().querySelector(".fp-panel-peek") as HTMLButtonElement;
+    expect(peek).not.toBeNull();
+    // Kept out of the page's own tab order, so the analyzer never numbers it.
+    expect(peek.tabIndex).toBe(-1);
+    expect(peek.textContent!.toLowerCase()).toContain("click");
+    peek.click();
+    expect(layer().dataset.fpPeek).toBe("on");
+    expect(peek.classList.contains("fp-panel-btn--on")).toBe(true);
+    peek.click();
+    expect(layer().dataset.fpPeek).toBe("off");
+  });
+
+  test("hiding the overlay disables the peek button", () => {
+    mount("<button>A</button>");
+    const peek = layer().querySelector(".fp-panel-peek") as HTMLButtonElement;
+    expect(peek.disabled).toBe(false);
+    handle!.setVisible(false);
+    // Peek is meaningless with nothing drawn, so it's disabled while hidden.
+    expect(peek.disabled).toBe(true);
+    handle!.setVisible(true);
+    expect(peek.disabled).toBe(false);
+  });
+
+  test("the header collapses and expands the panel", () => {
+    mount("<button>A</button>");
+    const panel = layer().querySelector(".fp-panel") as HTMLElement;
+    const head = layer().querySelector(".fp-panel-head") as HTMLButtonElement;
+    expect(panel.dataset.open).toBe("1");
+    head.click();
+    expect(panel.dataset.open).toBe("0");
+    head.click();
+    expect(panel.dataset.open).toBe("1");
+  });
+
+  test("a modifier combo (not a lone tap) doesn't toggle peek", () => {
+    mount("<button>A</button>");
+    // Alt+Tab style: another key joins the press, so it isn't a peek tap.
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Alt", altKey: true }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", altKey: true }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Alt", altKey: false }));
+    expect(layer().dataset.fpPeek).toBe("off");
+  });
+
+  test("a click between press and release doesn't toggle peek", () => {
+    mount("<button>A</button>");
+    // Hold-and-click is the link-hijack case peek exists to avoid; it must not toggle.
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Alt", altKey: true }));
+    window.dispatchEvent(new PointerEvent("pointerdown"));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Alt", altKey: false }));
+    expect(layer().dataset.fpPeek).toBe("off");
   });
 
   test("destroy removes the layer and un-rings elements", () => {
@@ -67,14 +153,6 @@ describe("reveal", () => {
     handle = null;
     expect(document.querySelector(".fp-layer")).toBeNull();
     expect(button.classList.contains("fp-ring")).toBe(false);
-  });
-
-  test("exclude skips a subtree so it isn't numbered", () => {
-    root = document.createElement("div");
-    root.innerHTML = '<button>A</button><div id="ex"><button>B</button></div>';
-    document.body.appendChild(root);
-    handle = reveal({ root, exclude: root.querySelector("#ex") });
-    expect(numbered()).toHaveLength(1); // only the non-excluded button
   });
 
   test("rebuilds when the page DOM changes", async () => {

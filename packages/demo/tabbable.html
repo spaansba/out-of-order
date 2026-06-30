@@ -14,13 +14,26 @@
   </head>
   <body>
     <header class="topbar">
-      <h1>Focus Pocus</h1>
-      <nav>
-        <a href="./index.html">Rule violations</a>
-        <a href="./tabbable.html" aria-current="page">What's tabbable</a>
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html">rules</a>
+        <a href="./api.html">api</a>
+        <a href="./recipes.html">recipes</a>
+        <a href="./faq.html">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html" aria-current="page">tabbable</a>
       </nav>
       <span class="spacer"></span>
-      <button class="btn" id="toggle">Hide overlay</button>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
     </header>
 
     <main class="wrap">
@@ -30,7 +43,7 @@
         <p>
           The tabbable edge cases worth knowing, and whether we count each in the tab order. The
           overlay numbers what is tabbable; everything else gets no number. For the bugs the package
-          flags, see <a href="./index.html">Rule violations</a>.
+          flags, see <a href="./violations.html">Rule violations</a>.
         </p>
       </div>
 
@@ -230,7 +243,7 @@
             <code>display:none</code>, <code>visibility:hidden</code> and the
             <code>hidden</code> attribute remove an element from the tab order, so they get no
             number. (Other ways of hiding that <em>don't</em>, such as opacity, off-screen, and
-            clipping, are bugs; see <a href="./index.html">Rule violations</a>.)
+            clipping, are bugs; see <a href="./violations.html">Rule violations</a>.)
           </p>
           <div class="row">
             <button class="demo-btn hidden-disp" type="button">display:none</button>

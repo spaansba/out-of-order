@@ -53,7 +53,7 @@ export interface TabOrderResult {
 
 export interface AnalyzeOptions {
   /** Per-rule overrides. Every rule runs at its default severity unless listed
-      here: set `"off"`/`false` to disable it, or `"error"`/`"warning"` to
+      here: set `"off"` to disable it, or `"error"`/`"warning"` to
       re-grade it. See {@link RuleSetting}. */
   rules?: Partial<Record<RuleId, RuleSetting>>;
 }

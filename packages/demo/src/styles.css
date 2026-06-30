@@ -84,6 +84,18 @@ code {
   letter-spacing: 0.01em;
   color: var(--ink);
 }
+.topbar h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+/* hairline between the two nav groups (docs · demo) */
+.nav-sep {
+  align-self: center;
+  width: 1px;
+  height: 14px;
+  background: var(--line-2);
+  margin: 0 0.35rem;
+}
 .topbar .spacer {
   flex: 1;
 }
@@ -618,7 +630,7 @@ fieldset.radio-group label {
   gap: 0.35rem;
 }
 
-/* ---- rule-violation demos (index.html) ---- */
+/* ---- rule-violation demos (violations.html) ---- */
 /* invisible yet still tabbable — four ways, each tripping hidden-while-focusable
    for a different reason (see hiddenReason() in core/dom.ts) */
 .invisible-opacity {
@@ -872,4 +884,156 @@ fieldset.radio-group label {
   .scramble {
     grid-template-columns: 1fr;
   }
+  table.spec {
+    font-size: 12px;
+  }
+}
+
+/* ---- docs pages (home, getting-started, concepts, rules, api, recipes, faq) ----
+   Prose-only pages. They borrow the same ledger sections (section.group) and chrome
+   as the demos; only these few text primitives are extra. No JS runs on them. */
+
+/* a bulleted list in the muted prose voice */
+.doc-list {
+  margin: 0 0 1rem;
+  padding-left: 1.15rem;
+  max-width: 64ch;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.doc-list li {
+  margin: 0.32rem 0;
+}
+.doc-list a {
+  color: var(--accent-2);
+  text-underline-offset: 2px;
+}
+
+/* a row of link-buttons under a section (e.g. "See the demo" / "Get started") */
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.15rem 0 0;
+}
+.cta .btn {
+  text-decoration: none;
+}
+
+/* a neutral code block (no diff caption); same inset as .snippet pre */
+pre.code {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--paper-2);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--ink);
+}
+
+/* an API signature heading, in the structural-chrome mono voice */
+.sig {
+  margin: 0 0 0.55rem;
+  font: 500 13.5px/1.5 var(--font-mono);
+  color: var(--ink);
+  word-break: break-word;
+}
+.sig .tok {
+  color: var(--accent);
+}
+section.group > h3 {
+  margin: 1.15rem 0 0.45rem;
+  font: 500 12px/1.3 var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+/* option/field definition rows used in the API and recipes pages */
+.defs {
+  margin: 0 0 1rem;
+  max-width: 70ch;
+}
+.defs dt {
+  font: 500 12.5px/1.4 var(--font-mono);
+  color: var(--accent);
+}
+.defs dt code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 1em;
+}
+.defs dd {
+  margin: 0.18rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+/* a spec-sheet table: hairline rules, mono uppercase header, no card or zebra */
+table.spec {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.1rem;
+  font-size: 13px;
+}
+table.spec th {
+  text-align: left;
+  padding: 0 0.9rem 0.5rem 0;
+  border-bottom: 1px solid var(--line-2);
+  font: 600 10.5px/1.3 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+table.spec td {
+  padding: 0.55rem 0.9rem 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--ink);
+}
+table.spec tr:hover td {
+  background: var(--accent-soft);
+}
+table.spec th:last-child,
+table.spec td:last-child {
+  padding-right: 0;
+}
+table.spec td code {
+  white-space: nowrap;
+}
+table.spec a {
+  color: var(--accent-2);
+  text-underline-offset: 2px;
+}
+/* the default-severity pill reused from the rule tags, but inline in a cell */
+.sev {
+  display: inline-block;
+  font: 600 9.5px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.26em 0.46em;
+  border-radius: 2px;
+}
+.sev.is-error {
+  color: var(--err);
+  background: var(--err-soft);
+}
+.sev.is-warning {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+/* inline key cap for Tab / arrow keys in prose */
+kbd {
+  font: 500 11px/1 var(--font-mono);
+  padding: 0.14em 0.4em;
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--ink);
 }

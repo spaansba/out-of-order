@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus Pocus: API reference</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html">rules</a>
+        <a href="./api.html" aria-current="page">api</a>
+        <a href="./recipes.html">recipes</a>
+        <a href="./faq.html">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html">tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">API reference</span>
+        <h2>core and reveal, in full</h2>
+        <p>
+          Two packages. <code>@focuspocus/core</code> is the analyzer and its
+          types, and <code>@focuspocus/reveal</code> is the overlay. The
+          test-runner matcher is in progress and not documented here yet.
+        </p>
+      </div>
+
+      <section class="group" id="core">
+        <h2>core &middot; analyzeTabOrder</h2>
+        <p class="sig">
+          <span class="tok">analyzeTabOrder</span>(root?, options?, customRules?)
+          &rarr; TabOrderResult
+        </p>
+        <p class="note">
+          Computes the tab sequence for <code>root</code> and grades it against
+          the enabled rules. It is browser-only, because <code>tabbable</code>
+          uses real CSS layout for visibility and several rules read bounding
+          rects.
+        </p>
+        <dl class="defs">
+          <dt><code>root: ParentNode = document</code></dt>
+          <dd>
+            The subtree to analyze. A <code>Document</code> analyzes the whole
+            page, exactly like tabbing through it.
+          </dd>
+          <dt><code>options: AnalyzeOptions = {}</code></dt>
+          <dd>Per-rule severity overrides. See below.</dd>
+          <dt><code>customRules: Rule[] = []</code></dt>
+          <dd>
+            Extra rules run alongside the built-ins. See
+            <a href="#rule">custom rules</a>.
+          </dd>
+        </dl>
+      </section>
+
+      <section class="group">
+        <h2>core &middot; result types</h2>
+        <p class="note">What <code>analyzeTabOrder</code> hands back.</p>
+        <pre class="code">interface TabOrderResult {
+  // True when no enabled rule produced an `error`. Warnings don't flip it.
+  valid: boolean;
+  // Elements in the exact order tabbing reaches them.
+  sequence: SequenceEntry[];
+  // All violations found, across every enabled rule (both severities).
+  violations: Violation[];
+}
+
+interface SequenceEntry {
+  element: Element;
+  selector: string;
+  orderIndex: number; // zero-based position in the tab sequence
+  tabIndex: number; // resolved tabindex (0 if unset but focusable)
+  rect: DOMRect; // bounding rect at analysis time (real layout)
+}
+
+interface Violation {
+  rule: RuleId | (string &amp; {}); // built-in id, or a custom rule's id
+  severity: Severity; // "error" | "warning"
+  message: string;
+  docs?: string; // spec link for the rule
+  element: Element; // the offending element
+  selector: string; // a CSS-ish path, for messages and logs
+  orderIndex?: number; // present when the element is a tab stop
+  relatedElements?: Element[]; // same root cause, ringed but not re-counted
+}</pre>
+        <p class="note">
+          <code>relatedElements</code> is how one missing fix avoids becoming N
+          separate findings. The analyzer reports a single violation, and the
+          overlay rings every related element too.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>core &middot; options &amp; severity</h2>
+        <pre class="code">type Severity = "error" | "warning";
+type RuleSetting = Severity | "off";
+
+interface AnalyzeOptions {
+  // Per-rule overrides. Omit a rule to keep its default; otherwise
+  //   "error" | "warning" -> enable, graded at that severity
+  //   "off"               -> disable the rule
+  rules?: Partial&lt;Record&lt;RuleId, RuleSetting&gt;&gt;;
+}
+
+// The built-in defaults, as a Record&lt;RuleId, Severity&gt;.
+const DEFAULT_SEVERITY: Record&lt;RuleId, Severity&gt;;</pre>
+        <p class="note">
+          <code>RuleId</code> is the union of built-in rule ids, so overrides
+          autocomplete. The full list is on the
+          <a href="./rules.html">rules page</a>.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>core &middot; helpers &amp; exports</h2>
+        <dl class="defs">
+          <dt><code>formatViolations(violations: Violation[]) =&gt; string</code></dt>
+          <dd>
+            Renders violations into a readable multi-line block for test messages
+            and logs. Each finding gets its severity, rule id, tab position,
+            message, and docs link.
+          </dd>
+          <dt><code>isInteractive(el: Element) =&gt; boolean</code></dt>
+          <dd>
+            Whether an element is interactive (a native control or an
+            interactive ARIA role). The same predicate several rules use.
+          </dd>
+          <dt><code>selectorFor(el: Element) =&gt; string</code></dt>
+          <dd>A short, CSS-ish path to an element, for messages and logs.</dd>
+          <dt><code>ALL_RULES</code></dt>
+          <dd>The built-in rule definitions, keyed by id.</dd>
+          <dt><code>RULE_DOCS</code></dt>
+          <dd>The spec link for each rule id.</dd>
+          <dt><code>OVERLAY_CLASS_PREFIX</code></dt>
+          <dd>
+            The class prefix the overlay marks its own nodes with, so the
+            analyzer can ignore them instead of mistaking them for page content.
+          </dd>
+        </dl>
+      </section>
+
+      <section class="group" id="rule">
+        <h2>core &middot; custom rules</h2>
+        <p class="note">
+          A rule is a pure function over the computed sequence. Pass your own
+          alongside the built-ins and they flow into the result and the overlay
+          like any other.
+        </p>
+        <pre class="code">interface Rule {
+  id: string; // surfaced on every Violation it produces
+  docs: string; // spec link the rule is grounded in
+  defaultSeverity: Severity;
+  run: RuleRun;
+}
+
+type RuleRun = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
+
+interface RuleContext {
+  container: Element; // the analyzed root (look beyond the sequence)
+  inSequence: Set&lt;Element&gt;; // fast "is this a tab stop?" test
+}
+
+interface Finding {
+  message: string;
+  target: SequenceEntry | Element; // a SequenceEntry when it's a tab stop
+  relatedElements?: Element[];
+}</pre>
+        <p class="note">
+          <code>analyzeTabOrder</code> stamps the severity on (from
+          <code>defaultSeverity</code> or the caller's override), which is why a
+          <code>Finding</code> is a <code>Violation</code> without one.
+        </p>
+        <pre class="code">import { analyzeTabOrder } from "@focuspocus/core";
+import type { Rule } from "@focuspocus/core";
+
+// Flag links that open a new tab without rel="noopener".
+const noUnsafeBlank: Rule = {
+  id: "no-unsafe-blank",
+  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
+  defaultSeverity: "warning",
+  run: (sequence) =>
+    sequence
+      .filter(
+        (entry) =>
+          entry.element.matches('a[target="_blank"]') &amp;&amp;
+          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
+      )
+      .map((entry) => ({
+        message: 'Link opens a new tab without rel="noopener".',
+        target: entry,
+      })),
+};
+
+analyzeTabOrder(document.body, {}, [noUnsafeBlank]);</pre>
+      </section>
+
+      <section class="group" id="reveal">
+        <h2>reveal &middot; reveal</h2>
+        <p class="sig">
+          <span class="tok">reveal</span>(options?: RevealOptions) &rarr;
+          RevealHandle
+        </p>
+        <p class="note">
+          Mounts the overlay layer, draws the first analysis, and starts
+          observing. It re-analyzes itself on DOM mutation, so most pages need
+          nothing past the call.
+        </p>
+        <pre class="code">interface RevealOptions {
+  root?: ParentNode; // subtree to analyze; defaults to document
+  analyze?: AnalyzeOptions; // forwarded rule toggles
+  rules?: Rule[]; // extra custom rules, run with the built-ins
+  exclude?: Element | null; // a subtree to skip (another overlay owns it)
+  motion?: "auto" | "on" | "off"; // animation; defaults to "auto"
+}</pre>
+        <p class="note">
+          <code>motion: "auto"</code> follows the user's
+          <code>prefers-reduced-motion</code> setting, live.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>reveal &middot; RevealHandle</h2>
+        <p class="note">What <code>reveal()</code> returns.</p>
+        <dl class="defs">
+          <dt><code>refresh(): void</code></dt>
+          <dd>Re-run the analysis and redraw. Call after the DOM changes if you have disabled or out-paced the auto-observer.</dd>
+          <dt><code>reposition(): void</code></dt>
+          <dd>Re-read every marker's rect and redraw, without re-analyzing.</dd>
+          <dt><code>visible: boolean</code> (readonly)</dt>
+          <dd>Whether the overlay is currently shown.</dd>
+          <dt><code>setVisible(visible: boolean): void</code></dt>
+          <dd>Show or hide the whole overlay, including badges, lines, and rings.</dd>
+          <dt><code>toggle(): void</code></dt>
+          <dd>Flip between shown and hidden.</dd>
+          <dt><code>destroy(): void</code></dt>
+          <dd>Remove the overlay layer, observers, and listeners.</dd>
+          <dt><code>result: TabOrderResult | null</code></dt>
+          <dd>The latest analysis result, or <code>null</code> before the first draw.</dd>
+        </dl>
+        <div class="cta">
+          <a class="btn btn--primary" href="./recipes.html">Recipes &rarr;</a>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

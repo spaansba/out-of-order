@@ -175,7 +175,6 @@ export class Renderer {
     this.focused?.group.classList.add("fp-badge--on");
   }
 
-  /** Every element with a badge, for the tracker to observe. */
   elementsToObserve(): Element[] {
     return this.markers.map((marker) => marker.element);
   }
@@ -209,7 +208,6 @@ export class Renderer {
     this.ringEls = [];
   }
 
-  /** Create a badge group (circle + label) for an element and ring the element. */
   private addMarker(spec: StopSpec): void {
     this.markRing(spec.element, spec.severity);
 

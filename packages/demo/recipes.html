@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus Pocus: recipes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <nav aria-label="Site">
+        <a href="./getting-started.html">start</a>
+        <a href="./concepts.html">concepts</a>
+        <a href="./rules.html">rules</a>
+        <a href="./api.html">api</a>
+        <a href="./recipes.html" aria-current="page">recipes</a>
+        <a href="./faq.html">faq</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a href="./violations.html">violations</a>
+        <a href="./tabbable.html">tabbable</a>
+      </nav>
+      <span class="spacer"></span>
+      <a
+        class="btn"
+        href="https://github.com/focuspocusjs/focuspocus"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+    </header>
+
+    <main class="wrap">
+      <div class="intro">
+        <span class="kicker">Recipes</span>
+        <h2>Putting it to work</h2>
+        <p>
+          A handful of short, practical patterns. Gate a build on the verdict,
+          scope the overlay, mount it in a framework, add a rule, and turn a
+          finding into a fix. All of it runs through the same two entry points,
+          <code>analyzeTabOrder</code> and <code>reveal</code>.
+        </p>
+      </div>
+
+      <section class="group">
+        <h2>Gate a build in CI</h2>
+        <p class="note">
+          The analyzer needs a real DOM, so run it in a real-browser test runner
+          like Vitest Browser Mode or Playwright. A dedicated assertion matcher
+          is in progress. Until it lands, assert on the result directly, which
+          works in any real browser today.
+        </p>
+        <pre class="code">// A test running in real Chromium (e.g. Vitest Browser Mode).
+import { test, expect } from "vitest";
+import { analyzeTabOrder, formatViolations } from "@focuspocus/core";
+
+test("modal has a sane tab order", () => {
+  document.body.innerHTML = `
+    &lt;button&gt;First&lt;/button&gt;
+    &lt;a href="#"&gt;Second&lt;/a&gt;
+    &lt;input aria-label="Search" /&gt;
+  `;
+
+  const result = analyzeTabOrder(document.body);
+  // The formatted violations become the failure message.
+  expect(result.valid, formatViolations(result.violations)).toBe(true);
+});</pre>
+        <p class="note">
+          Because only <code>error</code>-severity findings flip
+          <code>valid</code>, warnings will not fail the gate. Promote or demote
+          rules per call if your policy differs (see
+          <a href="./rules.html#changing">changing a rule's grade</a>).
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Scope the overlay, or run two</h2>
+        <p class="note">
+          Point <code>reveal</code> at a subtree with <code>root</code>, and use
+          <code>exclude</code> when a second overlay owns part of the page, so a
+          region isn't numbered twice.
+        </p>
+        <pre class="code">// Scope the overlay to just the app shell.
+reveal({ root: document.querySelector("#app") });
+
+// Two overlays without double-numbering. One is dedicated to a dialog, and the
+// page overlay is told to exclude that same subtree.
+const dialog = document.querySelector(".dialog");
+reveal({ root: dialog });
+reveal({ exclude: dialog });</pre>
+      </section>
+
+      <section class="group">
+        <h2>Mount it in a framework</h2>
+        <p class="note">
+          <code>reveal</code> is framework-agnostic. Create it on mount, and call
+          <code>destroy()</code> on unmount. That is the whole lifecycle.
+        </p>
+        <h3>React</h3>
+        <pre class="code">import { useEffect } from "react";
+import { reveal } from "@focuspocus/reveal";
+
+useEffect(() => {
+  const overlay = reveal();
+  return () => overlay.destroy();
+}, []);</pre>
+        <h3>Vue</h3>
+        <pre class="code">import { onMounted, onBeforeUnmount } from "vue";
+import { reveal } from "@focuspocus/reveal";
+
+let overlay;
+onMounted(() => (overlay = reveal()));
+onBeforeUnmount(() => overlay?.destroy());</pre>
+        <p class="note">
+          Gate it behind a dev-only flag if you don't want the overlay in
+          production builds.
+        </p>
+      </section>
+
+      <section class="group" id="custom-rule">
+        <h2>Add a custom rule</h2>
+        <p class="note">
+          A rule is a pure function over the sequence. Pass yours through the
+          <code>rules</code> option and it runs with the built-ins, both in the
+          result and on the overlay.
+        </p>
+        <pre class="code">import { reveal } from "@focuspocus/reveal";
+import type { Rule } from "@focuspocus/core";
+
+const noUnsafeBlank: Rule = {
+  id: "no-unsafe-blank",
+  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
+  defaultSeverity: "warning",
+  run: (sequence) =>
+    sequence
+      .filter(
+        (entry) =>
+          entry.element.matches('a[target="_blank"]') &amp;&amp;
+          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
+      )
+      .map((entry) => ({
+        message: 'Link opens a new tab without rel="noopener".',
+        target: entry,
+      })),
+};
+
+reveal({ rules: [noUnsafeBlank] });</pre>
+        <p class="note">
+          The full <a href="./api.html#rule">Rule, RuleRun, and Finding
+          types</a> are on the API page.
+        </p>
+      </section>
+
+      <section class="group">
+        <h2>Turn a finding into a fix</h2>
+        <p class="note">
+          Every violation is self-describing. It carries the rule it tripped, a
+          message, a spec link, and the element (plus a selector for logs). Walk
+          them and you have a punch list.
+        </p>
+        <pre class="code">const { violations } = analyzeTabOrder(document.body);
+
+for (const v of violations) {
+  console.log(`[${v.severity}] ${v.rule} -> ${v.selector}`);
+  console.log(`  ${v.message}`);
+  if (v.docs) console.log(`  docs: ${v.docs}`);
+}</pre>
+        <p class="note">
+          When several controls share one root cause (a whole reimplemented
+          widget, say), they arrive as one violation with the others in
+          <code>relatedElements</code>, so your list has one entry to fix, not N.
+          The <a href="./violations.html">violations demo</a> pairs each finding
+          with the exact before/after markup that clears it.
+        </p>
+      </section>
+    </main>
+    <script type="module" src="./src/docs.ts"></script>
+  </body>
+</html>

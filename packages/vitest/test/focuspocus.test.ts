@@ -38,7 +38,7 @@ describe("toHaveValidTabOrder", () => {
     document.body.innerHTML = `<input />`;
     // Only the accessible-name rule would fire; turn it off.
     expect(document.body).toHaveValidTabOrder({
-      rules: { "missing-accessible-name": false },
+      rules: { "missing-accessible-name": "off" },
     });
   });
 
@@ -55,8 +55,8 @@ describe("toHaveValidTabOrder", () => {
     // invalid; promote it so .not.toHaveValidTabOrder() actually asserts detection.
     expect(document.body).not.toHaveValidTabOrder({
       rules: {
-        "missing-accessible-name": false,
-        "no-positive-tabindex": false,
+        "missing-accessible-name": "off",
+        "no-positive-tabindex": "off",
         "visual-order-mismatch": "error",
       },
     });

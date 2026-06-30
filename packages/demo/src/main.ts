@@ -1,5 +1,4 @@
 import { reveal } from "@focuspocus/reveal";
-import { wireOverlayControls } from "./controls.js";
 import { wireVirtualList } from "./virtual-list.js";
 
 const host = document.getElementById("shadow-host");
@@ -17,11 +16,7 @@ if (host && !host.shadowRoot) {
 const overlay = reveal();
 // Collect a teardown for every side effect this module plants on the persistent
 // page DOM, so the HMR dispose can undo all of them - not just the overlay.
-const teardown = [
-  () => overlay.destroy(),
-  wireOverlayControls([overlay]),
-  wireVirtualList(),
-];
+const teardown = [() => overlay.destroy(), wireVirtualList()];
 
 // HMR boundary. A reveal/core edit (e.g. ../reveal/src/*.ts) bubbles up to this
 // self-accepting module, which re-runs top to bottom. Undo every side effect on

@@ -19,14 +19,16 @@ Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequ
 
 A Playwright matcher shares the same core and can be added later.
 
-## Demo
+## Demo & docs
+
+The [`@focuspocus/demo`](./packages/demo) package is the project site: docs pages (getting started, concepts, the rule reference, the API, recipes, FAQ) plus two interactive demos, a tabbable edge-case gauntlet and a page where focus and keyboard access are clearly broken. Both demos just call `reveal()` from the library.
 
 ```bash
 pnpm install
 pnpm --filter @focuspocus/demo dev
 ```
 
-Two pages: a tabbable edge-case gauntlet, and one where focus and keyboard access are clearly broken. Both just call `reveal()` from the library.
+It deploys to GitHub Pages on every push to `main` (see [`.github/workflows/deploy-demo.yml`](./.github/workflows/deploy-demo.yml)), served at `https://focuspocusjs.github.io/focuspocus/`.
 
 ## Quick start
 

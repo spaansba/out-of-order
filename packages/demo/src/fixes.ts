@@ -335,7 +335,11 @@ const REIMPL_DEMOS: {
   {
     role: "button",
     fake: () =>
-      make("div", { class: "demo-btn reimpl-btn", role: "button" }, "Save"),
+      make(
+        "div",
+        { class: "demo-btn reimpl-btn", role: "button", tabindex: "0" },
+        "Save",
+      ),
     native: () => make("button", { class: "demo-btn reimpl-btn" }, "Save"),
   },
   {

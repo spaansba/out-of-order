@@ -27,6 +27,41 @@ ${RING_CSS}
    is pointer-events:none). The badge is a small disc at the element's centre, so
    it only intercepts clicks dead-centre. */
 .fp-badge { pointer-events: auto; cursor: help; }
+.fp-layer[data-fp-peek="on"] .fp-svg { opacity: 0.22; }
+.fp-layer[data-fp-peek="on"] .fp-badge,
+.fp-layer[data-fp-peek="on"] .fp-hit--back { pointer-events: none; }
+
+.fp-layer.fp-hidden .fp-svg { display: none; }
+.fp-panel, .fp-panel * { box-sizing: border-box; }
+.fp-panel { position: fixed; left: 12px; bottom: 12px; z-index: 1;
+  width: 190px; pointer-events: auto; margin: 0;
+  background: #f5f4ef; border: 1px solid #c6c2b4; border-radius: 3px;
+  box-shadow: 0 10px 30px -12px rgba(24, 25, 28, 0.32), 0 1px 2px rgba(24, 25, 28, 0.08);
+  font: 500 12px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fp-panel-head { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0;
+  padding: 9px 10px; border: 0; background: transparent; cursor: pointer;
+  font: 600 13px/1 inherit; color: #18191c; letter-spacing: 0.01em; text-align: left; }
+.fp-panel-head:hover { color: #000; }
+.fp-panel[data-open="1"] .fp-panel-head { border-bottom: 1px solid #dcd9cd; }
+.fp-panel-chev { margin-left: auto; width: 0; height: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid #74756d; transition: transform 0.15s ease; }
+.fp-panel[data-open="0"] .fp-panel-chev { transform: rotate(-90deg); }
+.fp-panel-body { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px 10px; }
+.fp-panel[data-open="0"] .fp-panel-body { display: none; }
+.fp-panel-btn { display: block; width: 100%; margin: 0; text-align: left;
+  font: inherit; cursor: pointer; padding: 7px 9px; color: #18191c;
+  background: #fffefb; border: 1px solid #c6c2b4; border-radius: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease; }
+.fp-panel-btn:hover { border-color: #18191c; }
+/* Active state: the demo's "current page" treatment - accent ink on a soft wash.
+   Both buttons use it so they read consistently (overlay hidden / peek on). */
+.fp-panel-btn--on { color: #1f4e79; border-color: #1f4e79;
+  background: rgba(31, 78, 121, 0.09); }
+.fp-panel-btn:disabled { cursor: default; opacity: 0.4; }
+.fp-panel-btn:disabled:hover { border-color: #c6c2b4; }
+.fp-panel-hint { margin: 1px 0 0; color: #74756d; font-size: 10.5px; letter-spacing: 0.01em; }
 .fp-badge circle { fill: #fffefb; stroke: #2f6a47; stroke-width: 1.5;
   transform-box: fill-box; transform-origin: center; }
 .fp-badge text { fill: #2f6a47;
