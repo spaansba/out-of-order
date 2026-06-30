@@ -559,27 +559,6 @@ fieldset.radio-group label {
   background: none;
   padding: 0;
 }
-/* redundant-tabindex showcase: one natively-focusable control per row, stacked
-   top-to-bottom with each control vertically centered against its label. A single
-   column means every tab stop sits strictly below the previous one, so the wildly
-   differing control heights never read as a same-row backward hop (which a grid
-   would, tripping visual-order-mismatch on center-Y). */
-.redundant-list {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-}
-.redundant-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.redundant-row .reimpl-role {
-  flex: none;
-  width: 110px;
-  text-align: right;
-}
 /* the reimplemented form controls, each styled (by its role) to resemble the native
    widget it fakes, so the showcase reads as a row of different controls — checkbox,
    radio, switch, slider … — rather than 11 identical boxes. The affordance is drawn
