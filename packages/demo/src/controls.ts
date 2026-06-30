@@ -10,34 +10,12 @@ export function wireOverlayControls(overlays: RevealHandle[]): () => void {
   if (!toggle) {
     return () => {};
   }
-  let visible = true;
   const onClick = (): void => {
-    visible = !visible;
     for (const overlay of overlays) {
-      overlay.setVisible(visible);
+      overlay.toggle();
     }
-    toggle.textContent = visible ? "Hide overlay" : "Show overlay";
+    toggle.textContent = overlays[0]?.visible ? "Hide overlay" : "Show overlay";
   };
   toggle.addEventListener("click", onClick);
   return () => toggle.removeEventListener("click", onClick);
-}
-
-export function wireTopbarOffset(): () => void {
-  const topbar = document.querySelector<HTMLElement>(".topbar");
-  if (!topbar) {
-    return () => {};
-  }
-  const sync = (): void => {
-    document.documentElement.style.setProperty(
-      "--topbar-h",
-      `${topbar.offsetHeight - 1}px`,
-    );
-  };
-  sync();
-  const observer = new ResizeObserver(sync);
-  observer.observe(topbar);
-  return () => {
-    observer.disconnect();
-    document.documentElement.style.removeProperty("--topbar-h");
-  };
 }

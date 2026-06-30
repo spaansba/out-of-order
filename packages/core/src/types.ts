@@ -6,8 +6,9 @@ export type RuleSetting = Severity | "off";
 
 /** A single problem found with the tab order. */
 export interface Violation {
-  /** Stable rule identifier */
-  rule: RuleId;
+  /** Stable rule identifier. A built-in {@link RuleId}, or any id a custom rule
+      reports under (the `string & {}` keeps built-in ids as autocomplete). */
+  rule: RuleId | (string & {});
   /** How serious this finding is: the rule's default unless overridden via
       {@link AnalyzeOptions.rules}. */
   severity: Severity;

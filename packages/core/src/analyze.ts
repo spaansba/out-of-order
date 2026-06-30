@@ -17,8 +17,7 @@ function resolveRule(
   options: AnalyzeOptions,
   rule: Rule,
 ): { enabled: boolean; severity: Severity } {
-  // Custom rule ids aren't in the RuleId union; the lookup is still safe (a miss
-  // returns undefined, i.e. "use the default").
+  // Custom rule ids aren't in the RuleId union. A miss returns undefined.
   const setting = options.rules?.[rule.id as RuleId];
   if (setting === undefined) {
     return { enabled: true, severity: rule.defaultSeverity };
@@ -29,28 +28,28 @@ function resolveRule(
   return { enabled: true, severity: setting };
 }
 
-/** Expand a rule's {@link Finding} into a full {@link Violation}: stamp the rule's
-    id and docs plus the graded severity, and resolve `target` into element/selector/
-    orderIndex. A tab stop arrives as its SequenceEntry (reuse its selector and
-    orderIndex); anything off the sequence arrives as a bare Element. */
 function toViolation(
   finding: Finding,
   rule: Rule,
   severity: Severity,
 ): Violation {
   const { target } = finding;
-  const entry = "orderIndex" in target ? target : null;
-  const element = entry ? entry.element : target;
-  return {
+  const base = {
     rule: rule.id,
     severity,
     message: finding.message,
     docs: rule.docs,
-    element,
-    selector: entry ? entry.selector : selectorFor(element),
-    orderIndex: entry?.orderIndex,
     relatedElements: finding.relatedElements,
   };
+
+  return "orderIndex" in target
+    ? {
+        ...base,
+        element: target.element,
+        selector: target.selector,
+        orderIndex: target.orderIndex,
+      }
+    : { ...base, element: target, selector: selectorFor(target) };
 }
 
 /**
@@ -86,17 +85,20 @@ export function analyzeTabOrder(
     inSequence: new Set(sequence.map((entry) => entry.element)),
   };
 
+  const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
+    id,
+    ...def,
+  }));
+
   const violations: Violation[] = [];
-  for (const ruleId of Object.keys(ALL_RULES) as RuleId[]) {
-    const { enabled, severity } = resolveRule(options, ruleId);
+  for (const rule of [...builtins, ...customRules]) {
+    const { enabled, severity } = resolveRule(options, rule);
     if (!enabled) {
       continue;
     }
 
-    // The rule reports *what's* wrong; severity (its default, or the caller's
-    // override) is uniform across that rule's findings, so stamp it on here.
-    for (const finding of ALL_RULES[ruleId](sequence, ctx)) {
-      violations.push({ ...finding, severity });
+    for (const finding of rule.run(sequence, ctx)) {
+      violations.push(toViolation(finding, rule, severity));
     }
   }
 

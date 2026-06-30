@@ -49,25 +49,35 @@ export function selectorFor(element: Element): string {
   return parts.join(" > ");
 }
 
-/** Interactive-widget ARIA roles ("Name From: author required"). Shared by
-    isInteractive (name-required) and looksClickable (mouse-only). */
-const INTERACTIVE_ROLES = [
-  "button",
-  "link",
-  "checkbox",
-  "radio",
+/** The native HTML element each interactive ARIA role reimplements, when one
+    exists. Roles with no native equivalent live in COMPOSITE_ROLES_NO_NATIVE. */
+const NATIVE_FOR_ROLE: Record<string, string> = {
+  button: "<button>",
+  link: "<a href>",
+  checkbox: '<input type="checkbox">',
+  radio: '<input type="radio">',
+  switch: '<input type="checkbox" role="switch">',
+  slider: '<input type="range">',
+  spinbutton: '<input type="number">',
+  searchbox: '<input type="search">',
+  textbox: "<input> or <textarea>",
+  combobox: "<select>",
+  option: "<option>",
+};
+
+/** Interactive roles with no native HTML equivalent: legitimate custom widgets,
+    not controls to swap out (so absent from NATIVE_FOR_ROLE). */
+const COMPOSITE_ROLES_NO_NATIVE = [
   "menuitem",
   "menuitemcheckbox",
   "menuitemradio",
   "tab",
-  "switch",
-  "combobox",
-  "textbox",
-  "searchbox",
-  "slider",
-  "spinbutton",
-  "option",
   "treeitem",
+];
+
+const INTERACTIVE_ROLES = [
+  ...Object.keys(NATIVE_FOR_ROLE),
+  ...COMPOSITE_ROLES_NO_NATIVE,
 ];
 
 /** Elements that need an accessible name to be usable. */
@@ -220,23 +230,6 @@ export function looksClickable(element: Element): boolean {
   }
   return element.hasAttribute("onclick");
 }
-
-/** The native HTML element each ARIA role reimplements, when one exists. Roles
-    with no native equivalent (menuitem, tab, treeitem, …) are intentionally
-    absent: those are legitimate custom widgets, not controls to swap out. */
-const NATIVE_FOR_ROLE: Record<string, string> = {
-  button: "<button>",
-  link: "<a href>",
-  checkbox: '<input type="checkbox">',
-  radio: '<input type="radio">',
-  switch: '<input type="checkbox" role="switch">',
-  slider: '<input type="range">',
-  spinbutton: '<input type="number">',
-  searchbox: '<input type="search">',
-  textbox: "<input> or <textarea>",
-  combobox: "<select>",
-  option: "<option>",
-};
 
 /** If `element` reimplements a native control via an interactive role on a generic
     tag, the native element to use instead; else null. Native interactive tags (and a

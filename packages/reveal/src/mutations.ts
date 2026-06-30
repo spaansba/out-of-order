@@ -17,6 +17,7 @@ const WATCHED_ATTRS = [
   "alt",
   "href",
   "type",
+  "open", // <details> toggling shows/hides its (focusable) contents
 ];
 
 export class Mutations {

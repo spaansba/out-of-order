@@ -27,37 +27,30 @@ export interface RuleContext {
   inSequence: Set<Element>;
 }
 
-/** What a rule reports for a single occurrence. The rule's id, docs link, and
-    graded severity are uniform across all of its findings, so `analyzeTabOrder`
-    stamps those on (from the owning {@link Rule}); a Finding carries only what
-    varies per hit. */
+/** One problem a rule reports, before grading. */
 export interface Finding {
   /** Human-readable description of what's wrong. */
   message: string;
-  /** What the finding points at. A tab stop is passed as its {@link SequenceEntry}
-      (so the analyzer reuses the entry's orderIndex and precomputed selector);
-      anything off the tab sequence is passed as a bare Element. */
+  /** The element the finding points at. A {@link SequenceEntry} when it is a tab
+      stop (carries orderIndex and a selector), or a bare Element when it is not. */
   target: SequenceEntry | Element;
   /** Other elements with the same root cause. Ringed alongside `target` but not
       reported as separate findings, so one missing fix doesn't become N violations. */
   relatedElements?: Element[];
 }
 
-/** Detector half of a rule: takes the computed tab sequence (plus context) and
-    returns any findings. Pure. */
-export type RuleRun = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
+/** Takes the tab sequence (plus context) and returns any findings. Pure. */
+export type RuleRun = (
+  sequence: SequenceEntry[],
+  ctx: RuleContext,
+) => Finding[];
 
-/** A rule: its static identity/config plus its detector. `docs` and
-    `defaultSeverity` are constant across the rule's findings, so they live here,
-    not on each {@link Finding}. Custom rules handed to `analyzeTabOrder` are this
-    shape; built-ins are stored the same way in {@link ALL_RULES}, keyed by `id`. */
 export interface Rule {
   /** Stable rule identifier, surfaced on every Violation it produces. */
   id: string;
   /** Spec link the rule is grounded in (WCAG, WAI-ARIA, or ARIA APG). */
   docs: string;
-  /** Severity the rule fires at unless the caller overrides it via
-      `AnalyzeOptions.rules`. */
+  /** Severity the rule fires at unless overridden via `AnalyzeOptions.rules`. */
   defaultSeverity: Severity;
   run: RuleRun;
 }
@@ -115,10 +108,17 @@ const visualOrderMismatch: RuleRun = (sequence) => {
     const prevX = prev.rect.left + prev.rect.width / 2;
     const curX = cur.rect.left + cur.rect.width / 2;
 
+    // A stop whose box sits entirely to the right of prev starts a later column.
+    // Multi-column reading runs down one column then jumps to the TOP of the next,
+    // so this upward move is a forward column advance, not a backward hop. Without
+    // this, every column break (left column's end → right column's start) misfires.
+    const nextColumn = cur.rect.left >= prev.rect.right;
+
     const earlierRow = cur.rect.bottom <= prev.rect.top + ROW_TOLERANCE_PX;
     const sameRow =
       !earlierRow && cur.rect.top < prev.rect.bottom - ROW_TOLERANCE_PX;
-    const backwardHop = earlierRow || (sameRow && curX < prevX - 1);
+    const backwardHop =
+      !nextColumn && (earlierRow || (sameRow && curX < prevX - 1));
     if (!backwardHop) {
       continue;
     }
@@ -197,7 +197,10 @@ const hiddenWhileFocusable: RuleRun = (sequence) => {
 
 /** Something interactive to the mouse (role/onclick) that the
     keyboard can never reach because it isn't focusable. */
-const clickableNotFocusable: RuleRun = (_sequence, { container, inSequence }) => {
+const clickableNotFocusable: RuleRun = (
+  _sequence,
+  { container, inSequence },
+) => {
   // Every ancestor-or-self of a tab stop, collected once. A clickable element
   // that's in this set merely wraps a real focusable control, so the keyboard
   // can still get in, so skip it.
@@ -352,6 +355,7 @@ const tabindexOnNoninteractive: RuleRun = (sequence) => {
       target: entry,
     });
   }
+
   return out;
 };
 
@@ -365,6 +369,7 @@ const preferNativeElement: RuleRun = (sequence) => {
     if (!native) {
       continue;
     }
+
     const tag = entry.element.tagName.toLowerCase();
     const role = entry.element.getAttribute("role");
     out.push({
@@ -372,6 +377,7 @@ const preferNativeElement: RuleRun = (sequence) => {
       target: entry,
     });
   }
+
   return out;
 };
 
@@ -473,14 +479,6 @@ const redundantTabindex: RuleRun = (sequence) => {
   return out;
 };
 
-/** Every built-in rule, keyed by its id. Each entry bundles the rule's spec link,
-    default severity, and detector, so a rule's whole identity lives in one place.
-    The id is the key (and the {@link RuleId} source); `analyzeTabOrder` reattaches
-    it when it grades findings.
-
-    `defaultSeverity`: `error` = a real barrier (unreachable, unannounced, invisible,
-    trapped); `warning` = dead/no-op markup or a best-practice nit that doesn't block
-    a keyboard or screen-reader user. */
 export const ALL_RULES = {
   "no-positive-tabindex": {
     docs: "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",

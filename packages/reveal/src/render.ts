@@ -1,9 +1,4 @@
-import {
-  ensureRingStyles,
-  RING_CLASS,
-  RING_BAD_CLASS,
-  RING_WARN_CLASS,
-} from "./styles.js";
+import { ensureRingStyles, RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./styles.js";
 import type { Severity } from "@focuspocus/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
@@ -87,8 +82,12 @@ export class Renderer {
   private markers: Marker[] = [];
   private segments: Segment[] = [];
   private readonly byEl = new Map<Element, Marker>();
-  // Elements we've ringed, kept so we can untag them on rebuild/destroy.
-  private ringEls: Element[] = [];
+  // Elements we've ringed, with the class applied, kept so we can untag them on
+  // rebuild/destroy and toggle them when the overlay is hidden.
+  private ringEls: { element: Element; cls: string }[] = [];
+  // The rings live on the page, not in the hideable layer, so their visibility is
+  // tracked here and applied by class — otherwise "Hide overlay" leaves them behind.
+  private ringsVisible = true;
   // The badge of the currently keyboard-focused element, filled in as a cursor.
   private focused: Marker | null = null;
   // Last SVG size written; reset in clear() since each draw makes a fresh svg.
@@ -130,7 +129,7 @@ export class Renderer {
       if (back) {
         // Pop the tooltip where the pointer meets the line: a long backward hop's
         // endpoints can sit far from where you're actually hovering.
-        this.tooltip.wireCursor(hit, tip);
+        this.tooltip.wire(hit, tip);
       }
     }
 
@@ -142,9 +141,7 @@ export class Renderer {
       All rect reads run before any SVG writes, so a scroll frame triggers a
       single layout flush instead of one reflow per marker (read→write→read…). */
   seed(): void {
-    const rects = this.markers.map((marker) =>
-      marker.element.getBoundingClientRect(),
-    );
+    const rects = this.markers.map((marker) => marker.element.getBoundingClientRect());
     this.syncSize();
     this.markers.forEach((marker, idx) => this.applyRect(marker, rects[idx]!));
     this.updateSegments();
@@ -152,9 +149,7 @@ export class Renderer {
 
   /** Apply fresh rects for the elements the position observer saw move, then
       refresh the connecting segments. */
-  applyMoved(
-    moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>,
-  ): void {
+  applyMoved(moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>): void {
     this.syncSize();
     for (const { target, rect } of moved) {
       const marker = this.byEl.get(target);
@@ -182,6 +177,19 @@ export class Renderer {
     return this.markers.map((marker) => marker.element);
   }
 
+  /** Toggle the page-element rings with the overlay's visibility. They sit on the
+      page rather than inside the hideable layer, so hiding the layer alone leaves
+      them; this drives them by class and survives a rebuild (see markRing). */
+  setRingsVisible(visible: boolean): void {
+    if (this.ringsVisible === visible) {
+      return;
+    }
+    this.ringsVisible = visible;
+    for (const { element, cls } of this.ringEls) {
+      element.classList.toggle(cls, visible);
+    }
+  }
+
   /** Tear down the current drawing (SVG + rings); leaves the renderer reusable. */
   clear(): void {
     this.svg?.remove();
@@ -192,7 +200,7 @@ export class Renderer {
     this.focused = null;
     this.sizeW = 0;
     this.sizeH = 0;
-    for (const element of this.ringEls) {
+    for (const { element } of this.ringEls) {
       element.classList.remove(...RING_CLASSES);
     }
     this.ringEls = [];
@@ -240,20 +248,19 @@ export class Renderer {
     this.byEl.set(spec.element, marker);
     // Every badge is hoverable: the tooltip shows the stop's name/role and either
     // its findings or a clean "no issues" confirmation.
-    this.tooltip.wire(group, spec.tip, spec.element);
+    this.tooltip.wire(group, spec.tip);
   }
 
   /** Tag a real element so CSS rings it (until it's keyboard-focused): green when
       clean, amber on a warning, red on an error. */
   private markRing(element: Element, severity: Severity | null): void {
     const ringClass =
-      severity === "error"
-        ? RING_BAD_CLASS
-        : severity === "warning"
-          ? RING_WARN_CLASS
-          : RING_CLASS;
-    element.classList.add(ringClass);
-    this.ringEls.push(element);
+      severity === "error" ? RING_BAD_CLASS : severity === "warning" ? RING_WARN_CLASS : RING_CLASS;
+    // Keep the class off while hidden so a rebuild mid-hide doesn't repaint the ring.
+    if (this.ringsVisible) {
+      element.classList.add(ringClass);
+    }
+    this.ringEls.push({ element, cls: ringClass });
     // Elements inside a shadow root need the rule mirrored in; document styles
     // don't cross the boundary.
     const root = element.getRootNode();
@@ -263,13 +270,16 @@ export class Renderer {
   }
 
   private applyRect(marker: Marker, rect: DOMRectReadOnly): void {
-    marker.centerX = rect.left + rect.width / 2;
-    marker.centerY = rect.top + rect.height / 2;
-    // Center the badge on the element; segments stop just outside it via SEG_PAD.
-    marker.group.setAttribute(
-      "transform",
-      `translate(${marker.centerX}, ${marker.centerY})`,
-    );
+    // Elements smaller than the badge get it pinned off their top-right corner instead
+    // of centered, so the badge doesn't swallow them.
+    if (rect.width < 2 * RADIUS && rect.height < 2 * RADIUS) {
+      marker.centerX = rect.right + RADIUS;
+      marker.centerY = rect.top - RADIUS;
+    } else {
+      marker.centerX = rect.left + rect.width / 2;
+      marker.centerY = rect.top + rect.height / 2;
+    }
+    marker.group.setAttribute("transform", `translate(${marker.centerX}, ${marker.centerY})`);
   }
 
   /** Redraw every hop: shorten it to the badge edges and drop the arrow at the
@@ -301,10 +311,7 @@ export class Renderer {
       seg.hit.setAttribute("x2", String(endX));
       seg.hit.setAttribute("y2", String(endY));
       // A midpoint vertex carries the marker-mid arrowhead, oriented along the hop.
-      seg.line.setAttribute(
-        "points",
-        `${startX},${startY} ${midX},${midY} ${endX},${endY}`,
-      );
+      seg.line.setAttribute("points", `${startX},${startY} ${midX},${midY} ${endX},${endY}`);
     }
   }
 

@@ -78,16 +78,13 @@ describe("visual-order-mismatch", () => {
       ).not.toContain("visual-order-mismatch");
     },
   );
-  test.fails(
-    "02 CSS multi-column link list is valid (currently FAILS - CI-2 false positive)",
-    () => {
-      expect(
-        fired(
-          '<div style="column-count:2; column-fill:auto; column-gap:30px; width:300px; height:50px; line-height:24px;"><a href="#1">One</a><br><a href="#2">Two</a><br><a href="#3">Three</a><br><a href="#4">Four</a></div>',
-        ),
-      ).not.toContain("visual-order-mismatch");
-    },
-  );
+  test("02 CSS multi-column link list is valid (CI-2: column break is a forward advance)", () => {
+    expect(
+      fired(
+        '<div style="column-count:2; column-fill:auto; column-gap:30px; width:300px; height:50px; line-height:24px;"><a href="#1">One</a><br><a href="#2">Two</a><br><a href="#3">Three</a><br><a href="#4">Four</a></div>',
+      ),
+    ).not.toContain("visual-order-mismatch");
+  });
   test("03 Tall sidebar beside short content link is valid", () => {
     expect(
       fired(

@@ -1,12 +1,8 @@
 import { reveal } from "@focuspocus/reveal";
-import { wireOverlayControls, wireTopbarOffset } from "./controls.js";
+import { wireOverlayControls } from "./controls.js";
 import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { restoreAutofocus, wireTriage } from "./triage.js";
-
-// Promote data-autofocus -> autofocus before anything analyzes the page, so the
-// autofocus rules still fire but the browser never grabs focus/scroll on load.
-restoreAutofocus();
 
 const overlay = reveal();
 
@@ -17,11 +13,17 @@ const overlay = reveal();
 const teardown = [
   () => overlay.destroy(),
   wireOverlayControls([overlay]),
-  wireTopbarOffset(),
   wireTriage(),
   wireSolvers(),
   wireModal(),
 ];
+
+// wireTriage reorders the warning cards with appendChild, and re-inserting an element
+// that already carries `autofocus` re-arms the browser's autofocus pass, so it would grab
+// focus and scroll into that card on load. Promote data-autofocus -> autofocus only after
+// the reorder and the first paint: setAttribute on a settled DOM never triggers focus, and
+// the overlay re-analyzes on the resulting mutation so the autofocus rules still fire.
+requestAnimationFrame(() => requestAnimationFrame(restoreAutofocus));
 
 // HMR boundary. A reveal/core edit (e.g. ../reveal/src/*.ts) bubbles up to this
 // self-accepting module, which re-runs top to bottom. Undo every side effect on

@@ -1,6 +1,7 @@
 import {
   analyzeTabOrder,
   type AnalyzeOptions,
+  type Rule,
   type Severity,
   type TabOrderResult,
   type Violation,
@@ -23,6 +24,8 @@ export interface RevealOptions {
   root?: ParentNode;
   /** Forwarded to analyzeTabOrder (rule toggles). */
   analyze?: AnalyzeOptions;
+  /** Extra custom rules, run alongside the built-ins on every analysis. */
+  rules?: Rule[];
   /** A subtree to skip (no badges/rings), e.g. because another overlay owns it, so
       a region the main overlay also analyzes isn't numbered twice. */
   exclude?: Element | null;
@@ -35,8 +38,12 @@ export interface RevealHandle {
   refresh(): void;
   /** Re-read every marker's rect and redraw (without re-analyzing). */
   reposition(): void;
-  /** Show or hide the overlay layer. */
+  /** Whether the overlay is currently shown. */
+  readonly visible: boolean;
+  /** Show or hide the whole overlay: badges, arrows, and the element rings. */
   setVisible(visible: boolean): void;
+  /** Flip between shown and hidden. */
+  toggle(): void;
   /** Remove the overlay layer, observers, and listeners. */
   destroy(): void;
   /** Latest analysis result, or null before the first draw. */
@@ -81,13 +88,22 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   // tracked separately, so only sequence/violation changes need a redraw).
   let lastSig: string | null = null;
 
+  let visible = true;
+  const setVisible = (next: boolean): void => {
+    visible = next;
+    layer.style.display = next ? "" : "none";
+    renderer.setRingsVisible(next);
+  };
+
   const handle: RevealHandle = {
     result: null,
+    get visible() {
+      return visible;
+    },
     refresh: () => build(),
     reposition: () => renderer.seed(),
-    setVisible: (visible) => {
-      layer.style.display = visible ? "" : "none";
-    },
+    setVisible,
+    toggle: () => setVisible(!visible),
     destroy: () => {
       if (motion === "auto") {
         reduceQuery.removeEventListener("change", applyMotion);
@@ -102,21 +118,11 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
 
   /** Re-analyze, turn the result into a draw model, render it, and (re)observe. */
   function build(): void {
-    const result = analyzeTabOrder(options.root ?? document, options.analyze, [
-      (sequence) => {
-        console.log(sequence);
-
-        return [
-          {
-            rule: "custom-rule",
-            message: "This is a custom rule violation.",
-            docs: "https://example.com/custom-rule-docs",
-            element: sequence[0]?.element ?? document.body,
-            selector: sequence[0]?.selector ?? "",
-          },
-        ];
-      },
-    ]);
+    const result = analyzeTabOrder(
+      options.root ?? document,
+      options.analyze,
+      options.rules,
+    );
 
     handle.result = result;
 

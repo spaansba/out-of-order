@@ -6,11 +6,13 @@
 
 import { DEFAULT_SEVERITY, type RuleId, type Severity } from "@focuspocus/core";
 
-// The browser fires `autofocus` while parsing the page, so on every reload focus (and
-// the scroll position) jumps into the first autofocus card. The cards still need the
-// attribute for duplicate-autofocus / autofocus-not-focusable to fire, so the HTML
-// ships it as `data-autofocus` and we promote it to the real attribute after parse:
-// setAttribute never triggers the focus, but the analyzer still sees the attribute.
+// The browser focuses the first `autofocus` element during the page's first render, so a
+// real attribute in the HTML jumps focus (and scroll) into that card on every load. The
+// cards still need it for duplicate-autofocus / autofocus-not-focusable to fire, so the
+// HTML ships `data-autofocus` and we promote it to the real attribute. setAttribute on its
+// own never triggers focus, but re-inserting an element that already carries `autofocus`
+// (e.g. the triage reorder) re-arms that pass, so the caller must run this only once the
+// cards are in their final position and the first paint has gone by.
 export function restoreAutofocus(): void {
   for (const element of document.querySelectorAll("[data-autofocus]")) {
     element.removeAttribute("data-autofocus");
@@ -85,8 +87,7 @@ export function wireTriage(): () => void {
 }
 
 // A hover-reveal anchor beside each indexed heading, the way a docs contents page marks
-// its sections. tabindex="-1" keeps it out of the analyzed tab order (same as the index
-// links and per-card Fix buttons), so it doesn't stack a badge on every heading.
+// its sections.
 function addHeaderAnchor(section: HTMLElement): void {
   const heading = section.querySelector<HTMLElement>(":scope > h2");
   if (!heading || heading.querySelector(".header-anchor")) {
@@ -95,7 +96,6 @@ function addHeaderAnchor(section: HTMLElement): void {
   const anchor = document.createElement("a");
   anchor.className = "header-anchor";
   anchor.href = `#${section.id}`;
-  anchor.tabIndex = -1;
   anchor.setAttribute("aria-label", `Link to "${titleOf(section)}"`);
   anchor.textContent = "#";
   heading.appendChild(anchor);

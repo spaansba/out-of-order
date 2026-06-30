@@ -46,9 +46,6 @@ export function wireSolvers(): () => void {
 function addButton(section: Element, fix: Fix): Element[] {
   const btn = document.createElement("button");
   btn.className = "btn solve-btn";
-  // tabindex="-1": keep these meta-controls out of the analyzed tab order so they
-  // don't add a badge to every card and distort the sequence each one teaches.
-  btn.tabIndex = -1;
   btn.textContent = "Fix";
 
   // The flagged markup is shown straight away (red) so you can read the bug before
@@ -88,7 +85,12 @@ function addButton(section: Element, fix: Fix): Element[] {
       pulse(section);
     }
   });
-  section.appendChild(btn);
+  const heading = section.querySelector(":scope > h2");
+  if (heading) {
+    heading.after(btn);
+  } else {
+    section.appendChild(btn);
+  }
 
   return created;
 }
@@ -238,7 +240,9 @@ function collectSolvers(
     {
       anchor: reimplPairs[0]?.fake ?? null,
       fix: combine(
-        ...reimplPairs.map(({ fake, native }) => useNativeElement(fake, native)),
+        ...reimplPairs.map(({ fake, native }) =>
+          useNativeElement(fake, native),
+        ),
       ),
     },
     // L · two elements claim autofocus; only the first wins. Drop autofocus from
@@ -323,55 +327,152 @@ function make(
 
 // Mirrors NATIVE_FOR_ROLE in core/dom.ts: one source of truth per role drives both
 // the rendered demo and its fix, so they can't drift.
-const REIMPL_DEMOS: { role: string; fake: () => HTMLElement; native: () => HTMLElement }[] = [
+const REIMPL_DEMOS: {
+  role: string;
+  fake: () => HTMLElement;
+  native: () => HTMLElement;
+}[] = [
   {
     role: "button",
-    fake: () => make("div", { class: "demo-btn reimpl-btn", role: "button", tabindex: "0" }, "Save"),
+    fake: () =>
+      make("div", { class: "demo-btn reimpl-btn", role: "button" }, "Save"),
     native: () => make("button", { class: "demo-btn reimpl-btn" }, "Save"),
   },
   {
     role: "link",
-    fake: () => make("span", { class: "demo-link", role: "link", tabindex: "0" }, "Docs"),
+    fake: () =>
+      make("span", { class: "demo-link", role: "link", tabindex: "0" }, "Docs"),
     native: () => make("a", { class: "demo-link", href: "#" }, "Docs"),
   },
   {
     role: "checkbox",
-    fake: () => make("div", { class: "reimpl-fake", role: "checkbox", tabindex: "0", "aria-checked": "true" }, "Subscribe"),
-    native: () => make("input", { type: "checkbox", checked: "", "aria-label": "Subscribe" }),
+    fake: () =>
+      make(
+        "div",
+        {
+          class: "reimpl-fake",
+          role: "checkbox",
+          tabindex: "0",
+          "aria-checked": "true",
+        },
+        "Subscribe",
+      ),
+    native: () =>
+      make("input", {
+        type: "checkbox",
+        checked: "",
+        "aria-label": "Subscribe",
+      }),
   },
   {
     role: "radio",
-    fake: () => make("div", { class: "reimpl-fake", role: "radio", tabindex: "0", "aria-checked": "true" }, "Email me"),
-    native: () => make("input", { type: "radio", checked: "", "aria-label": "Email me" }),
+    fake: () =>
+      make(
+        "div",
+        {
+          class: "reimpl-fake",
+          role: "radio",
+          tabindex: "0",
+          "aria-checked": "true",
+        },
+        "Email me",
+      ),
+    native: () =>
+      make("input", { type: "radio", checked: "", "aria-label": "Email me" }),
   },
   {
     role: "switch",
-    fake: () => make("div", { class: "reimpl-fake", role: "switch", tabindex: "0", "aria-checked": "true" }, "Dark mode"),
-    native: () => make("input", { type: "checkbox", role: "switch", checked: "", "aria-label": "Dark mode" }),
+    fake: () =>
+      make(
+        "div",
+        {
+          class: "reimpl-fake",
+          role: "switch",
+          tabindex: "0",
+          "aria-checked": "true",
+        },
+        "Dark mode",
+      ),
+    native: () =>
+      make("input", {
+        type: "checkbox",
+        role: "switch",
+        checked: "",
+        "aria-label": "Dark mode",
+      }),
   },
   {
     role: "slider",
-    fake: () => make("div", { class: "reimpl-fake", role: "slider", tabindex: "0", "aria-valuenow": "50", "aria-valuemin": "0", "aria-valuemax": "100" }, "Volume"),
-    native: () => make("input", { type: "range", value: "50", "aria-label": "Volume" }),
+    fake: () =>
+      make(
+        "div",
+        {
+          class: "reimpl-fake",
+          role: "slider",
+          tabindex: "0",
+          "aria-valuenow": "50",
+          "aria-valuemin": "0",
+          "aria-valuemax": "100",
+        },
+        "Volume",
+      ),
+    native: () =>
+      make("input", { type: "range", value: "50", "aria-label": "Volume" }),
   },
   {
     role: "spinbutton",
-    fake: () => make("div", { class: "reimpl-fake", role: "spinbutton", tabindex: "0", "aria-valuenow": "1" }, "Quantity"),
-    native: () => make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
+    fake: () =>
+      make(
+        "div",
+        {
+          class: "reimpl-fake",
+          role: "spinbutton",
+          tabindex: "0",
+          "aria-valuenow": "1",
+        },
+        "Quantity",
+      ),
+    native: () =>
+      make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
   },
   {
     role: "searchbox",
-    fake: () => make("div", { class: "reimpl-fake", role: "searchbox", tabindex: "0" }, "Search"),
-    native: () => make("input", { type: "search", placeholder: "Search", "aria-label": "Search" }),
+    fake: () =>
+      make(
+        "div",
+        { class: "reimpl-fake", role: "searchbox", tabindex: "0" },
+        "Search",
+      ),
+    native: () =>
+      make("input", {
+        type: "search",
+        placeholder: "Search",
+        "aria-label": "Search",
+      }),
   },
   {
     role: "textbox",
-    fake: () => make("div", { class: "reimpl-fake", role: "textbox", tabindex: "0" }, "Name"),
-    native: () => make("input", { type: "text", placeholder: "Name", "aria-label": "Name" }),
+    fake: () =>
+      make(
+        "div",
+        { class: "reimpl-fake", role: "textbox", tabindex: "0" },
+        "Name",
+      ),
+    native: () =>
+      make("input", {
+        type: "text",
+        placeholder: "Name",
+        "aria-label": "Name",
+      }),
   },
   {
     role: "combobox",
-    fake: () => make("div", { class: "reimpl-fake", role: "combobox", tabindex: "0" }, "Country"),
+    fake: () =>
+      make(
+        "div",
+        { class: "reimpl-fake", role: "combobox", tabindex: "0" },
+        "Country",
+      ),
     native: () => {
       const select = make("select", { "aria-label": "Country" });
       for (const name of ["United States", "Netherlands", "Japan"]) {
@@ -382,7 +483,12 @@ const REIMPL_DEMOS: { role: string; fake: () => HTMLElement; native: () => HTMLE
   },
   {
     role: "option",
-    fake: () => make("div", { class: "reimpl-fake", role: "option", tabindex: "0" }, "Option A"),
+    fake: () =>
+      make(
+        "div",
+        { class: "reimpl-fake", role: "option", tabindex: "0" },
+        "Option A",
+      ),
     native: () => make("option", {}, "Option A"),
   },
 ];
@@ -399,7 +505,9 @@ function buildReimplDemos(): { pairs: ReimplPair[]; created: Element[] } {
   for (const demo of REIMPL_DEMOS) {
     const fake = demo.fake();
     const cell = make("div", { class: "reimpl-cell" });
-    cell.appendChild(make("code", { class: "reimpl-role" }, `role="${demo.role}"`));
+    cell.appendChild(
+      make("code", { class: "reimpl-role" }, `role="${demo.role}"`),
+    );
     cell.appendChild(fake);
     host.appendChild(cell);
     created.push(cell);

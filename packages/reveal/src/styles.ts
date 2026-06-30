@@ -1,11 +1,7 @@
 // The `.fp-*` selectors in the CSS below are written out literally for
 // readability; the class names the JS applies live in classes.ts and share its
 // prefix, so they can't drift from this namespace.
-export {
-  RING_CLASS,
-  RING_BAD_CLASS,
-  RING_WARN_CLASS,
-} from "./classes.js";
+export { RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./classes.js";
 
 const RING_CSS = `
 .fp-ring { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
@@ -50,12 +46,13 @@ ${RING_CSS}
 .fp-af circle { fill: #1f4e79; stroke: #fffefb; stroke-width: 1.5; }
 .fp-af path { fill: #fffefb; }
 
-/* 0x0 point slid to the cursor so a hop's tooltip anchors by the pointer. */
-.fp-tip-cursor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
+/* 0x0 point slid under the pointer; every tooltip anchors to it (see Tooltip),
+   so showing one never writes to page DOM. */
+.fp-tip-cursor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; anchor-name: --fp-tip-anchor; }
 
-/* Spec-sheet index card, CSS-anchored to the hovered element's centre (margin =
-   badge radius 11px + 8px gap) so it tracks scrolling and flips at the viewport
-   edge. Palette inlined: the overlay mounts on arbitrary pages. */
+/* Spec-sheet index card, CSS-anchored to the cursor proxy (margin = badge radius
+   11px + 8px gap, so it clears a badge) and flips at the viewport edge. Palette
+   inlined: the overlay mounts on arbitrary pages. */
 .fp-tip { position: fixed; position-anchor: --fp-tip-anchor;
   inset: auto; top: anchor(center); left: anchor(center); margin: 19px 0 0 -11px;
   position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;

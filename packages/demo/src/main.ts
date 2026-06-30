@@ -1,5 +1,5 @@
 import { reveal } from "@focuspocus/reveal";
-import { wireOverlayControls, wireTopbarOffset } from "./controls.js";
+import { wireOverlayControls } from "./controls.js";
 import { wireVirtualList } from "./virtual-list.js";
 
 const host = document.getElementById("shadow-host");
@@ -20,7 +20,6 @@ const overlay = reveal();
 const teardown = [
   () => overlay.destroy(),
   wireOverlayControls([overlay]),
-  wireTopbarOffset(),
   wireVirtualList(),
 ];
 

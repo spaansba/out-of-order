@@ -38,7 +38,8 @@
 }
 
 html {
-  scroll-padding-top: var(--topbar-h, 3.25rem);
+  scroll-behavior: smooth;
+  scroll-padding-top: 51px;
 }
 
 body {
@@ -168,6 +169,7 @@ code {
 .index {
   margin: 1.7rem 0 0.5rem;
   padding-top: 1.2rem;
+  padding-bottom: 0.8rem;
   border-top: 1px solid var(--line);
 }
 .index-summary {
@@ -326,10 +328,10 @@ section.group > h2 {
   font: 500 0.78em/1 var(--font-mono);
   color: var(--accent-2);
   text-decoration: none;
-  opacity: 0;
+  opacity: 0.35;
   transition: opacity 0.12s ease;
 }
-section.group:hover > h2 > .header-anchor,
+.header-anchor:hover,
 .header-anchor:focus-visible {
   opacity: 1;
 }
@@ -727,7 +729,11 @@ fieldset.radio-group label {
   height: 18px;
   border-radius: 999px;
   background:
-    radial-gradient(circle 6px at calc(100% - 9px) 9px, #fff 96%, transparent 98%),
+    radial-gradient(
+      circle 6px at calc(100% - 9px) 9px,
+      #fff 96%,
+      transparent 98%
+    ),
     var(--accent);
 }
 
