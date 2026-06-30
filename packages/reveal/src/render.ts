@@ -10,6 +10,9 @@ const SVG_NS = "http://www.w3.org/2000/svg" as const;
     stops just outside the circles (the arrowhead now sits at the midpoint). */
 const RADIUS = 11;
 const SEG_PAD = RADIUS + 5;
+/** Below this in both dimensions an element is too small to host a centered
+    badge, so it gets pinned off the top-right corner instead. */
+const SMALL_SIZE = 50;
 
 /** Create an SVG element with attributes and children in one call, dropping the
     repetitive createElementNS + setAttribute boilerplate. */
@@ -270,9 +273,9 @@ export class Renderer {
   }
 
   private applyRect(marker: Marker, rect: DOMRectReadOnly): void {
-    // Elements smaller than the badge get it pinned off their top-right corner instead
+    // Small elements get the badge pinned off their top-right corner instead
     // of centered, so the badge doesn't swallow them.
-    if (rect.width < 2 * RADIUS && rect.height < 2 * RADIUS) {
+    if (rect.width < SMALL_SIZE && rect.height < SMALL_SIZE) {
       marker.centerX = rect.right + RADIUS;
       marker.centerY = rect.top - RADIUS;
     } else {
