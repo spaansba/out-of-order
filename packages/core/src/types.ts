@@ -11,7 +11,7 @@ export type AuditFormat = "by-element" | "text";
 /** A single rule failure on one element. */
 export interface Issue {
   /** Stable rule identifier. */
-  rule: RuleId | (string & {});
+  rule: AnyRuleId;
   /** How serious this finding is. */
   severity: Severity;
   /** Human-readable description of what's wrong. */
