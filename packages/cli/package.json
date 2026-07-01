@@ -10,10 +10,10 @@
     "playwright",
     "tab-order"
   ],
-  "license": "MIT",
-  "author": "Bart Spaans",
   "homepage": "https://github.com/spaansba/out-of-order#readme",
   "bugs": "https://github.com/spaansba/out-of-order/issues",
+  "license": "MIT",
+  "author": "Bart Spaans",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/spaansba/out-of-order.git",
@@ -25,10 +25,10 @@
   "files": [
     "dist"
   ],
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },
-  "type": "module",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

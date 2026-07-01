@@ -43,6 +43,39 @@ pnpm dev          # serve the demo site
 
 The suites use [Vitest Browser Mode](https://vitest.dev/guide/browser/) driving real Chromium through Playwright. This is deliberate: `tabbable` and the visibility rules need real layout, so a green jsdom test would not prove the tab order is correct on screen. Please keep new assertions inside Browser Mode rather than reaching for jsdom.
 
+## Releasing (Changesets)
+
+Every pull request that changes a published package (`core`, `trace`, `cli`, `vitest`) **must include a changeset**.
+From the repo root:
+
+```bash
+pnpm changeset
+```
+
+Select the package(s) you changed, pick a bump level (below), and write a short user-facing summary of the effect, not the implementation.
+
+For changes that should not trigger a release (docs, tests, CI, internal refactors with no observable effect), add an empty changeset so it is clear you did not just forget one:
+
+```bash
+pnpm changeset --empty
+```
+
+### Bump levels
+
+| Level     | When to use                                                     |
+| --------- | --------------------------------------------------------------- |
+| **patch** | Bug fix, no API change.                                         |
+| **minor** | New export or new option, backward compatible.                  |
+| **major** | Removed or renamed export, or changed behavior of existing API. |
+
+Pick the level based on the impact on that package's public API, not on how large the code change was.
+
+### What happens after you merge
+
+1. Merging to `main` triggers the Release workflow.
+2. Changesets opens (or updates) a **Version Packages** PR that applies the bumps and updates changelogs.
+3. When a maintainer merges that PR, the changed packages publish to npm automatically.
+
 ## Reporting bugs
 
 Open an issue with a minimal HTML snippet (or a URL) that reproduces the wrong verdict, what you expected, and what the analyzer reported. Reproductions that run through the demo or the `cli` are easiest to triage.

@@ -1,5 +1,7 @@
 # Out of Order
 
+> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
+
 Focus & keyboard-accessibility validation for real browsers.
 
 Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then grades it: is the order right, and is every stop reachable, visible, and announced? It runs in real Chromium only, because that is the one place the answer is true. It builds on [tabbable](https://github.com/focus-trap/tabbable), with a rules layer on top.
@@ -38,12 +40,12 @@ More in [getting started](https://spaansba.github.io/out-of-order/getting-starte
 
 ## Packages
 
-| Package | What it is | Reach for it when |
-| --- | --- | --- |
-| [`@out-of-order/core`](packages/core) | The analyzer. Wraps `tabbable`, applies the rules, returns a plain result. No framework or test-runner deps. | You assert in a test or CI, or run headless in a Playwright `page.evaluate`. |
-| [`@out-of-order/trace`](packages/trace) | Framework-agnostic live overlay, built on core, which it re-exports. | You want to see the tab path and findings on a live page. Most people want this. |
-| [`@out-of-order/cli`](packages/cli) | Audits any URL from the terminal. Headless by default, `--overlay` to draw it live. | You check a URL without writing code, gate CI on the exit code, or pipe findings into an agent. |
-| [`@out-of-order/vitest`](packages/vitest) | `toHaveValidTabOrder()` matcher for Vitest Browser Mode. *In progress.* | You assert tab order inside a Vitest browser test. |
+| Package                                   | What it is                                                                                                   | Reach for it when                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| [`@out-of-order/core`](packages/core)     | The analyzer. Wraps `tabbable`, applies the rules, returns a plain result. No framework or test-runner deps. | You assert in a test or CI, or run headless in a Playwright `page.evaluate`.                    |
+| [`@out-of-order/trace`](packages/trace)   | Framework-agnostic live overlay, built on core, which it re-exports.                                         | You want to see the tab path and findings on a live page. Most people want this.                |
+| [`@out-of-order/cli`](packages/cli)       | Audits any URL from the terminal. Headless by default, `--overlay` to draw it live.                          | You check a URL without writing code, gate CI on the exit code, or pipe findings into an agent. |
+| [`@out-of-order/vitest`](packages/vitest) | `toHaveValidTabOrder()` matcher for Vitest Browser Mode. _In progress._                                      | You assert tab order inside a Vitest browser test.                                              |
 
 ## Docs
 
