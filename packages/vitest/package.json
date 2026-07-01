@@ -10,10 +10,10 @@
     "tab-order",
     "vitest"
   ],
-  "license": "MIT",
-  "author": "Bart Spaans",
   "homepage": "https://github.com/spaansba/out-of-order#readme",
   "bugs": "https://github.com/spaansba/out-of-order/issues",
+  "license": "MIT",
+  "author": "Bart Spaans",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/spaansba/out-of-order.git",
@@ -34,7 +34,6 @@
     }
   },
   "publishConfig": {
-    "access": "public",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -43,7 +42,8 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
