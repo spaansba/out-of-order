@@ -1,60 +1,68 @@
 # Out of Order
 
-> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
+Focus & keyboard-accessibility validation for real browsers.
 
-Focus and keyboard-accessibility validation that runs in **real browsers only**. No jsdom, no layout guessing, no silently-skipped checks.
+Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then grades it: is the order right, and is every stop reachable, visible, and announced? It runs in real Chromium only, because that is the one place the answer is true. It builds on [tabbable](https://github.com/focus-trap/tabbable), with a rules layer on top.
 
-Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequence, with a rules layer on top that decides whether that sequence is _valid_: correct order, every stop reachable, visible, and announced.
+**[Live site & docs](https://spaansba.github.io/out-of-order/)** · **[Playground](https://spaansba.github.io/out-of-order/playground.html)** (the bugs it catches) · **[What's tabbable](https://spaansba.github.io/out-of-order/tabbable.html)**
 
-## Why real-browser only?
+## Why real-browser only
 
-`tabbable` (and any honest focus check) needs CSS layout to know what's actually visible and where it sits visually. jsdom has no layout engine, so a green jsdom test can't promise the order is correct in a real browser. This project deliberately runs every assertion in real Chromium (via Vitest Browser Mode), so a passing test reflects reality.
-
-## Packages
-
-| Package                                     | What it is                                                                                                                                       |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`@out-of-order/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result. No framework or test-runner deps, just the DOM.                          |
-| [`@out-of-order/trace`](./packages/trace)   | Framework-agnostic live overlay built on the core analyzer: numbers the tab path, rings every finding in place, shows per-stop details on hover. |
-| [`@out-of-order/vitest`](./packages/vitest) | `expect(el).toHaveValidTabOrder()` matcher for Vitest Browser Mode, plus TypeScript augmentation.                                                |
-| [`@out-of-order/cli`](./packages/cli)       | Audit any URL's tab order from the terminal: findings to stdout for a CI gate or an AI agent, or a headed browser with the live overlay.         |
-| [`@out-of-order/demo`](./packages/demo)     | Vite demo, an edge-cases page and a deliberately-broken page, both thin consumers of `@out-of-order/trace`.                                      |
-
-A Playwright matcher shares the same core and can be added later.
-
-## Demo & docs
-
-The [`@out-of-order/demo`](./packages/demo) package is the project site: docs pages (getting started, concepts, the rule reference, the API, recipes, FAQ) plus two interactive demos, a tabbable edge-case gauntlet and a page where focus and keyboard access are clearly broken. Both demos just call `trace()` from the library.
-
-```bash
-pnpm install
-pnpm --filter @out-of-order/demo dev
-```
-
-It deploys to GitHub Pages on every push to `main` (see [`.github/workflows/deploy-demo.yml`](./.github/workflows/deploy-demo.yml)), served at `https://spaansba.github.io/out-of-order/`.
+An honest focus check needs CSS layout: what is really visible, what is clipped, where each control sits. `jsdom` has no layout engine, so a green `jsdom` test cannot promise the order holds up in a real browser. Out of Order reads live visibility and bounding rects, so a passing check reflects what a keyboard user actually gets. It stays light on dependencies, so it also runs inside a Playwright `page.evaluate`. See [concepts](https://spaansba.github.io/out-of-order/concepts.html).
 
 ## Quick start
 
-```bash
-pnpm install
-pnpm --filter @out-of-order/core build    # build core first (workspace types)
-pnpm --filter @out-of-order/vitest test   # runs in headless Chromium
-```
+**See it** on a live page with the overlay:
 
 ```ts
-import { expect, test } from "vitest";
-import "@out-of-order/vitest";
-
-test("modal has a sane tab order", () => {
-  document.body.innerHTML = `
-    <button>First</button>
-    <a href="#">Second</a>
-    <input aria-label="Search" />
-  `;
-  expect(document.body).toHaveValidTabOrder();
-});
+import { trace } from "@out-of-order/trace";
+trace(); // numbered tab stops, the path between them, findings ringed in place
 ```
 
-## Rules
+**Check it** headless in a test or CI:
 
-Rules across ordering, reachability, accessible naming, and ARIA/focus-management, each grounded in a WCAG, WAI-ARIA, or HTML-spec link and individually toggleable. See the [full table in `@out-of-order/core`](./packages/core#rules).
+```ts
+import { audit } from "@out-of-order/core";
+const result = audit();
+result.valid; // false when there is an error-severity violation
+```
+
+**Scan it** from the terminal, or an AI agent:
+
+```bash
+npx @out-of-order/cli https://example.com           # prints findings, fails on violations
+npx @out-of-order/cli https://example.com --overlay # opens a browser with the overlay
+```
+
+More in [getting started](https://spaansba.github.io/out-of-order/getting-started.html).
+
+## Packages
+
+| Package | What it is | Reach for it when |
+| --- | --- | --- |
+| [`@out-of-order/core`](packages/core) | The analyzer. Wraps `tabbable`, applies the rules, returns a plain result. No framework or test-runner deps. | You assert in a test or CI, or run headless in a Playwright `page.evaluate`. |
+| [`@out-of-order/trace`](packages/trace) | Framework-agnostic live overlay, built on core, which it re-exports. | You want to see the tab path and findings on a live page. Most people want this. |
+| [`@out-of-order/cli`](packages/cli) | Audits any URL from the terminal. Headless by default, `--overlay` to draw it live. | You check a URL without writing code, gate CI on the exit code, or pipe findings into an agent. |
+| [`@out-of-order/vitest`](packages/vitest) | `toHaveValidTabOrder()` matcher for Vitest Browser Mode. *In progress.* | You assert tab order inside a Vitest browser test. |
+
+## Docs
+
+- [Getting started](https://spaansba.github.io/out-of-order/getting-started.html) — install, the three modes, rule overrides, approving findings
+- [Concepts](https://spaansba.github.io/out-of-order/concepts.html) — how a tab order becomes a verdict, error vs warning, limitations
+- [Rules](https://spaansba.github.io/out-of-order/rules.html) — every rule, its severity, and the spec clause behind it
+- [API reference](https://spaansba.github.io/out-of-order/api.html) — `audit()`, `trace()`, types, and custom rules
+- [Recipes](https://spaansba.github.io/out-of-order/recipes.html) — patterns for tests, CI, and Playwright
+
+## Develop
+
+```bash
+pnpm install
+pnpm dev        # run the demo site
+pnpm build      # build all packages
+pnpm test       # run tests
+pnpm typecheck
+```
+
+## License
+
+[MIT](LICENSE)

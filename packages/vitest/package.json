@@ -11,6 +11,14 @@
     "vitest"
   ],
   "license": "MIT",
+  "author": "Bart Spaans",
+  "homepage": "https://github.com/spaansba/out-of-order#readme",
+  "bugs": "https://github.com/spaansba/out-of-order/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spaansba/out-of-order.git",
+    "directory": "packages/vitest"
+  },
   "files": [
     "dist",
     "src"

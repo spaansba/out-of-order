@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Interactive demo for Out of Order: edge cases + a deliberately broken page.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
