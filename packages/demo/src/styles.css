@@ -17,13 +17,14 @@
   --line-2: #c6c2b4; /* stronger rule between sections */
   --accent: #1f4e79; /* drafting-ink blue */
   --accent-2: #285f97; /* links / interactive accent */
-  --accent-soft: rgba(31, 78, 121, 0.09);
   --err: #b3261e; /* the path where the order breaks */
-  --err-soft: rgba(179, 38, 30, 0.09);
   --warn: #b45309; /* reachable-but-not-tabbable */
-  --warn-soft: rgba(180, 83, 9, 0.1);
   --ok: #1f7a44; /* a fixed violation */
-  --ok-soft: rgba(31, 122, 68, 0.11);
+
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, transparent);
+  --err-soft: color-mix(in srgb, var(--err) 9%, transparent);
+  --warn-soft: color-mix(in srgb, var(--warn) 10%, transparent);
+  --ok-soft: color-mix(in srgb, var(--ok) 11%, transparent);
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -77,19 +78,45 @@ code {
   padding: 0.7rem 1.5rem;
   background: var(--paper);
   border-bottom: 1px solid var(--line-2);
-}
-.topbar a {
-  scroll-margin-top: -51px;
-}
-.topbar h1 {
-  margin: 0;
-  font: 600 14px/1 var(--font-mono);
-  letter-spacing: 0.01em;
-  color: var(--ink);
-}
-.topbar h1 a {
-  color: inherit;
-  text-decoration: none;
+
+  a {
+    scroll-margin-top: -51px;
+  }
+  h1 {
+    margin: 0;
+    font: 600 14px/1 var(--font-mono);
+    letter-spacing: 0.01em;
+    color: var(--ink);
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+  }
+  .spacer {
+    flex: 1;
+  }
+  nav {
+    display: flex;
+    gap: 0.2rem;
+
+    a {
+      font: 500 12px/1 var(--font-mono);
+      text-transform: lowercase;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 0.42rem 0.55rem;
+      border-radius: 3px;
+
+      &[aria-current="page"] {
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+      &:hover {
+        color: var(--ink);
+      }
+    }
+  }
 }
 /* hairline between the two nav groups (docs · demo) */
 .nav-sep {
@@ -98,28 +125,6 @@ code {
   height: 14px;
   background: var(--line-2);
   margin: 0 0.35rem;
-}
-.topbar .spacer {
-  flex: 1;
-}
-.topbar nav {
-  display: flex;
-  gap: 0.2rem;
-}
-.topbar nav a {
-  font: 500 12px/1 var(--font-mono);
-  text-transform: lowercase;
-  color: var(--muted);
-  text-decoration: none;
-  padding: 0.42rem 0.55rem;
-  border-radius: 3px;
-}
-.topbar nav a[aria-current="page"] {
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-.topbar nav a:hover {
-  color: var(--ink);
 }
 
 .btn {
@@ -130,9 +135,10 @@ code {
   background: var(--surface);
   border-radius: 3px;
   cursor: pointer;
-}
-.btn:hover {
-  border-color: var(--ink);
+
+  &:hover {
+    border-color: var(--ink);
+  }
 }
 
 /* ---- column ---- */
@@ -146,29 +152,30 @@ code {
 .intro {
   max-width: 68ch;
   margin-bottom: 0.5rem;
-}
-.intro .kicker {
-  display: block;
-  margin-bottom: 0.85rem;
-  font: 500 11px/1 var(--font-mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.intro h2 {
-  margin: 0;
-  font: 400 30px/1.12 var(--font-serif);
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.intro p {
-  margin: 0.9rem 0 0;
-  color: var(--muted);
-  font-size: 14.5px;
-}
-.intro a {
-  color: var(--accent-2);
-  text-underline-offset: 2px;
+
+  .kicker {
+    display: block;
+    margin-bottom: 0.85rem;
+    font: 500 11px/1 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h2 {
+    margin: 0;
+    font: 400 30px/1.12 var(--font-serif);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  p {
+    margin: 0.9rem 0 0;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+  a {
+    color: var(--accent-2);
+    text-underline-offset: 2px;
+  }
 }
 
 /* ---- index: a collapsible contents list, built in triage.ts, splitting the cards into
@@ -189,14 +196,15 @@ code {
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--accent);
-}
-.index-summary::-webkit-details-marker {
-  display: none;
-}
-.index-summary::before {
-  content: "▸";
-  font-size: 0.92em;
-  transition: transform 0.12s ease;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+  &::before {
+    content: "▸";
+    font-size: 0.92em;
+    transition: transform 0.12s ease;
+  }
 }
 .index[open] .index-summary::before {
   transform: rotate(90deg);
@@ -213,15 +221,16 @@ code {
   font: 600 10.5px/1 var(--font-mono);
   letter-spacing: 0.13em;
   text-transform: uppercase;
-}
-.index-head.is-error {
-  color: var(--err);
-}
-.index-head.is-warning {
-  color: var(--warn);
-}
-.index-head.is-other {
-  color: var(--muted);
+
+  &.is-error {
+    color: var(--err);
+  }
+  &.is-warning {
+    color: var(--warn);
+  }
+  &.is-other {
+    color: var(--muted);
+  }
 }
 .index-list {
   margin: 0;
@@ -236,23 +245,21 @@ code {
   border-radius: 2px;
   color: var(--ink);
   text-decoration: none;
-}
-.index-link:hover {
-  background: var(--accent-soft);
+
+  &:hover {
+    background: var(--accent-soft);
+  }
+  &.is-error .index-num {
+    color: var(--err);
+  }
+  &.is-warning .index-num {
+    color: var(--warn);
+  }
 }
 .index-num {
   flex: none;
   min-width: 1.7rem;
   font: 500 11px/1.5 var(--font-mono);
-  color: var(--muted);
-}
-.index-link.is-error .index-num {
-  color: var(--err);
-}
-.index-link.is-warning .index-num {
-  color: var(--warn);
-}
-.index-link.is-other .index-num {
   color: var(--muted);
 }
 .index-title {
@@ -265,29 +272,30 @@ section.group {
   margin: 0;
   padding: 1.95rem 0 2.15rem var(--gutter);
   border-top: 1px solid var(--line-2);
-}
-/* the leading-zero index in the left margin */
-section.group::before {
-  counter-increment: section;
-  content: counter(section, decimal-leading-zero);
-  position: absolute;
-  left: 0;
-  top: 2rem;
-  width: 2.6rem;
-  text-align: right;
-  font: 500 1.3rem/1 var(--font-mono);
-  letter-spacing: -0.02em;
-  color: var(--accent);
-}
-/* the continuous ledger rule between index and content */
-section.group::after {
-  content: "";
-  position: absolute;
-  left: 3.4rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--line);
+
+  /* the leading-zero index in the left margin */
+  &::before {
+    counter-increment: section;
+    content: counter(section, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 2rem;
+    width: 2.6rem;
+    text-align: right;
+    font: 500 1.3rem/1 var(--font-mono);
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+  /* the continuous ledger rule between index and content */
+  &::after {
+    content: "";
+    position: absolute;
+    left: 3.4rem;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
 }
 /* the rule id(s) this entry trips, as plain mono right under the title — no chip,
    just the structural-chrome voice in the one drafting-ink accent */
@@ -303,49 +311,47 @@ section.group::after {
   color: var(--accent);
   background: none;
   padding: 0;
-}
-/* the rule's severity, graded from DEFAULT_SEVERITY in triage.ts: a small pill before
-   each rule id, in the same red/amber the overlay paints, so a card carrying two rules
-   of different severities shows each one's grade inline */
-.rule-tag.is-error::before,
-.rule-tag.is-warning::before,
-.rule-tag.is-approved::before {
-  font: 600 9.5px/1 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.22em 0.42em;
-  margin-right: 0.5em;
-  border-radius: 2px;
-  vertical-align: 0.08em;
-}
-.rule-tag.is-error::before {
-  content: "error";
-  color: var(--err);
-  background: var(--err-soft);
-}
-.rule-tag.is-warning::before {
-  content: "warning";
-  color: var(--warn);
-  background: var(--warn-soft);
-}
-.rule-tag.is-approved::before {
-  content: "approved";
-  color: var(--muted);
-  background: rgba(116, 117, 109, 0.12);
-}
-/* a rule passed through trace's `rules` option rather than shipped in core: an accent
-   "custom" pill after the id, so it reads distinctly from the built-ins */
-.rule-tag.is-custom::after {
-  content: "custom";
-  font: 600 9.5px/1 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.22em 0.42em;
-  margin-left: 0.5em;
-  border-radius: 2px;
-  vertical-align: 0.08em;
-  color: var(--accent);
-  background: var(--accent-soft);
+
+  /* the rule's severity, graded from DEFAULT_SEVERITY in triage.ts: a small pill before
+     each rule id, in the same red/amber the overlay paints, so a card carrying two rules
+     of different severities shows each one's grade inline */
+  &.is-error::before,
+  &.is-warning::before,
+  &.is-approved::before,
+  &.is-custom::after {
+    font: 600 9.5px/1 var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.22em 0.42em;
+    border-radius: 2px;
+    vertical-align: 0.08em;
+  }
+  &.is-error::before {
+    content: "error";
+    margin-right: 0.5em;
+    color: var(--err);
+    background: var(--err-soft);
+  }
+  &.is-warning::before {
+    content: "warning";
+    margin-right: 0.5em;
+    color: var(--warn);
+    background: var(--warn-soft);
+  }
+  &.is-approved::before {
+    content: "approved";
+    margin-right: 0.5em;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--muted) 12%, transparent);
+  }
+  /* a rule passed through trace's `rules` option rather than shipped in core: an accent
+     "custom" pill after the id, so it reads distinctly from the built-ins */
+  &.is-custom::after {
+    content: "custom";
+    margin-left: 0.5em;
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
 }
 section.group > h2 {
   margin: 0 0 0.45rem;
@@ -363,13 +369,14 @@ section.group > h2 {
   text-decoration: none;
   opacity: 0;
   transition: opacity 0.12s ease;
-}
-.header-anchor:hover,
-.header-anchor:focus-visible {
-  opacity: 1;
-}
-.header-anchor:hover {
-  text-decoration: underline;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 section.group > p.note,
 .note {
@@ -389,10 +396,11 @@ section.group > p.note,
   top: 1.9rem;
   right: 0;
   z-index: 1;
-}
-.solve-btn.is-solved {
-  color: var(--ok);
-  border-color: var(--ok);
+
+  &.is-solved {
+    color: var(--ok);
+    border-color: var(--ok);
+  }
 }
 
 /* before/after markup shown as a quiet diff, not a coloured callout box. The code
@@ -400,6 +408,19 @@ section.group > p.note,
    is on the single token that changed — struck when removed, underlined when added. */
 .snippet {
   margin: 0 0 1rem;
+
+  pre {
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    background: var(--paper-2);
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--ink);
+  }
 }
 .snippet-head {
   display: inline-flex;
@@ -408,10 +429,11 @@ section.group > p.note,
   margin-bottom: 0.45rem;
   font: 500 11.5px/1 var(--font-mono);
   color: var(--muted);
-}
-/* a diff sign carries the state, in place of the old coloured border */
-.snippet-head::before {
-  font-weight: 600;
+
+  /* a diff sign carries the state, in place of the old coloured border */
+  &::before {
+    font-weight: 600;
+  }
 }
 .snippet.before .snippet-head::before {
   content: "−";
@@ -420,18 +442,6 @@ section.group > p.note,
 .snippet.after .snippet-head::before {
   content: "+";
   color: var(--ok);
-}
-.snippet pre {
-  margin: 0;
-  padding: 0.7rem 0.85rem;
-  background: var(--paper-2);
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--ink);
 }
 /* the exact attribute at fault, called out by colour alone (it isn't being deleted,
    it's the problem) — and the added attribute underlined the way a review marks it */
@@ -458,12 +468,13 @@ section.group > p.note,
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-}
-.field > span {
-  font: 500 11px/1.2 var(--font-mono);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--muted);
+
+  > span {
+    font: 500 11px/1.2 var(--font-mono);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }
 
 input[type="text"],
@@ -491,6 +502,10 @@ textarea {
   border-radius: 3px;
   color: var(--ink);
   cursor: pointer;
+
+  &:hover {
+    border-color: var(--ink);
+  }
 }
 .dead-autofocus {
   font: 500 13px/1.3 var(--font-mono);
@@ -499,9 +514,6 @@ textarea {
   border-radius: 3px;
   background: var(--accent-soft);
   color: var(--accent);
-}
-.demo-btn:hover {
-  border-color: var(--ink);
 }
 /* shared by the native <a> and the <span role="link"> that reimplements it (case K),
    so the swap reads identically: a span isn't underlined by default, so set it here. */
@@ -569,10 +581,11 @@ details.demo-details {
   padding: 0.5rem 0.75rem;
   background: var(--surface);
   max-width: 520px;
-}
-details.demo-details summary {
-  cursor: pointer;
-  font-size: 13px;
+
+  summary {
+    cursor: pointer;
+    font-size: 13px;
+  }
 }
 img.demo-imagemap {
   display: block;
@@ -629,15 +642,16 @@ fieldset.radio-group label {
   gap: 12px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line);
+
+  .demo-link {
+    flex: 1;
+  }
 }
 .vrow-idx {
   width: 4ch;
   text-align: right;
   font: 500 11px/1 var(--font-mono);
   color: var(--muted);
-}
-.vrow .demo-link {
-  flex: 1;
 }
 
 /* the broken-order page's visual grid (case A) */
@@ -646,9 +660,10 @@ fieldset.radio-group label {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem 1.1rem;
   max-width: 520px;
-}
-.scramble .field {
-  gap: 0.35rem;
+
+  .field {
+    gap: 0.35rem;
+  }
 }
 
 /* ---- rule-violation demos (playground.html) ---- */
@@ -713,6 +728,101 @@ fieldset.radio-group label {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+
+  /* checkbox + radio: a marked box / circle (aria-checked="true") before the label */
+  [role="checkbox"]::before {
+    content: "✓";
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+  }
+  [role="radio"]::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    background: radial-gradient(var(--accent) 0 40%, transparent 44%);
+  }
+
+  /* switch: an on-state pill with the knob pushed to the right */
+  [role="switch"]::before {
+    content: "";
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background:
+      radial-gradient(
+        circle 6px at calc(100% - 9px) 9px,
+        #fff 96%,
+        transparent 98%
+      ),
+      var(--accent);
+  }
+
+  /* slider: a thin track with the thumb at the midpoint */
+  [role="slider"]::before {
+    content: "";
+    width: 90px;
+    height: 16px;
+    background:
+      radial-gradient(
+        circle 7px at 45px 8px,
+        var(--accent) 96%,
+        transparent 98%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 6px,
+        var(--line-2) 6px,
+        var(--line-2) 10px,
+        transparent 10px
+      );
+  }
+
+  /* text-entry stand-ins (textbox/searchbox/spinbutton/combobox) look like an input,
+     their text reading as placeholder; the trailing affordance hints at the type */
+  [role="textbox"],
+  [role="searchbox"],
+  [role="spinbutton"],
+  [role="combobox"] {
+    min-width: 132px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--line-2);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  [role="combobox"],
+  [role="spinbutton"] {
+    justify-content: space-between;
+  }
+  [role="searchbox"]::before {
+    content: "⌕";
+    font-size: 15px;
+    color: var(--ink);
+  }
+  [role="combobox"]::after {
+    content: "▾";
+    color: var(--ink);
+  }
+  [role="spinbutton"]::after {
+    content: "⇅";
+    color: var(--ink);
+  }
+
+  /* option: a selected row in a list */
+  [role="option"] {
+    padding: 0.35rem 0.6rem;
+    border-radius: 3px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
 }
 .reimpl-role {
   font: 500 11px/1.2 var(--font-mono);
@@ -734,97 +844,6 @@ fieldset.radio-group label {
   user-select: none;
 }
 
-/* checkbox + radio: a marked box / circle (aria-checked="true") before the label */
-.reimpl-cell [role="checkbox"]::before {
-  content: "✓";
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 11px;
-}
-.reimpl-cell [role="radio"]::before {
-  content: "";
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1.5px solid var(--accent);
-  background: radial-gradient(var(--accent) 0 40%, transparent 44%);
-}
-
-/* switch: an on-state pill with the knob pushed to the right */
-.reimpl-cell [role="switch"]::before {
-  content: "";
-  width: 32px;
-  height: 18px;
-  border-radius: 999px;
-  background:
-    radial-gradient(
-      circle 6px at calc(100% - 9px) 9px,
-      #fff 96%,
-      transparent 98%
-    ),
-    var(--accent);
-}
-
-/* slider: a thin track with the thumb at the midpoint */
-.reimpl-cell [role="slider"]::before {
-  content: "";
-  width: 90px;
-  height: 16px;
-  background:
-    radial-gradient(circle 7px at 45px 8px, var(--accent) 96%, transparent 98%),
-    linear-gradient(
-      to bottom,
-      transparent 6px,
-      var(--line-2) 6px,
-      var(--line-2) 10px,
-      transparent 10px
-    );
-}
-
-/* text-entry stand-ins (textbox/searchbox/spinbutton/combobox) look like an input,
-   their text reading as placeholder; the trailing affordance hints at the type */
-.reimpl-cell [role="textbox"],
-.reimpl-cell [role="searchbox"],
-.reimpl-cell [role="spinbutton"],
-.reimpl-cell [role="combobox"] {
-  min-width: 132px;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-  background: var(--surface);
-  color: var(--muted);
-}
-.reimpl-cell [role="combobox"],
-.reimpl-cell [role="spinbutton"] {
-  justify-content: space-between;
-}
-.reimpl-cell [role="searchbox"]::before {
-  content: "⌕";
-  font-size: 15px;
-  color: var(--ink);
-}
-.reimpl-cell [role="combobox"]::after {
-  content: "▾";
-  color: var(--ink);
-}
-.reimpl-cell [role="spinbutton"]::after {
-  content: "⇅";
-  color: var(--ink);
-}
-
-/* option: a selected row in a list */
-.reimpl-cell [role="option"] {
-  padding: 0.35rem 0.6rem;
-  border-radius: 3px;
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
 /* case J trigger, and its full-page modal (body-level so the page behind it can
    be made inert without inert-ing the dialog). The dialog opens but the background
    is never made inert: the planted bug. */
@@ -843,39 +862,24 @@ fieldset.radio-group label {
   /* The bug made visible: the backdrop blocks nothing behind it, so the page stays
      reachable (the Fix button included). Only the dialog itself is interactive. */
   pointer-events: none;
-}
-.modal-overlay[hidden] {
-  display: none; /* author display:flex above would otherwise beat the UA hidden rule */
-}
-.modal-overlay .dialog {
-  background: var(--surface);
-  border: 1px solid var(--line-2);
-  border-radius: 4px;
-  padding: 0.9rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 220px;
-  box-shadow: 0 12px 40px rgba(24, 25, 28, 0.18);
-  pointer-events: auto;
-}
-.modal-overlay .dialog strong {
-  font-size: 13px;
-}
-.modal-overlay .dialog .row {
-  gap: 8px;
-}
 
-/* Card J's fix: a native <dialog> opened with showModal(). Styled to match the
-   custom dialog above. Its backdrop is kept near-transparent on purpose, so the
-   overlay's (false) leak rings on the inert page behind stay visible through it. */
+  &[hidden] {
+    display: none; /* author display:flex above would otherwise beat the UA hidden rule */
+  }
+}
+/* The broken custom dialog and the native <dialog> fix (below) render identically,
+   so their shared card look + layout live here once; each then adds only what makes
+   it itself. */
+.modal-overlay .dialog,
 dialog.modal-native {
   background: var(--surface);
-  color: inherit;
   border: 1px solid var(--line-2);
   border-radius: 4px;
   box-shadow: 0 12px 40px rgba(24, 25, 28, 0.18);
 }
+/* Laid out only while shown: the custom dialog is always mounted; a closed native
+   <dialog> is display:none, so it gates its layout on [open]. */
+.modal-overlay .dialog,
 dialog.modal-native[open] {
   display: flex;
   flex-direction: column;
@@ -883,15 +887,26 @@ dialog.modal-native[open] {
   min-width: 220px;
   padding: 0.9rem 1rem;
 }
+.modal-overlay .dialog strong,
 dialog.modal-native strong {
   font-size: 13px;
 }
+.modal-overlay .dialog .row,
 dialog.modal-native .row {
-  display: flex;
   gap: 8px;
 }
-dialog.modal-native::backdrop {
-  background: rgba(24, 25, 28, 0.08);
+.modal-overlay .dialog {
+  pointer-events: auto;
+}
+/* Card J's fix: a native <dialog> opened with showModal(). Its backdrop is kept
+   near-transparent on purpose, so the overlay's (false) leak rings on the inert
+   page behind stay visible through it. */
+dialog.modal-native {
+  color: inherit;
+
+  &::backdrop {
+    background: rgba(24, 25, 28, 0.08);
+  }
 }
 
 /* green flash on an entry when its Fix button clears the violation */
@@ -922,13 +937,14 @@ dialog.modal-native::backdrop {
   }
   section.group {
     padding-left: 3rem;
-  }
-  section.group::before {
-    width: 1.9rem;
-    font-size: 1rem;
-  }
-  section.group::after {
-    left: 2.4rem;
+
+    &::before {
+      width: 1.9rem;
+      font-size: 1rem;
+    }
+    &::after {
+      left: 2.4rem;
+    }
   }
   .scramble {
     grid-template-columns: 1fr;
@@ -949,13 +965,14 @@ dialog.modal-native::backdrop {
   max-width: 64ch;
   color: var(--muted);
   font-size: 13.5px;
-}
-.doc-list li {
-  margin: 0.32rem 0;
-}
-.doc-list a {
-  color: var(--accent-2);
-  text-underline-offset: 2px;
+
+  li {
+    margin: 0.32rem 0;
+  }
+  a {
+    color: var(--accent-2);
+    text-underline-offset: 2px;
+  }
 }
 
 /* a row of link-buttons under a section (e.g. "See the demo" / "Get started") */
@@ -964,20 +981,22 @@ dialog.modal-native::backdrop {
   flex-wrap: wrap;
   gap: 0.6rem;
   margin: 1.15rem 0 0;
-}
-.cta .btn {
-  text-decoration: none;
+
+  .btn {
+    text-decoration: none;
+  }
 }
 
 .kind {
   font: 500 11.5px/1 var(--font-mono);
   color: var(--muted);
   vertical-align: 0.08em;
-}
-.kind::before {
-  content: "·";
-  margin: 0 0.4rem;
-  color: var(--line-2);
+
+  &::before {
+    content: "·";
+    margin: 0 0.4rem;
+    color: var(--line-2);
+  }
 }
 
 /* a neutral code block (no diff caption); same inset as .snippet pre */
@@ -1000,33 +1019,15 @@ pre.code {
   font: 500 13.5px/1.5 var(--font-mono);
   color: var(--ink);
   word-break: break-word;
-}
-.sig .tok {
-  color: var(--accent);
+
+  .tok {
+    color: var(--accent);
+  }
 }
 section.group > h3 {
   margin: 1.15rem 0 0.45rem;
   font: 500 12px/1.3 var(--font-mono);
   letter-spacing: 0.02em;
-  color: var(--ink);
-}
-
-/* API reference property/parameter tables: the spec table, with the symbol name
-   voiced in accent mono (like the old definition-list term) and the type column
-   free to wrap on long generic signatures instead of overflowing the row. */
-table.spec.api td:first-child code {
-  background: none;
-  padding: 0;
-  color: var(--accent);
-  font-weight: 500;
-}
-table.spec.api td.type {
-  white-space: normal;
-}
-table.spec.api td.type code {
-  white-space: normal;
-  background: none;
-  padding: 0;
   color: var(--ink);
 }
 
@@ -1036,33 +1037,54 @@ table.spec {
   border-collapse: collapse;
   margin: 0 0 1.1rem;
   font-size: 13px;
-}
-table.spec th {
-  text-align: left;
-  padding: 0 0.9rem 0.5rem 0;
-  border-bottom: 1px solid var(--line-2);
-  font: 600 10.5px/1.3 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  white-space: nowrap;
-}
-table.spec td {
-  padding: 0.55rem 0.9rem 0.55rem 0;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-  color: var(--ink);
-}
-table.spec th:last-child,
-table.spec td:last-child {
-  padding-right: 0;
-}
-table.spec td code {
-  white-space: nowrap;
-}
-table.spec a {
-  color: var(--accent-2);
-  text-underline-offset: 2px;
+
+  th {
+    text-align: left;
+    padding: 0 0.9rem 0.5rem 0;
+    border-bottom: 1px solid var(--line-2);
+    font: 600 10.5px/1.3 var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.55rem 0.9rem 0.55rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    color: var(--ink);
+  }
+  th:last-child,
+  td:last-child {
+    padding-right: 0;
+  }
+  td code {
+    white-space: nowrap;
+  }
+  a {
+    color: var(--accent-2);
+    text-underline-offset: 2px;
+  }
+
+  /* API reference property/parameter tables: the symbol name voiced in accent mono
+     (like the old definition-list term) and the type column free to wrap on long
+     generic signatures instead of overflowing the row. */
+  &.api td:first-child code {
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  &.api td.type {
+    white-space: normal;
+
+    code {
+      white-space: normal;
+      background: none;
+      padding: 0;
+      color: var(--ink);
+    }
+  }
 }
 /* the default-severity pill reused from the rule tags, but inline in a cell */
 .sev {
@@ -1072,14 +1094,15 @@ table.spec a {
   text-transform: uppercase;
   padding: 0.26em 0.46em;
   border-radius: 2px;
-}
-.sev.is-error {
-  color: var(--err);
-  background: var(--err-soft);
-}
-.sev.is-warning {
-  color: var(--warn);
-  background: var(--warn-soft);
+
+  &.is-error {
+    color: var(--err);
+    background: var(--err-soft);
+  }
+  &.is-warning {
+    color: var(--warn);
+    background: var(--warn-soft);
+  }
 }
 
 /* inline key cap for Tab / arrow keys in prose */
