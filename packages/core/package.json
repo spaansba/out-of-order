@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
   "keywords": [
     "a11y",
