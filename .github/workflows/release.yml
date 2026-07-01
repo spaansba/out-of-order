@@ -25,6 +25,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - uses: changesets/action@v1
         with:
@@ -32,5 +33,3 @@ jobs:
           publish: pnpm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
