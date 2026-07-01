@@ -589,7 +589,46 @@
               own the same way, see the recipe for
               <a href="./recipes.html#custom-rule">adding a custom rule</a>.
             </p>
-            <button class="demo-btn shouty" type="button">CLICK ME NOW!!!</button>
+            <button class="demo-btn shouty" type="button">
+              CLICK ME NOW!!!
+            </button>
+          </section>
+
+          <section class="group">
+            <h2>A finding you've approved with data-ooo-ignore</h2>
+            <div class="rule-tags">
+              <code class="rule-tag" data-severity="approved"
+                >data-ooo-ignore</code
+              >
+            </div>
+            <p class="note">
+              Both boxes are the same custom
+              <code>&lt;div role="button"&gt;</code>, which normally nudges you
+              toward a native <code>&lt;button&gt;</code>
+              (<code>prefer-native-element</code>). The right one carries
+              <code>data-ooo-ignore="prefer-native-element"</code>, your note
+              that you have weighed it and it stays. See
+              <a href="./getting-started.html#approve">approving a finding</a>.
+            </p>
+            <div class="reimpl-grid">
+              <div class="reimpl-cell">
+                <code class="reimpl-role">flagged</code>
+                <div class="demo-btn reimpl-btn" role="button" tabindex="0">
+                  Save
+                </div>
+              </div>
+              <div class="reimpl-cell">
+                <code class="reimpl-role">approved</code>
+                <div
+                  class="demo-btn reimpl-btn"
+                  role="button"
+                  tabindex="0"
+                  data-ooo-ignore="prefer-native-element"
+                >
+                  Save
+                </div>
+              </div>
+            </div>
           </section>
         </div>
 
@@ -604,9 +643,9 @@
             control underneath: the overlay lights up the whole page as a focus
             leak. Flags <code>focus-escapes-modal</code>. The fix swaps it for a
             native <code>&lt;dialog&gt;</code> opened with
-            <code>showModal()</code>, which traps focus for real, yet the warning
-            stays: a false positive, since <code>tabbable</code> ignores the top
-            layer's implicit inertness. See the ARIA APG's
+            <code>showModal()</code>, which traps focus for real, yet the
+            warning stays: a false positive, since <code>tabbable</code> ignores
+            the top layer's implicit inertness. See the ARIA APG's
             <a
               href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
               target="_blank"
@@ -636,9 +675,7 @@
         <strong>Delete this item?</strong>
         <div class="row">
           <button class="demo-btn" type="button" data-close>Cancel</button>
-          <button class="demo-btn" type="button" data-close>
-            Delete
-          </button>
+          <button class="demo-btn" type="button" data-close>Delete</button>
         </div>
       </div>
     </div>

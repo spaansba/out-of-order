@@ -13,13 +13,23 @@ export interface BadgeTipData {
   role: string;
   description: string;
   autofocus: boolean;
+  srOnly: boolean;
 }
 
 /** A badge's tooltip: header (index + selector), the a11y ledger, then either the
     element's findings or a clean "no issues" note. */
 export function badgeTip(data: BadgeTipData): string {
-  const { num, selector, tabIndex, issues, name, role, description, autofocus } =
-    data;
+  const {
+    num,
+    selector,
+    tabIndex,
+    issues,
+    name,
+    role,
+    description,
+    autofocus,
+    srOnly,
+  } = data;
 
   // Stop number, or ⊘ for an off-sequence (interactive-but-unreachable) marker.
   const idx =
@@ -34,23 +44,35 @@ export function badgeTip(data: BadgeTipData): string {
     field("name", name ? escapeHtml(name) : null) +
     field("role", role ? mono(escapeHtml(role)) : null) +
     (description ? field("description", escapeHtml(description)) : "") +
-    (tabIndex && tabIndex !== 0 ? field("tabindex", mono(String(tabIndex))) : "") +
-    // Informational, not a finding: this is where focus lands on page load.
-    (autofocus ? field("autofocus", mono("yes")) : "");
+    (tabIndex && tabIndex !== 0
+      ? field("tabindex", mono(String(tabIndex)))
+      : "") +
+    (autofocus ? field("autofocus", mono("yes")) : "") +
+    (srOnly ? field("sr-only", mono("yes")) : "");
 
   const body = issues.length
-    ? `<ul class="ooo-tip-list">${issues
-        .map(
-          (issue) =>
-            `<li class="ooo-tip-item">${ruleLabel(issue)}` +
-            `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span></li>`,
-        )
-        .join("")}</ul>`
+    ? `<ul class="ooo-tip-list">${issues.map(issueItem).join("")}</ul>`
     : `<p class="ooo-tip-ok">No issues found.</p>`;
   return (
     `<div class="ooo-tip-head">${idx}<code class="ooo-tip-sel">${escapeHtml(selector)}</code></div>` +
     `<dl class="ooo-tip-fields">${fields}</dl>` +
     `<div class="ooo-tip-body">${body}</div>`
+  );
+}
+
+/** One finding row: rule label, message, and, when the element approved it with a
+    `data-ooo-ignore`, a note that it's silenced (so a muted badge still explains
+    itself instead of looking clean-by-accident). */
+function issueItem(issue: Issue): string {
+  const cls = issue.ignored
+    ? "ooo-tip-item ooo-tip-item--ignored"
+    : "ooo-tip-item";
+  const note = issue.ignored
+    ? `<span class="ooo-tip-ignored">Ignored via <code>data-ooo-ignore</code></span>`
+    : "";
+  return (
+    `<li class="${cls}">${ruleLabel(issue)}` +
+    `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span>${note}</li>`
   );
 }
 

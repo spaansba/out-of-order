@@ -20,6 +20,8 @@ export interface Issue {
   docs?: string;
   /** Other elements sharing this issue's root cause. */
   relatedElements?: Element[];
+  /** Approved (silenced) by a `data-ooo-ignore` on the element */
+  ignored?: boolean;
 }
 
 /** One offending element and every rule it failed. */
@@ -44,6 +46,8 @@ export interface SerializedIssue {
   docs?: string;
   /** Selectors of the elements sharing this issue's root cause. */
   related?: string[];
+  /** Approved (silenced) by a `data-ooo-ignore` */
+  ignored?: boolean;
 }
 
 /** `"by-element"` format: one entry per offending element, its issues nested. The
@@ -68,6 +72,7 @@ export interface ByRule {
     orderIndex?: number;
     message: string;
     related?: string[];
+    ignored?: boolean;
   }[];
 }
 
@@ -80,6 +85,7 @@ export interface Flat {
   message: string;
   docs?: string;
   related?: string[];
+  ignored?: boolean;
 }
 
 /** The type of {@link AuditResult.violations} for a given `format`: a string for
@@ -109,8 +115,7 @@ export interface SequenceEntry {
 }
 
 export interface AuditResult<V = Violation[]> {
-  /** True when no enabled rule produced an `error`. Warnings are advisory and do
-      not flip this; check `violations` if you need to surface them too. */
+  /** True when no enabled rule produced an `error` severity finding. */
   valid: boolean;
   /** Elements in the exact order tabbing will reach them. */
   sequence: SequenceEntry[];

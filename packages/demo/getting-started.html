@@ -182,10 +182,26 @@ trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre
           The full list, with what each rule catches, is on the
           <a href="./rules.html">rules page</a>.
         </p>
-        <div class="cta">
-          <a class="btn" href="./concepts.html">Next: concepts</a>
-          <a class="btn" href="./recipes.html">Recipes &amp; CI</a>
-        </div>
+      </section>
+
+      <section class="group" id="approve">
+        <h2>Approve a finding in place</h2>
+        <p class="note">
+          Some findings are not bugs: a known false positive, or a deliberate
+          choice you have already weighed. Approve one by putting
+          <code>data-ooo-ignore</code> on the flagged element.
+        </p>
+        <pre class="code">
+&lt;!-- Approve every finding on this element --&gt;
+&lt;button data-ooo-ignore&gt;&hellip;&lt;/button&gt;
+
+&lt;!-- Approve only the named rules, leave the rest live --&gt;
+&lt;div data-ooo-ignore="hidden-while-focusable visual-order-mismatch"&gt;&hellip;&lt;/div&gt;</pre
+        >
+        <p class="note">
+          It is element-scoped, so it approves findings on that element only and
+          is never inherited by its descendants.
+        </p>
       </section>
     </main>
     <script type="module" src="./src/docs.ts"></script>

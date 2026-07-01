@@ -1,6 +1,7 @@
 import {
   audit,
   selectorFor,
+  isScreenReaderOnly,
   type AuditOptions,
   type Rule,
   type Severity,
@@ -233,7 +234,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     const segs: SegSpec[] = [];
     for (let idx = 0; idx < sequence.length - 1; idx++) {
       const back = (issuesByElement.get(sequence[idx + 1]!.element) ?? []).some(
-        (issue) => issue.rule === "visual-order-mismatch",
+        (issue) => issue.rule === "visual-order-mismatch" && !issue.ignored,
       );
       segs.push({ back, tip: () => segTip(back, idx + 1, idx + 2) });
     }
@@ -288,7 +289,8 @@ function resultSignature(result: AuditResult): string {
   const vios = result.violations
     .flatMap((violation) =>
       violation.issues.map(
-        (issue) => `${elementId(violation.element)}:${issue.rule}`,
+        (issue) =>
+          `${elementId(violation.element)}:${issue.rule}${issue.ignored ? "!" : ""}`,
       ),
     )
     .sort()
@@ -326,16 +328,19 @@ function makeStop(
         role: getRole(element) ?? "",
         description: computeAccessibleDescription(element).trim(),
         autofocus,
+        srOnly: isScreenReaderOnly(element),
       }),
   };
 }
 
 /** The worst severity among an element's issues (error outranks warning), or
     null when it has none. Drives the badge/ring colour: one element, one colour,
-    set by its most serious problem. */
+    set by its most serious problem. Ignored (data-ooo-ignore) findings don't
+    count, so an element whose only findings are approved reads as clean. */
 function worstSeverity(issues: Issue[]): Severity | null {
-  if (issues.some((issue) => issue.severity === "error")) {
+  const live = issues.filter((issue) => !issue.ignored);
+  if (live.some((issue) => issue.severity === "error")) {
     return "error";
   }
-  return issues.length ? "warning" : null;
+  return live.length ? "warning" : null;
 }

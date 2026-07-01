@@ -115,6 +115,22 @@ export function isInert(element: Element): boolean {
   return element.closest("[inert]") !== null;
 }
 
+/** The opt-out attribute an author puts on an element to approve (silence) findings */
+export const IGNORE_ATTRIBUTE = "data-ooo-ignore";
+
+/** Whether `element` opts out of `ruleId` via {@link IGNORE_ATTRIBUTE}. Element-scoped:
+    the attribute must sit on the flagged element itself, it is not inherited by
+    descendants, so approving one control never silences a whole subtree. */
+export function isRuleIgnored(element: Element, ruleId: string): boolean {
+  const value = element.getAttribute(IGNORE_ATTRIBUTE);
+  if (value === null) {
+    return false;
+  }
+
+  const ids = value.trim().split(/\s+/).filter(Boolean);
+  return ids.length === 0 || ids.includes(ruleId);
+}
+
 /** Resolved opacity is 0 on the element or any ancestor (so it paints nothing).
     Prefers the native checkVisibility() (which folds in the opacity chain), falling
     back to walking the ancestors on engines that lack it. */
@@ -133,7 +149,10 @@ function isTransparent(element: Element): boolean {
 
 /** The intentional ".sr-only"/"visually-hidden" utility: tiny + clipped. We must
     NOT flag it as a bug, since it's the standard way to expose text to screen readers. */
-function isScreenReaderOnly(element: Element, rect: DOMRect): boolean {
+export function isScreenReaderOnly(
+  element: Element,
+  rect: DOMRect = element.getBoundingClientRect(),
+): boolean {
   if (rect.width > 2 || rect.height > 2) {
     return false;
   }

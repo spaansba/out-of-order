@@ -167,6 +167,11 @@ a.ooo-tip-rule:hover > span { text-decoration: underline; text-underline-offset:
 a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
 .ooo-tip-msg { display: block; margin: 0; color: #34352d; font-size: 12.5px; }
 .ooo-tip-ok { margin: 0; color: #1f7a44; font-size: 12.5px; }
+.ooo-tip-item--ignored { opacity: 0.7; }
+.ooo-tip-item--ignored .ooo-tip-rule { color: #8a8b80; }
+.ooo-tip-ignored { display: block; margin-top: 4px; color: #74756d; font-size: 11.5px; }
+.ooo-tip-ignored code { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; }
 
 /* hop tooltips reuse the frame without the index column */
 .ooo-tip-flag { flex: none;

@@ -19,10 +19,19 @@ export function restoreAutofocus(): void {
   }
 }
 
-const SEV_LABEL: Record<Severity, string> = {
+// Cards sort into the two built-in severities, then a trailing "other" bucket for the
+// ones that don't grade on that scale: custom-rule demos and data-ooo-ignore approvals.
+type Bucket = Severity | "other";
+
+const SECTION_LABEL: Record<Bucket, string> = {
   error: "Errors",
   warning: "Warnings",
+  other: "Other",
 };
+
+// Worst-wins when a card carries several tags: an error outranks a warning outranks the
+// other bucket.
+const RANK: Record<Bucket, number> = { error: 3, warning: 2, other: 1 };
 
 export function wireTriage(): () => void {
   const content = document.querySelector<HTMLElement>(".content");
@@ -52,11 +61,13 @@ export function wireTriage(): () => void {
     }
   }
 
-  // Warning-only cards drop to the end, after the error cards (the modal card
-  // included), so everything that actually blocks a user reads first.
-  for (const section of sections) {
-    if (section.dataset.severity === "warning") {
-      content.appendChild(section);
+  // Warning-only cards drop below the errors (the modal card included), then the "other"
+  // cards go dead last, so everything that actually blocks a user reads first.
+  for (const bucket of ["warning", "other"]) {
+    for (const section of sections) {
+      if (section.dataset.severity === bucket) {
+        content.appendChild(section);
+      }
     }
   }
 
@@ -80,7 +91,9 @@ export function wireTriage(): () => void {
       section.querySelector(":scope > h2 > .header-anchor")?.remove();
       section
         .querySelectorAll(".rule-tag")
-        .forEach((tag) => tag.classList.remove("is-error", "is-warning"));
+        .forEach((tag) =>
+          tag.classList.remove("is-error", "is-warning", "is-approved"),
+        );
     }
   };
 }
@@ -100,27 +113,27 @@ function addHeaderAnchor(section: HTMLElement): void {
   heading.appendChild(anchor);
 }
 
-// Grade a card from its rule tags, colouring each tag by its own severity. A card is
-// an error if any of its rules is an error; otherwise a warning.
-function gradeSection(section: Element): Severity {
-  let severity: Severity = "warning";
+// Grade a card from its rule tags. Each tag gets its own severity pill; the card itself
+// buckets to the worst of its tags, and anything without a built-in severity (custom
+// rules, a data-ooo-ignore approval) collects under "other".
+function gradeSection(section: Element): Bucket {
+  let bucket: Bucket | null = null;
   for (const tag of section.querySelectorAll<HTMLElement>(".rule-tag")) {
     const rule = tag.textContent?.trim() as RuleId | undefined;
-    // Built-ins grade from DEFAULT_SEVERITY; a custom rule isn't in it, so fall back to
-    // the tag's own data-severity.
-    const ruleSeverity =
-      (rule ? DEFAULT_SEVERITY[rule] : undefined) ??
-      (tag.dataset.severity as Severity | undefined);
-    if (!ruleSeverity) {
-      continue;
+    const builtin = rule ? DEFAULT_SEVERITY[rule] : undefined;
+    // The tag's pill: a built-in's default severity, or a custom/marker tag's declared
+    // data-severity (a custom rule's grade, or "approved" for a data-ooo-ignore demo).
+    const pill = builtin ?? tag.dataset.severity;
+    if (pill) {
+      tag.classList.add(`is-${pill}`);
+      tag.title = pill;
     }
-    tag.classList.add(ruleSeverity === "error" ? "is-error" : "is-warning");
-    tag.title = ruleSeverity;
-    if (ruleSeverity === "error") {
-      severity = "error";
+    const cardBucket: Bucket = builtin ?? "other";
+    if (!bucket || RANK[cardBucket] > RANK[bucket]) {
+      bucket = cardBucket;
     }
   }
-  return severity;
+  return bucket ?? "other";
 }
 
 function buildIndex(): HTMLElement {
@@ -129,31 +142,32 @@ function buildIndex(): HTMLElement {
   const ordered = Array.from(
     document.querySelectorAll<HTMLElement>("section.group"),
   );
-  const lists: Record<Severity, HTMLOListElement> = {
+  const lists: Record<Bucket, HTMLOListElement> = {
     error: makeList(),
     warning: makeList(),
+    other: makeList(),
   };
-  const counts: Record<Severity, number> = { error: 0, warning: 0 };
+  const counts: Record<Bucket, number> = { error: 0, warning: 0, other: 0 };
 
   ordered.forEach((section, i) => {
-    const severity = (section.dataset.severity as Severity) ?? "warning";
-    counts[severity]++;
-    lists[severity].appendChild(indexItem(section, i + 1, severity));
+    const bucket = (section.dataset.severity as Bucket) ?? "other";
+    counts[bucket]++;
+    lists[bucket].appendChild(indexItem(section, i + 1, bucket));
   });
 
   const nav = document.createElement("nav");
   nav.className = "index-grid";
   nav.setAttribute("aria-label", "Violations index");
-  for (const severity of ["error", "warning"] as Severity[]) {
-    if (!counts[severity]) {
+  for (const bucket of ["error", "warning", "other"] as Bucket[]) {
+    if (!counts[bucket]) {
       continue;
     }
     const group = document.createElement("div");
     group.className = "index-group";
     const head = document.createElement("span");
-    head.className = `index-head is-${severity}`;
-    head.textContent = `${SEV_LABEL[severity]} · ${counts[severity]}`;
-    group.append(head, lists[severity]);
+    head.className = `index-head is-${bucket}`;
+    head.textContent = `${SECTION_LABEL[bucket]} · ${counts[bucket]}`;
+    group.append(head, lists[bucket]);
     nav.appendChild(group);
   }
 
@@ -177,7 +191,7 @@ function makeList(): HTMLOListElement {
 function indexItem(
   section: Element,
   num: number,
-  severity: Severity,
+  severity: Bucket,
 ): HTMLLIElement {
   const li = document.createElement("li");
   const link = document.createElement("a");

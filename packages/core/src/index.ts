@@ -1,7 +1,13 @@
 export { audit } from "./audit.js";
 export { DEFAULT_SEVERITY } from "./rules.js";
 export type { Rule, Finding } from "./rules.js";
-export { isInteractive, selectorFor } from "./dom.js";
+export {
+  isInteractive,
+  isScreenReaderOnly,
+  selectorFor,
+  isRuleIgnored,
+  IGNORE_ATTRIBUTE,
+} from "./dom.js";
 export { OVERLAY_CLASS_PREFIX } from "./overlay-classes.js";
 export type {
   AuditOptions,

@@ -202,6 +202,51 @@ describe("severity", () => {
   });
 });
 
+describe("data-ooo-ignore", () => {
+  test("a bare attribute approves every finding on the element", () => {
+    document.body.innerHTML = "<button data-ooo-ignore></button>"; // unnamed
+    const result = audit(document.body);
+    const issues = result.violations.flatMap((v) => v.issues);
+    expect(issues.some((i) => i.rule === "missing-accessible-name")).toBe(true);
+    // Still reported, just approved: it stays in the result, flagged ignored.
+    expect(issues.every((i) => i.ignored)).toBe(true);
+    // An ignored error no longer fails the result.
+    expect(result.valid).toBe(true);
+  });
+
+  test("a valued attribute silences only the listed rules", () => {
+    // Two errors on one element: a positive tabindex and no accessible name.
+    document.body.innerHTML =
+      '<button tabindex="1" data-ooo-ignore="no-positive-tabindex"></button>';
+    const issues = audit(document.body).violations.flatMap((v) => v.issues);
+    const positive = issues.find((i) => i.rule === "no-positive-tabindex")!;
+    const unnamed = issues.find((i) => i.rule === "missing-accessible-name")!;
+    expect(positive.ignored).toBe(true);
+    expect(unnamed.ignored).toBeFalsy();
+    // The unlisted error still stands, so the result stays invalid.
+    expect(audit(document.body).valid).toBe(false);
+  });
+
+  test("is element-scoped: an ancestor's attribute doesn't cover a child", () => {
+    document.body.innerHTML = "<div data-ooo-ignore><button></button></div>";
+    const result = audit(document.body);
+    const unnamed = result.violations
+      .flatMap((v) => v.issues)
+      .find((i) => i.rule === "missing-accessible-name")!;
+    expect(unnamed.ignored).toBeFalsy();
+    expect(result.valid).toBe(false);
+  });
+
+  test("text and flat views surface the approval", () => {
+    document.body.innerHTML = "<button data-ooo-ignore></button>";
+    expect(audit(document.body, { format: "text" }).violations).toContain(
+      "ignored via data-ooo-ignore",
+    );
+    const rows = audit(document.body, { format: "flat" }).violations;
+    expect(rows.some((row) => row.ignored)).toBe(true);
+  });
+});
+
 describe("rule metadata", () => {
   test("every rule has an absolute https docs link", () => {
     for (const rule of Object.values(ALL_RULES)) {

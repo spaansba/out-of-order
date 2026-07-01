@@ -13,7 +13,7 @@ import type {
   Flat,
   RuleId,
 } from "./types.js";
-import { selectorFor } from "./dom.js";
+import { selectorFor, isRuleIgnored } from "./dom.js";
 import { ALL_RULES, type Finding, type Rule } from "./rules.js";
 
 /** Fold a rule's caller override against its default into a final decision: is it
@@ -130,7 +130,11 @@ export function audit(
         violation = { element, selector, orderIndex, issues: [] };
         byElement.set(element, violation);
       }
-      violation.issues.push(toIssue(finding, rule, severity));
+      const issue = toIssue(finding, rule, severity);
+      if (isRuleIgnored(element, rule.id)) {
+        issue.ignored = true;
+      }
+      violation.issues.push(issue);
     }
   }
 
@@ -144,7 +148,9 @@ export function audit(
   }
 
   const hasErrors = violations.some((violation) =>
-    violation.issues.some((issue) => issue.severity === "error"),
+    violation.issues.some(
+      (issue) => issue.severity === "error" && !issue.ignored,
+    ),
   );
 
   return finalize({ valid: !hasErrors, sequence, violations }, options.format);
@@ -191,6 +197,7 @@ function byElement(violations: Violation[]): ByElement[] {
       message: issue.message,
       docs: issue.docs,
       related: related(issue),
+      ignored: issue.ignored,
     })),
   }));
 }
@@ -215,6 +222,7 @@ function byRule(violations: Violation[]): ByRule[] {
         orderIndex: violation.orderIndex,
         message: issue.message,
         related: related(issue),
+        ignored: issue.ignored,
       });
       group.issueCount = group.elements.length;
     }
@@ -232,6 +240,7 @@ function flat(violations: Violation[]): Flat[] {
       message: issue.message,
       docs: issue.docs,
       related: related(issue),
+      ignored: issue.ignored,
     })),
   );
 }
@@ -250,7 +259,8 @@ function renderText(violations: Violation[]): string {
             `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
             (issue.relatedElements?.length
               ? ` (related: ${issue.relatedElements.map(selectorFor).join(", ")})`
-              : ""),
+              : "") +
+            (issue.ignored ? " (ignored via data-ooo-ignore)" : ""),
         )
         .join("\n");
       return `${pos}${violation.selector}\n${issues}`;
