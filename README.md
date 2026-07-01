@@ -1,5 +1,7 @@
 # Out of Order
 
+> ⚠️ **Heavy development.** Released, but the API is still changing and may break between versions.
+
 Focus and keyboard-accessibility validation that runs in **real browsers only**. No jsdom, no layout guessing, no silently-skipped checks.
 
 Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequence, with a rules layer on top that decides whether that sequence is _valid_: correct order, every stop reachable, visible, and announced.
