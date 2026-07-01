@@ -1,6 +1,6 @@
 // Builds the HTML for the overlay's hover tooltips. Pure templating, split out of
 // the orchestrator so index.ts stays about analysis-to-draw-model translation.
-import type { Violation } from "@out-of-order/core";
+import type { Issue } from "@out-of-order/core";
 
 /** The screen-reader facts a badge tooltip renders for one element. */
 export interface BadgeTipData {
@@ -8,7 +8,7 @@ export interface BadgeTipData {
   num: number | null;
   selector: string;
   tabIndex: number | null;
-  violations: Violation[];
+  issues: Issue[];
   name: string;
   role: string;
   description: string;
@@ -18,7 +18,7 @@ export interface BadgeTipData {
 /** A badge's tooltip: header (index + selector), the a11y ledger, then either the
     element's findings or a clean "no issues" note. */
 export function badgeTip(data: BadgeTipData): string {
-  const { num, selector, tabIndex, violations, name, role, description, autofocus } =
+  const { num, selector, tabIndex, issues, name, role, description, autofocus } =
     data;
 
   // Stop number, or ⊘ for an off-sequence (interactive-but-unreachable) marker.
@@ -38,12 +38,12 @@ export function badgeTip(data: BadgeTipData): string {
     // Informational, not a finding: this is where focus lands on page load.
     (autofocus ? field("autofocus", mono("yes")) : "");
 
-  const body = violations.length
-    ? `<ul class="ooo-tip-list">${violations
+  const body = issues.length
+    ? `<ul class="ooo-tip-list">${issues
         .map(
-          (violation) =>
-            `<li class="ooo-tip-item">${ruleLabel(violation)}` +
-            `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(violation.message))}</span></li>`,
+          (issue) =>
+            `<li class="ooo-tip-item">${ruleLabel(issue)}` +
+            `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span></li>`,
         )
         .join("")}</ul>`
     : `<p class="ooo-tip-ok">No issues found.</p>`;
@@ -90,18 +90,18 @@ const EXTERNAL_ICON =
 // tabindex="-1": the tooltip is a hover-only, invoker-less popover, so a keyboard
 // user can never open it to reach the link anyway. Keeping it out of the tab order
 // stops the analyzer (which reads the live DOM) from numbering it as a stray stop.
-function ruleLabel(violation: Violation): string {
+function ruleLabel(issue: Issue): string {
   // Amber for warnings, red (the default) for errors, matching badge and ring.
   const cls =
-    violation.severity === "warning"
+    issue.severity === "warning"
       ? "ooo-tip-rule ooo-tip-rule--warn"
       : "ooo-tip-rule";
-  if (!violation.docs) {
-    return `<span class="${cls}">${violation.rule}</span>`;
+  if (!issue.docs) {
+    return `<span class="${cls}">${issue.rule}</span>`;
   }
   return (
-    `<a class="${cls}" href="${escapeHtml(violation.docs)}" target="_blank" rel="noreferrer" tabindex="-1">` +
-    `<span>${violation.rule}</span>${EXTERNAL_ICON}</a>`
+    `<a class="${cls}" href="${escapeHtml(issue.docs)}" target="_blank" rel="noreferrer" tabindex="-1">` +
+    `<span>${issue.rule}</span>${EXTERNAL_ICON}</a>`
   );
 }
 

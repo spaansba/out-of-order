@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@out-of-order/core": "workspace:*",
+    "@out-of-order/trace": "workspace:*",
     "playwright": "^1.47.0"
   },
   "devDependencies": {

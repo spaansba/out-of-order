@@ -639,7 +639,7 @@ fieldset.radio-group label {
   gap: 0.35rem;
 }
 
-/* ---- rule-violation demos (violations.html) ---- */
+/* ---- rule-violation demos (playground.html) ---- */
 /* invisible yet still tabbable — four ways, each tripping hidden-while-focusable
    for a different reason (see hiddenReason() in core/dom.ts) */
 .invisible-opacity {

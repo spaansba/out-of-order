@@ -22,7 +22,7 @@
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./violations.html">violations</a>
+        <a href="./playground.html">playground</a>
         <a href="./tabbable.html">tabbable</a>
       </nav>
       <span class="spacer"></span>
@@ -38,35 +38,24 @@
     <main class="wrap">
       <div class="intro">
         <span class="kicker">Getting started</span>
-        <h2>From clone to overlay in a minute</h2>
+        <h2>From install to overlay in a minute</h2>
         <p>
-          There are two ways in. You can run this site's interactive demos
-          locally to see the overlay at work, or you can drop the analyzer into
-          your own page. Both run in a real browser, which is the whole point.
-          The test-runner matcher is a separate package that is still in
-          progress, so it is not covered here yet.
+          Drop the analyzer into your own page, or point the CLI at any URL.
+          Either way it runs in a real browser, which is the whole point. The
+          test-runner matcher is a separate package that is still in progress,
+          so it is not covered here yet.
         </p>
       </div>
 
       <section class="group">
-        <h2>Run the demos locally</h2>
+        <h2>See it before you install</h2>
         <p class="note">
-          The fastest way to understand the project is to run the two demo pages
-          and tab through them with the overlay on.
-        </p>
-        <pre class="code">git clone https://github.com/spaansba/out-of-order
-cd out-of-order
-pnpm install
-pnpm --filter @out-of-order/demo dev</pre>
-        <p class="note">
-          Open the printed URL. You do not need to build
-          <code>@out-of-order/core</code> or <code>@out-of-order/trace</code>
-          first. The demo's <code>vite.config.ts</code> aliases both packages to
-          their TypeScript source, so edits to the library hot-reload straight
-          into the page.
+          The playground is every focus and keyboard bug the analyzer catches,
+          each one wired to break then get fixed live, with the overlay tracing
+          the real tab path.
         </p>
         <div class="cta">
-          <a class="btn" href="./violations.html">Rule violations &rarr;</a>
+          <a class="btn" href="./playground.html">Open the playground &rarr;</a>
           <a class="btn" href="./tabbable.html">What's tabbable &rarr;</a>
         </div>
       </section>
@@ -74,27 +63,29 @@ pnpm --filter @out-of-order/demo dev</pre>
       <section class="group">
         <h2>Which package, and which mode</h2>
         <p class="note">
-          One analyzer, two ways to run it. <strong>See it</strong> on a live
-          page with the overlay, or <strong>check it</strong> headless in a test,
-          in CI, or from an AI agent. Installing <code>@out-of-order/trace</code>
-          covers both: it re-exports the analyzer, so the overlay and the
-          headless API come from a single import.
+          One analyzer, three ways to run it. <strong>See it</strong> on a live
+          page with the overlay, <strong>check it</strong> headless in a test or
+          CI, or <strong>scan</strong> any URL from the terminal.
         </p>
         <p class="note"><strong>See it</strong>, the overlay:</p>
-        <pre class="code">npm i @out-of-order/trace
+        <pre class="code">
+npm i @out-of-order/trace
 
 import { trace } from "@out-of-order/trace";
-trace();</pre>
+trace();</pre
+        >
         <p class="note"><strong>Check it</strong>, headless:</p>
-        <pre class="code">npm i @out-of-order/core
+        <pre class="code">
+npm i @out-of-order/core
 
-import { audit, formatViolations } from "@out-of-order/core";
-const result = audit(document.body);</pre>
-        <p class="note">
-          Reach for <code>@out-of-order/core</code> on its own only when you never
-          draw the overlay, for a test-runner matcher or a Playwright
-          <code>page.evaluate</code>, where the smaller install matters.
-        </p>
+import { audit } from "@out-of-order/core";
+const result = audit();</pre
+        >
+        <p class="note"><strong>Scan it</strong>, any URL from the terminal:</p>
+        <pre class="code">
+npx @out-of-order/cli https://example.com           # headless, prints findings
+npx @out-of-order/cli https://example.com --overlay # opens a browser with the overlay</pre
+        >
       </section>
 
       <section class="group" id="overlay">
@@ -105,13 +96,15 @@ const result = audit(document.body);</pre>
           numbered tab stops, the path between them, and every finding ringed in
           place.
         </p>
-        <pre class="code">import { trace } from "@out-of-order/trace";
+        <pre class="code">
+import { trace } from "@out-of-order/trace";
 
 // No options, so it analyzes the whole document.
 const overlay = trace();
 
 // Later, tear it down. This removes the layer, observers, and listeners.
-overlay.destroy();</pre>
+overlay.destroy();</pre
+        >
         <p class="note">
           The overlay re-analyzes itself on every DOM mutation, so most pages
           need nothing beyond the mount. You can scope it to a subtree, hide and
@@ -121,8 +114,8 @@ overlay.destroy();</pre>
         </p>
         <p class="note">
           The packages target npm as <code>@out-of-order/core</code> and
-          <code>@out-of-order/trace</code>. Until they are published, consume them
-          from the workspace (or a git install) as the demo does.
+          <code>@out-of-order/trace</code>. Until they are published, consume
+          them from the workspace (or a git install) as the demo does.
         </p>
         <p class="note">
           Only need the verdict, not the picture? Skip the overlay and call
@@ -135,42 +128,46 @@ overlay.destroy();</pre>
         <h2>Analyze without the overlay</h2>
         <p class="note">
           The overlay is optional. <code>@out-of-order/core</code> gives you the
-          verdict as plain data, which is what you would assert in a test or feed
-          into your own UI.
+          verdict as plain data, which is what you would assert in a test or
+          feed into your own UI.
         </p>
         <p class="note">
-          Want to see these findings on the page instead of asserting them? Mount
-          the overlay with <code>trace()</code>, covered
+          Want to see these findings on the page instead of asserting them?
+          Mount the overlay with <code>trace()</code>, covered
           <a href="#overlay">just above</a>.
         </p>
-        <pre class="code">import { audit, formatViolations } from "@out-of-order/core";
+        <pre class="code">
+import { audit } from "@out-of-order/core";
 
-const result = audit(document.body);
+const result = audit();
 
 result.valid; // boolean, true when there are no error-severity violations
 result.sequence; // elements in tab order, each with tabIndex + rect
-result.violations; // [{ rule, severity, message, element, selector, ... }]
+result.violations; // one entry per element: { element, selector, orderIndex, issues }
 
 if (!result.valid) {
-  console.log(formatViolations(result.violations));
-}</pre>
+  // Pass `format` for a ready-to-print string instead of the structured result.
+  console.log(audit(document.body, { format: "text" }).violations);
+}</pre
+        >
         <p class="note">
           <code>valid</code> only goes false on an <code>error</code>. Warnings
           are advisory and never flip it, so they will not fail a build gate
-          unless you promote them. See <a href="./concepts.html">concepts</a> for
-          what that distinction means, and the
-          <a href="./api.html#core">core API</a> for every field.
+          unless you promote them. See
+          <a href="./concepts.html">concepts</a> for what that distinction
+          means, and the <a href="./api.html#core">core API</a> for every field.
         </p>
       </section>
 
       <section class="group">
         <h2>Turn rules up, down, or off</h2>
         <p class="note">
-          Every rule runs at a default severity. You can override any of them per
-          call. Re-grade a noisy one to a warning, promote another to an error,
-          or switch one off entirely.
+          Every rule runs at a default severity. You can override any of them
+          per call. Re-grade a noisy one to a warning, promote another to an
+          error, or switch one off entirely.
         </p>
-        <pre class="code">audit(document.body, {
+        <pre class="code">
+audit(document.body, {
   rules: {
     "visual-order-mismatch": "warning", // re-grade
     "redundant-tabindex": "error", // promote
@@ -179,7 +176,8 @@ if (!result.valid) {
 });
 
 // The same overrides reach the overlay through its `audit` option.
-trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre>
+trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre
+        >
         <p class="note">
           The full list, with what each rule catches, is on the
           <a href="./rules.html">rules page</a>.

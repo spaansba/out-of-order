@@ -35,7 +35,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         home: resolve(__dirname, "index.html"),
-        violations: resolve(__dirname, "violations.html"),
+        playground: resolve(__dirname, "playground.html"),
         tabbable: resolve(__dirname, "tabbable.html"),
         start: resolve(__dirname, "getting-started.html"),
         concepts: resolve(__dirname, "concepts.html"),

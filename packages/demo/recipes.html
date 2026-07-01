@@ -22,7 +22,7 @@
         <a href="./api.html">api</a>
         <a href="./recipes.html" aria-current="page">recipes</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./violations.html">violations</a>
+        <a href="./playground.html">playground</a>
         <a href="./tabbable.html">tabbable</a>
       </nav>
       <span class="spacer"></span>
@@ -57,7 +57,7 @@
         </p>
         <pre class="code">// A test running in real Chromium (e.g. Vitest Browser Mode).
 import { test, expect } from "vitest";
-import { audit, formatViolations } from "@out-of-order/core";
+import { audit } from "@out-of-order/core";
 
 test("modal has a sane tab order", () => {
   document.body.innerHTML = `
@@ -66,9 +66,9 @@ test("modal has a sane tab order", () => {
     &lt;input aria-label="Search" /&gt;
   `;
 
-  const result = audit(document.body);
-  // The formatted violations become the failure message.
-  expect(result.valid, formatViolations(result.violations)).toBe(true);
+  const result = audit();
+  // A `text`-formatted audit's violations become the failure message.
+  expect(result.valid, audit(document.body, { format: "text" }).violations).toBe(true);
 });</pre>
         <p class="note">
           Because only <code>error</code>-severity findings flip
@@ -115,24 +115,22 @@ onBeforeUnmount(() => overlay?.destroy());</pre>
         <pre class="code">import { trace } from "@out-of-order/trace";
 import type { Rule } from "@out-of-order/core";
 
-const noUnsafeBlank: Rule = {
-  id: "no-unsafe-blank",
-  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
+const noShouting: Rule = {
+  id: "no-shouting",
   defaultSeverity: "warning",
   run: (sequence) =>
     sequence
-      .filter(
-        (entry) =>
-          entry.element.matches('a[target="_blank"]') &amp;&amp;
-          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
-      )
+      .filter((entry) => {
+        const text = entry.element.textContent?.trim() ?? "";
+        return text !== "" &amp;&amp; text === text.toUpperCase();
+      })
       .map((entry) => ({
-        message: 'Link opens a new tab without rel="noopener".',
+        message: "This label is ALL CAPS, which reads as shouting. Use sentence case.",
         target: entry,
       })),
 };
 
-trace({ rules: [noUnsafeBlank] });</pre>
+trace({ rules: [noShouting] });</pre>
         <p class="note">
           The full <a href="./api.html#rule">Rule, RuleRun, and Finding
           types</a> are on the API page.
@@ -145,9 +143,9 @@ trace({ rules: [noUnsafeBlank] });</pre>
           <code>trace</code> keeps its latest analysis on the handle as
           <code>result</code>, refreshed as the DOM changes. It's plain,
           serializable data, so any agent SDK can consume it. Format the
-          violations into a readable brief and let a model draft the fixes.
+          findings into a readable brief and let a model draft the fixes.
         </p>
-        <pre class="code">import { trace, formatViolations } from "@out-of-order/trace";
+        <pre class="code">import { trace, audit } from "@out-of-order/trace";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
@@ -157,7 +155,8 @@ async function reviewA11y() {
   const result = overlay.result;
   if (!result || result.valid) return;
 
-  const report = formatViolations(result.violations);
+  // `format` renders the result's violations to a ready-to-print string.
+  const report = audit(document.body, { format: "text" }).violations;
   const message = await client.messages.create({
     model: "claude-opus-4-8",
     max_tokens: 1024,
@@ -175,9 +174,10 @@ async function reviewA11y() {
   if (block?.type === "text") console.log(block.text);
 }</pre>
         <p class="note">
-          Each violation carries its rule, message, spec link, and selector, so
-          you can also serialize <code>result</code> as JSON for an MCP tool or
-          any other agent framework. Keep the API key out of client bundles by
+          Each violation carries its element and selector plus the
+          <code>issues</code> it failed (rule, message, spec link), so you can
+          also serialize <code>result</code> as JSON for an MCP tool or any
+          other agent framework. Keep the API key out of client bundles by
           proxying the call through your own server.
         </p>
       </section>

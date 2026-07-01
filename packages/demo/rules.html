@@ -22,7 +22,7 @@
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./violations.html">violations</a>
+        <a href="./playground.html">playground</a>
         <a href="./tabbable.html">tabbable</a>
       </nav>
       <span class="spacer"></span>
@@ -41,13 +41,12 @@
         <h2>Every rule, and the clause behind it</h2>
         <p>
           All rules are on by default. The severity shown is the default grade,
-          and you can override any of them per call. The "layout" column marks
-          the rules that read live CSS layout, the ones that can only run in a
-          real browser. Every rule maps to a specific WCAG, WAI-ARIA, or
-          HTML-spec clause, linked at the end of its row.
+          and you can override any of them per call. Every rule maps to a
+          specific WCAG, WAI-ARIA, or HTML-spec clause, linked at the end of its
+          row.
         </p>
         <div class="cta">
-          <a class="btn" href="./violations.html"
+          <a class="btn" href="./playground.html"
             >See every rule fail (and get fixed) live</a
           >
         </div>
@@ -60,7 +59,6 @@
             <tr>
               <th>Rule</th>
               <th>Default</th>
-              <th>Layout</th>
               <th>What it catches</th>
               <th>Clause</th>
             </tr>
@@ -69,7 +67,6 @@
             <tr>
               <td><code>no-positive-tabindex</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>no</td>
               <td><code>tabindex&nbsp;&gt;&nbsp;0</code>, which hijacks the natural order</td>
               <td>
                 <a
@@ -83,7 +80,6 @@
             <tr>
               <td><code>visual-order-mismatch</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>yes</td>
               <td>tab order that doesn't follow top&rarr;bottom, left&rarr;right reading order</td>
               <td>
                 <a
@@ -97,7 +93,6 @@
             <tr>
               <td><code>missing-accessible-name</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>no</td>
               <td>focusable interactive elements with no accessible name</td>
               <td>
                 <a
@@ -111,7 +106,6 @@
             <tr>
               <td><code>aria-hidden-focusable</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>no</td>
               <td>tabbable element inside <code>aria-hidden="true"</code></td>
               <td>
                 <a
@@ -125,8 +119,11 @@
             <tr>
               <td><code>hidden-while-focusable</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>yes</td>
-              <td>tabbable but invisible (opacity:0, zero size, off-screen, clipped)</td>
+              <td>
+                tabbable but invisible (opacity:0, zero size, off-screen,
+                clipped); a <code>:hover</code> reveal doesn't count, only
+                <code>:focus</code>
+              </td>
               <td>
                 <a
                   href="https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
@@ -139,7 +136,6 @@
             <tr>
               <td><code>clickable-not-focusable</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>yes</td>
               <td>mouse-only control (role/onclick) the keyboard can't reach</td>
               <td>
                 <a
@@ -153,7 +149,6 @@
             <tr>
               <td><code>composite-roving-tabindex</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>no</td>
               <td>composite widget (toolbar, tablist, ...) with one tab stop per item</td>
               <td>
                 <a
@@ -167,7 +162,6 @@
             <tr>
               <td><code>focus-escapes-modal</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>no</td>
               <td>background controls still tabbable while a modal is open</td>
               <td>
                 <a
@@ -181,7 +175,6 @@
             <tr>
               <td><code>tabindex-on-noninteractive</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>yes</td>
               <td><code>tabindex="0"</code> on a role-less, non-interactive element</td>
               <td>
                 <a
@@ -195,7 +188,6 @@
             <tr>
               <td><code>prefer-native-element</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>no</td>
               <td>generic tag reimplementing a native control via an interactive role</td>
               <td>
                 <a
@@ -209,7 +201,6 @@
             <tr>
               <td><code>duplicate-autofocus</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>yes</td>
               <td>more than one focusable <code>autofocus</code> (only the first ever wins)</td>
               <td>
                 <a
@@ -223,7 +214,6 @@
             <tr>
               <td><code>autofocus-not-focusable</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>yes</td>
               <td><code>autofocus</code> on a non-focusable element (a no-op on load)</td>
               <td>
                 <a
@@ -237,7 +227,6 @@
             <tr>
               <td><code>nested-interactive</code></td>
               <td><span class="sev is-error">error</span></td>
-              <td>no</td>
               <td>a focusable control nested inside another focusable element</td>
               <td>
                 <a
@@ -251,7 +240,6 @@
             <tr>
               <td><code>redundant-tabindex</code></td>
               <td><span class="sev is-warning">warning</span></td>
-              <td>no</td>
               <td><code>tabindex="0"</code> on an already-focusable native control (a no-op)</td>
               <td>
                 <a

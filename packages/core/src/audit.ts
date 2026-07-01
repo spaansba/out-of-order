@@ -1,10 +1,16 @@
 import { tabbable } from "tabbable";
 import type {
   AuditOptions,
+  AuditFormat,
+  Formatted,
   SequenceEntry,
   Severity,
   AuditResult,
+  Issue,
   Violation,
+  ByElement,
+  ByRule,
+  Flat,
   RuleId,
 } from "./types.js";
 import { selectorFor } from "./dom.js";
@@ -29,28 +35,29 @@ function resolveRule(
   return { enabled: true, severity: setting };
 }
 
-function toViolation(
-  finding: Finding,
-  rule: Rule,
-  severity: Severity,
-): Violation {
-  const { target } = finding;
-  const base = {
+function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
+  return {
     rule: rule.id,
     severity,
     message: finding.message,
     docs: rule.docs,
     relatedElements: finding.relatedElements,
   };
+}
 
+function locate(finding: Finding): {
+  element: Element;
+  selector: string;
+  orderIndex?: number;
+} {
+  const { target } = finding;
   return "orderIndex" in target
     ? {
-        ...base,
         element: target.element,
         selector: target.selector,
         orderIndex: target.orderIndex,
       }
-    : { ...base, element: target, selector: selectorFor(target) };
+    : { element: target, selector: selectorFor(target) };
 }
 
 /**
@@ -58,19 +65,33 @@ function toViolation(
  *
  * Browser-only by design: `tabbable` uses real CSS layout to decide visibility and
  * the visual-order rule reads bounding rects, neither meaningful under jsdom.
+ *
+ * Always returns an `AuditResult`; `options.format` only changes the type of its
+ * `violations`, from the structured `Violation[]` to the matching {@link Formatted}
+ * view (a string for `"text"`, an array of the named shape otherwise).
  */
+export function audit<F extends AuditFormat>(
+  root: ParentNode | undefined,
+  options: AuditOptions & { format: F },
+  customRules?: Rule[],
+): AuditResult<Formatted<F>>;
+export function audit(
+  root?: ParentNode,
+  options?: AuditOptions,
+  customRules?: Rule[],
+): AuditResult;
 export function audit(
   root: ParentNode = document,
   options: AuditOptions = {},
   customRules: Rule[] = [],
-): AuditResult {
+): AuditResult<Violation[] | string | ByElement[] | ByRule[] | Flat[]> {
   const container =
     root.nodeType === 9 /* Node.DOCUMENT_NODE */
       ? (root as Document).documentElement
       : (root as Element);
 
   if (!container) {
-    return { valid: true, sequence: [], violations: [] };
+    return finalize({ valid: true, sequence: [], violations: [] }, options.format);
   }
 
   const elements = tabbable(container, {
@@ -95,7 +116,7 @@ export function audit(
     ...def,
   }));
 
-  const violations: Violation[] = [];
+  const byElement = new Map<Element, Violation>();
   for (const rule of [...builtins, ...customRules]) {
     const { enabled, severity } = resolveRule(options, rule);
     if (!enabled) {
@@ -103,17 +124,136 @@ export function audit(
     }
 
     for (const finding of rule.run(sequence, ctx)) {
-      violations.push(toViolation(finding, rule, severity));
+      const { element, selector, orderIndex } = locate(finding);
+      let violation = byElement.get(element);
+      if (!violation) {
+        violation = { element, selector, orderIndex, issues: [] };
+        byElement.set(element, violation);
+      }
+      violation.issues.push(toIssue(finding, rule, severity));
     }
   }
 
-  const hasErrors = violations.some(
-    (violation) => violation.severity === "error",
+  const violations = [...byElement.values()].sort(
+    (a, b) => (a.orderIndex ?? Infinity) - (b.orderIndex ?? Infinity),
+  );
+  for (const violation of violations) {
+    violation.issues.sort((a, b) =>
+      a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1,
+    );
+  }
+
+  const hasErrors = violations.some((violation) =>
+    violation.issues.some((issue) => issue.severity === "error"),
   );
 
-  return {
-    valid: !hasErrors,
-    sequence,
-    violations,
-  };
+  return finalize({ valid: !hasErrors, sequence, violations }, options.format);
+}
+
+// Leaves `valid` and `sequence` untouched; only reshapes `violations`.
+function finalize(
+  result: AuditResult,
+  format?: AuditFormat,
+): AuditResult<Violation[] | string | ByElement[] | ByRule[] | Flat[]> {
+  if (!format) {
+    return result;
+  }
+  return { ...result, violations: reshape(result.violations, format) };
+}
+
+function reshape(
+  violations: Violation[],
+  format: AuditFormat,
+): string | ByElement[] | ByRule[] | Flat[] {
+  switch (format) {
+    case "text":
+      return renderText(violations);
+    case "by-element":
+      return byElement(violations);
+    case "by-rule":
+      return byRule(violations);
+    case "flat":
+      return flat(violations);
+  }
+}
+
+const related = (issue: Issue): string[] | undefined =>
+  issue.relatedElements?.map(selectorFor);
+
+function byElement(violations: Violation[]): ByElement[] {
+  return violations.map((violation) => ({
+    selector: violation.selector,
+    orderIndex: violation.orderIndex,
+    issueCount: violation.issues.length,
+    issues: violation.issues.map((issue) => ({
+      rule: issue.rule,
+      severity: issue.severity,
+      message: issue.message,
+      docs: issue.docs,
+      related: related(issue),
+    })),
+  }));
+}
+
+function byRule(violations: Violation[]): ByRule[] {
+  const groups = new Map<string, ByRule>();
+  for (const violation of violations) {
+    for (const issue of violation.issues) {
+      let group = groups.get(issue.rule);
+      if (!group) {
+        group = {
+          rule: issue.rule,
+          severity: issue.severity,
+          docs: issue.docs,
+          issueCount: 0,
+          elements: [],
+        };
+        groups.set(issue.rule, group);
+      }
+      group.elements.push({
+        selector: violation.selector,
+        orderIndex: violation.orderIndex,
+        message: issue.message,
+        related: related(issue),
+      });
+      group.issueCount = group.elements.length;
+    }
+  }
+  return [...groups.values()];
+}
+
+function flat(violations: Violation[]): Flat[] {
+  return violations.flatMap((violation) =>
+    violation.issues.map((issue) => ({
+      rule: issue.rule,
+      severity: issue.severity,
+      selector: violation.selector,
+      orderIndex: violation.orderIndex,
+      message: issue.message,
+      docs: issue.docs,
+      related: related(issue),
+    })),
+  );
+}
+
+function renderText(violations: Violation[]): string {
+  if (!violations.length) {
+    return "No tab-order issues.";
+  }
+  return violations
+    .map((violation) => {
+      const pos =
+        violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
+      const issues = violation.issues
+        .map(
+          (issue) =>
+            `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
+            (issue.relatedElements?.length
+              ? ` (related: ${issue.relatedElements.map(selectorFor).join(", ")})`
+              : ""),
+        )
+        .join("\n");
+      return `${pos}${violation.selector}\n${issues}`;
+    })
+    .join("\n\n");
 }

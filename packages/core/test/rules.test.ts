@@ -7,7 +7,11 @@ afterEach(() => {
 
 function fired(html: string): Set<string> {
   document.body.innerHTML = html;
-  return new Set(audit(document.body).violations.map((v) => v.rule));
+  return new Set(
+    audit(document.body).violations.flatMap((v) =>
+      v.issues.map((i) => i.rule),
+    ),
+  );
 }
 
 describe("no-positive-tabindex", () => {
@@ -361,36 +365,27 @@ describe("hidden-while-focusable", () => {
       ),
     ).not.toContain("hidden-while-focusable");
   });
-  test.fails(
-    "02 off-screen skip link revealed on focus should pass (CI-1 false positive)",
-    () => {
-      expect(
-        fired(
-          '<style>.skip{position:absolute;left:-9999px;top:auto}.skip:focus{left:8px;top:8px}</style><a href="#main" class="skip">Skip to content</a><button>Real</button>',
-        ),
-      ).not.toContain("hidden-while-focusable");
-    },
-  );
-  test.fails(
-    "03 opacity:0 control revealed on focus should pass (CI-2 false positive)",
-    () => {
-      expect(
-        fired(
-          '<style>.skip{opacity:0}.skip:focus{opacity:1}</style><a href="#main" class="skip">Skip</a><button>Real</button>',
-        ),
-      ).not.toContain("hidden-while-focusable");
-    },
-  );
-  test.fails(
-    "04 overflow:hidden carousel item should pass (CI-3 false positive)",
-    () => {
-      expect(
-        fired(
-          '<div style="width:200px;height:60px;overflow:hidden;white-space:nowrap;position:relative"><a href="#a" style="display:inline-block;width:200px">Item 1</a><a href="#b" style="display:inline-block;width:200px;margin-left:400px">Item 2</a></div>',
-        ),
-      ).not.toContain("hidden-while-focusable");
-    },
-  );
+  test("02 off-screen skip link revealed on focus should pass (CI-1 false positive)", () => {
+    expect(
+      fired(
+        '<style>.skip{position:absolute;left:-9999px;top:auto}.skip:focus{left:8px;top:8px}</style><a href="#main" class="skip">Skip to content</a><button>Real</button>',
+      ),
+    ).not.toContain("hidden-while-focusable");
+  });
+  test("03 opacity:0 control revealed on focus should pass (CI-2 false positive)", () => {
+    expect(
+      fired(
+        '<style>.skip{opacity:0}.skip:focus{opacity:1}</style><a href="#main" class="skip">Skip</a><button>Real</button>',
+      ),
+    ).not.toContain("hidden-while-focusable");
+  });
+  test("04 overflow:hidden carousel item should pass (CI-3 false positive)", () => {
+    expect(
+      fired(
+        '<div style="width:200px;height:60px;overflow:hidden;white-space:nowrap;position:relative"><a href="#a" style="display:inline-block;width:200px">Item 1</a><a href="#b" style="display:inline-block;width:200px;margin-left:400px">Item 2</a></div>',
+      ),
+    ).not.toContain("hidden-while-focusable");
+  });
   test("05 overflow:auto carousel item passes (correct handling, contrast to CI-3)", () => {
     expect(
       fired(
@@ -850,8 +845,8 @@ describe("duplicate-autofocus", () => {
   test("04 reports one finding per extra (two extras → two findings)", () => {
     document.body.innerHTML =
       "<input autofocus><input autofocus><input autofocus>";
-    const dupes = audit(document.body).violations.filter(
-      (v) => v.rule === "duplicate-autofocus",
+    const dupes = audit(document.body).violations.filter((v) =>
+      v.issues.some((i) => i.rule === "duplicate-autofocus"),
     );
     expect(dupes).toHaveLength(2);
   });
@@ -865,8 +860,8 @@ describe("duplicate-autofocus", () => {
   test("06 winner is first in document order; the later one is flagged", () => {
     document.body.innerHTML =
       '<div tabindex="-1" autofocus>x</div><input autofocus>';
-    const dupes = audit(document.body).violations.filter(
-      (v) => v.rule === "duplicate-autofocus",
+    const dupes = audit(document.body).violations.filter((v) =>
+      v.issues.some((i) => i.rule === "duplicate-autofocus"),
     );
     expect(dupes).toHaveLength(1);
     expect(dupes[0]!.element.tagName).toBe("INPUT");
@@ -924,8 +919,8 @@ describe("nested-interactive", () => {
   });
   test("06 flags the inner control, not the outer wrapper", () => {
     document.body.innerHTML = '<a href="#"><button>Buy</button></a>';
-    const nested = audit(document.body).violations.filter(
-      (v) => v.rule === "nested-interactive",
+    const nested = audit(document.body).violations.filter((v) =>
+      v.issues.some((i) => i.rule === "nested-interactive"),
     );
     expect(nested).toHaveLength(1);
     expect(nested[0]!.element.tagName).toBe("BUTTON");
@@ -989,8 +984,8 @@ describe("redundant-tabindex", () => {
   });
   test("11 flags the element itself, not a sibling", () => {
     document.body.innerHTML = '<input tabindex="0"><button>Save</button>';
-    const redundant = audit(document.body).violations.filter(
-      (v) => v.rule === "redundant-tabindex",
+    const redundant = audit(document.body).violations.filter((v) =>
+      v.issues.some((i) => i.rule === "redundant-tabindex"),
     );
     expect(redundant).toHaveLength(1);
     expect(redundant[0]!.element.tagName).toBe("INPUT");

@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit, formatViolations } from "../src/index.js";
+import { audit } from "../src/index.js";
 import { ALL_RULES } from "../src/rules.js";
-import type { RuleId, Violation } from "../src/index.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
 });
+
+const allIssues = (root: ParentNode, options?: Parameters<typeof audit>[1]) =>
+  audit(root, options).violations.flatMap((violation) => violation.issues);
 
 describe("audit", () => {
   test("reports an empty, valid result when nothing is focusable", () => {
@@ -30,9 +32,7 @@ describe("audit", () => {
 
   test("treats a Document root as its documentElement", () => {
     document.body.innerHTML = '<button id="probe">X</button>';
-    const ids = audit(document).sequence.map(
-      (entry) => entry.element.id,
-    );
+    const ids = audit(document).sequence.map((entry) => entry.element.id);
     expect(ids).toContain("probe");
   });
 
@@ -54,36 +54,37 @@ describe("audit", () => {
     expect(sequence[0]!.element.tagName).toBe("BUTTON");
   });
 
-  test("disabling a rule drops only that rule's violations", () => {
+  test("disabling a rule drops only that rule's issues", () => {
     document.body.innerHTML =
       '<button>Fine</button><button tabindex="3">Jumped</button>';
     const fired = (options?: Parameters<typeof audit>[1]) =>
-      new Set(
-        audit(document.body, options).violations.map((v) => v.rule),
-      );
+      new Set(allIssues(document.body, options).map((issue) => issue.rule));
     expect(fired()).toContain("no-positive-tabindex");
     expect(fired({ rules: { "no-positive-tabindex": "off" } })).not.toContain(
       "no-positive-tabindex",
     );
   });
 
-  test("a violation carries the offending element and its rule's docs link", () => {
+  test("groups an element's issues under one violation with its docs link", () => {
     document.body.innerHTML = "<button></button>"; // unnamed → missing-accessible-name
-    const violation = audit(document.body).violations.find(
-      (v) => v.rule === "missing-accessible-name",
+    const violation = audit(document.body).violations.find((v) =>
+      v.issues.some((issue) => issue.rule === "missing-accessible-name"),
     )!;
     expect(violation.element).toBe(document.querySelector("button"));
     expect(violation.orderIndex).toBe(0);
     expect(violation.selector).not.toBe("");
-    expect(violation.docs).toBe(ALL_RULES["missing-accessible-name"].docs);
+    const issue = violation.issues.find(
+      (i) => i.rule === "missing-accessible-name",
+    )!;
+    expect(issue.docs).toBe(ALL_RULES["missing-accessible-name"].docs);
   });
 
-  test("focus-escapes-modal collapses leaked background controls into one finding", () => {
+  test("focus-escapes-modal collapses leaked background controls into one issue", () => {
     document.body.innerHTML =
       '<button>Bg1</button><button>Bg2</button><a href="#x">Bg3</a>' +
       '<div role="dialog" aria-modal="true"><button>Inside</button></div>';
-    const leaks = audit(document.body).violations.filter(
-      (v) => v.rule === "focus-escapes-modal",
+    const leaks = allIssues(document.body).filter(
+      (issue) => issue.rule === "focus-escapes-modal",
     );
     expect(leaks).toHaveLength(1);
     // Three controls leak; the first is the primary, the other two ride along.
@@ -91,21 +92,86 @@ describe("audit", () => {
   });
 });
 
-describe("severity", () => {
-  test("stamps each rule's default severity onto its violations", () => {
-    document.body.innerHTML = '<button tabindex="1">Jump</button>';
-    const violation = audit(document.body).violations.find(
-      (v) => v.rule === "no-positive-tabindex",
+describe("format", () => {
+  // A positive tabindex (no-positive-tabindex) and an unnamed button
+  // (missing-accessible-name): two rules across two elements.
+  const markup = '<button tabindex="1">Jump</button><button></button>';
+
+  test("default keeps the structured Violation[] with live elements", () => {
+    document.body.innerHTML = markup;
+    const { violations } = audit(document.body);
+    expect(Array.isArray(violations)).toBe(true);
+    expect(violations[0]!.element).toBeInstanceOf(Element);
+  });
+
+  test("text renders a human-readable string, always AuditResult", () => {
+    document.body.innerHTML = markup;
+    const result = audit(document.body, { format: "text" });
+    expect(result.valid).toBe(false);
+    expect(result.sequence.length).toBeGreaterThan(0);
+    expect(typeof result.violations).toBe("string");
+    expect(result.violations).toContain("no-positive-tabindex");
+  });
+
+  test("text says so when there is nothing to report", () => {
+    document.body.innerHTML = "<p>just text</p>";
+    expect(audit(document.body, { format: "text" }).violations).toBe(
+      "No tab-order issues.",
+    );
+  });
+
+  test("by-element mirrors Violation[] with selectors, no live nodes", () => {
+    document.body.innerHTML = markup;
+    const violations = audit(document.body, { format: "by-element" }).violations;
+    expect(violations).toHaveLength(2);
+    expect(violations[0]).toMatchObject({
+      selector: expect.any(String),
+      issues: expect.any(Array),
+    });
+    expect(violations[0]!.issueCount).toBe(violations[0]!.issues.length);
+    expect("element" in violations[0]!).toBe(false);
+    // Round-trips through JSON, unlike the live-Element default.
+    expect(() => JSON.stringify(violations)).not.toThrow();
+  });
+
+  test("by-rule groups every element under its rule", () => {
+    document.body.innerHTML = markup;
+    const groups = audit(document.body, { format: "by-rule" }).violations;
+    const rules = groups.map((group) => group.rule);
+    expect(rules).toContain("no-positive-tabindex");
+    const positive = groups.find(
+      (group) => group.rule === "no-positive-tabindex",
     )!;
-    expect(violation.severity).toBe("error");
+    expect(positive.elements).toHaveLength(1);
+    expect(positive.issueCount).toBe(positive.elements.length);
+    expect(positive.elements[0]!.selector).toContain("button");
+  });
+
+  test("flat emits one row per element-rule pair", () => {
+    document.body.innerHTML = markup;
+    const rows = audit(document.body, { format: "flat" }).violations;
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(rows.every((row) => typeof row.rule === "string")).toBe(true);
+    expect(rows.some((row) => row.rule === "no-positive-tabindex")).toBe(true);
+  });
+});
+
+describe("severity", () => {
+  test("stamps each rule's default severity onto its issues", () => {
+    document.body.innerHTML = '<button tabindex="1">Jump</button>';
+    const issue = allIssues(document.body).find(
+      (i) => i.rule === "no-positive-tabindex",
+    )!;
+    expect(issue.severity).toBe("error");
   });
 
   test("warnings are advisory: a warning-only result stays valid", () => {
     // redundant-tabindex is a warning, and the only rule this trips.
     document.body.innerHTML = '<button tabindex="0">Save</button>';
     const result = audit(document.body);
-    expect(result.violations.map((v) => v.rule)).toContain("redundant-tabindex");
-    expect(result.violations.every((v) => v.severity === "warning")).toBe(true);
+    const issues = result.violations.flatMap((v) => v.issues);
+    expect(issues.map((i) => i.rule)).toContain("redundant-tabindex");
+    expect(issues.every((i) => i.severity === "warning")).toBe(true);
     expect(result.valid).toBe(true);
   });
 
@@ -119,19 +185,19 @@ describe("severity", () => {
     const result = audit(document.body, {
       rules: { "no-positive-tabindex": "warning" },
     });
-    const violation = result.violations.find(
-      (v) => v.rule === "no-positive-tabindex",
-    )!;
-    expect(violation.severity).toBe("warning");
+    const issue = result.violations
+      .flatMap((v) => v.issues)
+      .find((i) => i.rule === "no-positive-tabindex")!;
+    expect(issue.severity).toBe("warning");
     // Demoted to a warning, so it no longer fails the result.
     expect(result.valid).toBe(true);
   });
 
   test('"off" disables a rule', () => {
     document.body.innerHTML = '<button tabindex="1">Jump</button>';
-    const fired = audit(document.body, {
+    const fired = allIssues(document.body, {
       rules: { "no-positive-tabindex": "off" },
-    }).violations.map((v) => v.rule);
+    }).map((i) => i.rule);
     expect(fired).not.toContain("no-positive-tabindex");
   });
 });
@@ -141,47 +207,5 @@ describe("rule metadata", () => {
     for (const rule of Object.values(ALL_RULES)) {
       expect(rule.docs).toMatch(/^https:\/\/\S+$/);
     }
-  });
-});
-
-describe("formatViolations", () => {
-  const make = (over: Partial<Violation>): Violation => ({
-    rule: "no-positive-tabindex" as RuleId,
-    severity: "error",
-    message: "msg",
-    docs: "https://example.test/doc",
-    element: document.createElement("button"),
-    selector: "button",
-    ...over,
-  });
-
-  test("reads clearly when there are no violations", () => {
-    expect(formatViolations([])).toBe("No tab-order violations.");
-  });
-
-  test("includes the rule, message and docs link", () => {
-    const out = formatViolations([make({ orderIndex: 0 })]);
-    expect(out).toContain("[no-positive-tabindex]");
-    expect(out).toContain("msg");
-    expect(out).toContain("docs: https://example.test/doc");
-  });
-
-  test("shows the tab position only when the violation has one", () => {
-    expect(formatViolations([make({ orderIndex: 2 })])).toContain("(tab #3)");
-    expect(formatViolations([make({})])).not.toContain("(tab #");
-  });
-
-  test("numbers multiple violations", () => {
-    const out = formatViolations([make({}), make({})]);
-    expect(out).toContain("1. ");
-    expect(out).toContain("2. ");
-  });
-
-  test("lists related elements by selector when present", () => {
-    const related = document.createElement("a");
-    related.id = "next";
-    const out = formatViolations([make({ relatedElements: [related] })]);
-    expect(out).toContain("related: a#next");
-    expect(formatViolations([make({})])).not.toContain("related:");
   });
 });

@@ -76,14 +76,35 @@ ${RING_CSS}
 .ooo-switch--on .ooo-switch-knob { transform: translateX(14px); }
 .ooo-switch:disabled { cursor: default; opacity: 0.4; }
 .ooo-panel-hint { margin: 1px 0 0; color: #74756d; font-size: 10.5px; letter-spacing: 0.01em; }
-/* Copy findings: a plain action button (not a switch); hands the formatted report
-   to the clipboard so it can be pasted into an AI chat. */
-.ooo-copy { width: 100%; margin: 0; padding: 6px 8px; border: 1px solid #c6c2b4;
-  border-radius: 3px; background: #ecebe4; color: #34352d;
+/* Copy findings: a split button. The main face copies in the current format; the
+   caret to its right opens a menu to switch it, GitHub-merge-button style. */
+.ooo-copy-split { position: relative; display: flex; }
+.ooo-copy { flex: 1 1 auto; min-width: 0; margin: 0; padding: 6px 8px;
+  border: 1px solid #c6c2b4; border-radius: 3px 0 0 3px; background: #ecebe4; color: #34352d;
   font: 600 11px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.02em; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease; }
-.ooo-copy:hover { background: #e2e0d6; border-color: #b7b3a4; color: #18191c; }
+.ooo-copy-caret { flex: none; width: 26px; margin-left: -1px; padding: 0;
+  border: 1px solid #c6c2b4; border-radius: 0 3px 3px 0; background: #ecebe4; color: #34352d;
+  font: 600 11px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease; }
+/* Raise whichever half is hovered so its border draws over the shared seam. */
+.ooo-copy:hover, .ooo-copy-caret:hover { position: relative; z-index: 1;
+  background: #e2e0d6; border-color: #b7b3a4; color: #18191c; }
+.ooo-copy-menu { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 5px;
+  display: flex; flex-direction: column; padding: 3px; z-index: 2;
+  background: #fffefb; border: 1px solid #c6c2b4; border-radius: 3px;
+  box-shadow: 0 10px 30px -12px rgba(24, 25, 28, 0.4), 0 1px 2px rgba(24, 25, 28, 0.08); }
+.ooo-copy-menu[hidden] { display: none; }
+.ooo-copy-item { display: flex; align-items: center; width: 100%; margin: 0;
+  padding: 5px 7px; border: 0; border-radius: 2px; background: none; color: #34352d;
+  letter-spacing: 0.02em; text-align: left; cursor: pointer;
+  font: 500 11px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ooo-copy-item:hover { background: #ecebe4; color: #18191c; }
+.ooo-copy-item::before { content: "\\2713"; width: 13px; color: #1f4e79; visibility: hidden; }
+.ooo-copy-item--on { color: #18191c; }
+.ooo-copy-item--on::before { visibility: visible; }
 .ooo-badge circle { fill: #fffefb; stroke: #2f6a47; stroke-width: 1.5;
   transform-box: fill-box; transform-origin: center; }
 .ooo-badge text { fill: #2f6a47;

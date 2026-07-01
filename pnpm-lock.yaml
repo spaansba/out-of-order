@@ -23,6 +23,9 @@ importers:
       '@out-of-order/core':
         specifier: workspace:*
         version: link:../core
+      '@out-of-order/trace':
+        specifier: workspace:*
+        version: link:../trace
       playwright:
         specifier: ^1.47.0
         version: 1.61.1

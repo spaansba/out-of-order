@@ -1,4 +1,12 @@
+import type { AuditFormat } from "@out-of-order/core";
 import type { ModifierKey } from "./index.js";
+
+const COPY_FORMATS: { value: AuditFormat; label: string }[] = [
+  { value: "by-element", label: "By element" },
+  { value: "by-rule", label: "By rule" },
+  { value: "flat", label: "Flat" },
+  { value: "text", label: "Text" },
+];
 
 const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
   Alt: "Alt",
@@ -13,6 +21,7 @@ export interface PanelState {
   visible: boolean;
   peek: boolean;
   open: boolean;
+  copyFormat: AuditFormat;
 }
 
 export function loadPanelState(): Partial<PanelState> {
@@ -34,10 +43,11 @@ export function patchPanelState(patch: Partial<PanelState>): void {
 export interface ControlsOptions {
   peekKey: ModifierKey;
   open: boolean;
+  copyFormat: AuditFormat;
   onToggleVisible: () => void;
   onTogglePeek: () => void;
   onToggleOpen: (open: boolean) => void;
-  getReport: () => string;
+  getReport: (format: AuditFormat) => string;
 }
 
 export interface Controls {
@@ -50,8 +60,15 @@ export function setupControls(
   layer: HTMLElement,
   opts: ControlsOptions,
 ): Controls {
-  const { peekKey, open, onToggleVisible, onTogglePeek, onToggleOpen, getReport } =
-    opts;
+  const {
+    peekKey,
+    open,
+    copyFormat,
+    onToggleVisible,
+    onTogglePeek,
+    onToggleOpen,
+    getReport,
+  } = opts;
   const abort = new AbortController();
   const signal = abort.signal;
 
@@ -66,6 +83,7 @@ export function setupControls(
     onToggleVisible,
     onTogglePeek,
     getReport,
+    copyFormat,
   );
   panel.append(title, body);
   layer.appendChild(panel);
@@ -118,7 +136,8 @@ function buildBody(
   signal: AbortSignal,
   onToggleVisible: () => void,
   onTogglePeek: () => void,
-  getReport: () => string,
+  getReport: (format: AuditFormat) => string,
+  copyFormat: AuditFormat,
 ): {
   body: HTMLElement;
   visSwitch: HTMLButtonElement;
@@ -143,47 +162,130 @@ function buildBody(
   hint.textContent = `tap ${PEEK_KEY_LABEL[peekKey]} to peek`;
   body.appendChild(hint);
 
-  addCopyButton(body, getReport, signal);
+  addCopyButton(body, getReport, copyFormat, signal);
 
   return { body, visSwitch, peekSwitch };
 }
 
-const COPY_LABEL = "Copy findings";
-
+// A split button, GitHub-merge style: the main face copies in the current format;
+// the caret opens a menu to switch it. Picking a format only sets it (persisted so
+// it survives a same-tab navigation) and relabels the main face - the next main
+// click copies in that format.
 function addCopyButton(
   parent: HTMLElement,
-  getReport: () => string,
+  getReport: (format: AuditFormat) => string,
+  copyFormat: AuditFormat,
   signal: AbortSignal,
 ): void {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.tabIndex = -1;
-  btn.className = "ooo-copy";
-  btn.textContent = COPY_LABEL;
-  btn.addEventListener("mousedown", (event) => event.preventDefault(), {
-    signal,
-  });
+  let current = copyFormat;
+
+  const wrap = document.createElement("div");
+  wrap.className = "ooo-copy-split";
+
+  const main = document.createElement("button");
+  main.type = "button";
+  main.tabIndex = -1;
+  main.className = "ooo-copy";
+
+  const caret = document.createElement("button");
+  caret.type = "button";
+  caret.tabIndex = -1;
+  caret.className = "ooo-copy-caret";
+  caret.textContent = "▾";
+  caret.setAttribute("aria-haspopup", "menu");
+  caret.setAttribute("aria-expanded", "false");
+  caret.setAttribute("aria-label", "Choose copy format");
+
+  const menu = document.createElement("div");
+  menu.className = "ooo-copy-menu";
+  menu.setAttribute("role", "menu");
+  menu.hidden = true;
+
+  const labelFor = (value: AuditFormat): string =>
+    COPY_FORMATS.find((format) => format.value === value)?.label ?? value;
+  const mainLabel = (): string => `Copy ${labelFor(current).toLowerCase()}`;
 
   let revert: ReturnType<typeof setTimeout> | undefined;
   const flash = (text: string): void => {
-    btn.textContent = text;
+    main.textContent = text;
     clearTimeout(revert);
-    revert = setTimeout(() => (btn.textContent = COPY_LABEL), 1200);
+    revert = setTimeout(() => (main.textContent = mainLabel()), 1200);
   };
   signal.addEventListener("abort", () => clearTimeout(revert));
 
-  btn.addEventListener(
+  const copy = (): void => {
+    void navigator.clipboard.writeText(getReport(current)).then(
+      () => flash("Copied"),
+      () => flash("Copy failed"),
+    );
+  };
+
+  const closeMenu = (): void => {
+    menu.hidden = true;
+    caret.setAttribute("aria-expanded", "false");
+  };
+
+  const items = new Map<AuditFormat, HTMLButtonElement>();
+  const syncSelection = (): void => {
+    main.textContent = mainLabel();
+    for (const [value, el] of items) {
+      el.classList.toggle("ooo-copy-item--on", value === current);
+      el.setAttribute("aria-checked", String(value === current));
+    }
+  };
+
+  for (const format of COPY_FORMATS) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.tabIndex = -1;
+    item.className = "ooo-copy-item";
+    item.setAttribute("role", "menuitemradio");
+    item.textContent = format.label;
+    item.addEventListener("mousedown", (event) => event.preventDefault(), {
+      signal,
+    });
+    item.addEventListener(
+      "click",
+      () => {
+        current = format.value;
+        syncSelection();
+        patchPanelState({ copyFormat: current });
+        closeMenu();
+      },
+      { signal },
+    );
+    items.set(format.value, item);
+    menu.appendChild(item);
+  }
+  syncSelection();
+
+  for (const btn of [main, caret]) {
+    btn.addEventListener("mousedown", (event) => event.preventDefault(), {
+      signal,
+    });
+  }
+  main.addEventListener("click", copy, { signal });
+  caret.addEventListener(
     "click",
     () => {
-      void navigator.clipboard.writeText(getReport()).then(
-        () => flash("Copied"),
-        () => flash("Copy failed"),
-      );
+      const open = menu.hidden;
+      menu.hidden = !open;
+      caret.setAttribute("aria-expanded", String(open));
+    },
+    { signal },
+  );
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (!wrap.contains(event.target as Node)) {
+        closeMenu();
+      }
     },
     { signal },
   );
 
-  parent.appendChild(btn);
+  wrap.append(main, caret, menu);
+  parent.appendChild(wrap);
 }
 
 function addSwitch(

@@ -6,6 +6,7 @@ import {
   hasExplicitName,
   selectorFor,
   hiddenReason,
+  focusRevealSelectors,
   inAriaHidden,
   isInert,
   looksClickable,
@@ -178,10 +179,12 @@ const ariaHiddenFocusable: RuleRun = (sequence) => {
 
 /** In the tab order but invisible: opacity:0, zero size, off-screen, or clipped.
     The user can tab to something they can't see. */
-const hiddenWhileFocusable: RuleRun = (sequence) => {
+const hiddenWhileFocusable: RuleRun = (sequence, { container }) => {
+  // Scan the page's focus-reveal rules once, not per element.
+  const revealOnFocus = focusRevealSelectors(container.ownerDocument);
   const out: Finding[] = [];
   for (const entry of sequence) {
-    const reason = hiddenReason(entry.element, entry.rect);
+    const reason = hiddenReason(entry.element, entry.rect, revealOnFocus);
 
     if (!reason) {
       continue;

@@ -26,7 +26,7 @@
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./violations.html">violations</a>
+        <a href="./playground.html">playground</a>
         <a href="./tabbable.html">tabbable</a>
       </nav>
       <span class="spacer"></span>
@@ -58,14 +58,15 @@
         </p>
         <p>
           <strong>See it</strong> on the page with <code>trace()</code>.
-          <strong>Check it</strong> in a test, in CI, or from an AI agent with
-          <code>audit()</code>.
+          <strong>Check it</strong> in a test or CI with <code>audit()</code>.
+          <strong>Scan</strong> any URL from the terminal, or from an AI agent,
+          with the <code>out-of-order</code> CLI.
         </p>
         <div class="cta">
           <a class="btn" href="./getting-started.html"
             >Get started</a
           >
-          <a class="btn" href="./violations.html">See the bugs it catches</a>
+          <a class="btn" href="./playground.html">See the bugs it catches</a>
           <a class="btn" href="./rules.html">Browse the rules</a>
         </div>
       </div>
@@ -151,8 +152,8 @@ const overlay = trace();</pre>
           pages are nothing but this call.
         </p>
         <div class="cta">
-          <a class="btn" href="./violations.html"
-            >Live demo: rule violations</a
+          <a class="btn" href="./playground.html"
+            >Live demo: the playground</a
           >
           <a class="btn" href="./tabbable.html">Live demo: what's tabbable</a>
         </div>
@@ -198,9 +199,17 @@ const overlay = trace();</pre>
               </td>
             </tr>
             <tr>
-              <td><code>@out-of-order/demo</code></td>
-              <td>This site. The docs plus the two interactive demo pages.</td>
-              <td>You are reading it.</td>
+              <td><code>@out-of-order/cli</code></td>
+              <td>
+                Audits any URL from the terminal. Launches a headless browser,
+                runs the analyzer, and prints findings to stdout, with an exit
+                code that fails on violations. Add <code>--overlay</code> to
+                open a real browser with the overlay drawn on the live page.
+              </td>
+              <td>
+                You want to check a live URL without writing code, gate CI on
+                the exit code, or pipe findings straight into an AI agent.
+              </td>
             </tr>
           </tbody>
         </table>

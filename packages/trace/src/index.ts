@@ -1,11 +1,11 @@
 import {
   audit,
-  formatViolations,
+  selectorFor,
   type AuditOptions,
   type Rule,
   type Severity,
   type AuditResult,
-  type Violation,
+  type Issue,
 } from "@out-of-order/core";
 import {
   computeAccessibleName,
@@ -21,8 +21,8 @@ import { badgeTip, segTip } from "./tip-content.js";
 import { setupControls, loadPanelState, patchPanelState } from "./controls.js";
 
 // Overlay users get the analyzer from this one package: re-export core's public
-// API so trace() and audit()/formatViolations() come from a single
-// import, without also depending on @out-of-order/core directly.
+// API so trace() and audit() come from a single import, without also depending
+// on @out-of-order/core directly.
 export * from "@out-of-order/core";
 
 export type MotionMode = "auto" | "on" | "off";
@@ -130,11 +130,20 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   const controls = setupControls(layer, {
     peekKey: options.peekKey ?? "Alt",
     open: saved.open ?? true,
+    copyFormat: saved.copyFormat ?? "text",
     onToggleVisible: () => setVisible(!visible),
     // Peek does nothing with the overlay hidden, so ignore the toggle then.
     onTogglePeek: () => visible && setPeek(!peeking),
     onToggleOpen: (open) => patchPanelState({ open }),
-    getReport: () => formatViolations(handle.result?.violations ?? []),
+    getReport: (format) => {
+      const violations = audit(options.root ?? document, {
+        ...options.audit,
+        format,
+      }).violations;
+      return typeof violations === "string"
+        ? violations
+        : JSON.stringify(violations, null, 2);
+    },
   });
 
   // Replay the persisted state now the panel exists to mirror it. Peek is moot (and
@@ -186,19 +195,21 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     const sequence = result.sequence;
     const inSeq = new Set(sequence.map((entry) => entry.element));
 
-    // Group violations by element so a marker's tooltip can list every issue. A
-    // violation also rings each of its relatedElements (controls sharing its root
-    // cause) red, without counting as a separate finding - see Violation.relatedElements.
-    const vById = new Map<Element, Violation[]>();
-    const indexBy = (element: Element, violation: Violation): void => {
-      const list = vById.get(element) ?? [];
-      list.push(violation);
-      vById.set(element, list);
+    // Index issues by element so a marker's tooltip can list every one. An issue
+    // also rings each of its relatedElements (controls sharing its root cause) red,
+    // without counting as a separate finding - see Issue.relatedElements.
+    const issuesByElement = new Map<Element, Issue[]>();
+    const indexBy = (element: Element, issue: Issue): void => {
+      const list = issuesByElement.get(element) ?? [];
+      list.push(issue);
+      issuesByElement.set(element, list);
     };
     for (const violation of result.violations) {
-      indexBy(violation.element, violation);
-      for (const related of violation.relatedElements ?? []) {
-        indexBy(related, violation);
+      for (const issue of violation.issues) {
+        indexBy(violation.element, issue);
+        for (const related of issue.relatedElements ?? []) {
+          indexBy(related, issue);
+        }
       }
     }
 
@@ -210,7 +221,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
         idx + 1,
         entry.selector,
         entry.tabIndex,
-        vById.get(entry.element) ?? [],
+        issuesByElement.get(entry.element) ?? [],
         true,
       ),
     );
@@ -221,8 +232,8 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     // (otherwise a sticky stop scrolling past would flip the line green↔red).
     const segs: SegSpec[] = [];
     for (let idx = 0; idx < sequence.length - 1; idx++) {
-      const back = (vById.get(sequence[idx + 1]!.element) ?? []).some(
-        (violation) => violation.rule === "visual-order-mismatch",
+      const back = (issuesByElement.get(sequence[idx + 1]!.element) ?? []).some(
+        (issue) => issue.rule === "visual-order-mismatch",
       );
       segs.push({ back, tip: () => segTip(back, idx + 1, idx + 2) });
     }
@@ -230,13 +241,13 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     // Off-sequence markers: elements that violate a rule but aren't tab stops at
     // all (interactive-but-not-focusable). They get a ⊘ glyph, not a number.
     const offStops: StopSpec[] = [];
-    for (const [element, vios] of vById) {
+    for (const [element, issues] of issuesByElement) {
       if (inSeq.has(element)) {
         continue;
       }
       // null number → ⊘ glyph; not a tab stop, so no tabindex/autofocus to show.
       offStops.push(
-        makeStop(element, "⊘", null, vios[0]!.selector, null, vios, false),
+        makeStop(element, "⊘", null, selectorFor(element), null, issues, false),
       );
     }
 
@@ -275,7 +286,11 @@ function resultSignature(result: AuditResult): string {
     .map((entry) => elementId(entry.element))
     .join(">");
   const vios = result.violations
-    .map((violation) => `${elementId(violation.element)}:${violation.rule}`)
+    .flatMap((violation) =>
+      violation.issues.map(
+        (issue) => `${elementId(violation.element)}:${issue.rule}`,
+      ),
+    )
     .sort()
     .join("|");
   return `${order}#${vios}`;
@@ -290,7 +305,7 @@ function makeStop(
   num: number | null,
   selector: string,
   tabIndex: number | null,
-  violations: Violation[],
+  issues: Issue[],
   inSeq: boolean,
 ): StopSpec {
   // autofocus marks where load-focus lands; moot for off-sequence (unfocusable) marks.
@@ -298,7 +313,7 @@ function makeStop(
   return {
     element,
     label,
-    severity: worstSeverity(violations),
+    severity: worstSeverity(issues),
     inSeq,
     autofocus,
     tip: () =>
@@ -306,7 +321,7 @@ function makeStop(
         num,
         selector,
         tabIndex,
-        violations,
+        issues,
         name: computeAccessibleName(element).trim(),
         role: getRole(element) ?? "",
         description: computeAccessibleDescription(element).trim(),
@@ -315,12 +330,12 @@ function makeStop(
   };
 }
 
-/** The worst severity among an element's findings (error outranks warning), or
+/** The worst severity among an element's issues (error outranks warning), or
     null when it has none. Drives the badge/ring colour: one element, one colour,
     set by its most serious problem. */
-function worstSeverity(violations: Violation[]): Severity | null {
-  if (violations.some((violation) => violation.severity === "error")) {
+function worstSeverity(issues: Issue[]): Severity | null {
+  if (issues.some((issue) => issue.severity === "error")) {
     return "error";
   }
-  return violations.length ? "warning" : null;
+  return issues.length ? "warning" : null;
 }

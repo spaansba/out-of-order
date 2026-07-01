@@ -22,7 +22,7 @@
         <a href="./api.html" aria-current="page">api</a>
         <a href="./recipes.html">recipes</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./violations.html">violations</a>
+        <a href="./playground.html">playground</a>
         <a href="./tabbable.html">tabbable</a>
       </nav>
       <span class="spacer"></span>
@@ -59,6 +59,16 @@
           <code>tabbable</code> uses real CSS layout for visibility and several
           rules read bounding rects.
         </p>
+        <p class="note">
+          You always get an <code>AuditResult</code>. Pass
+          <code>options.format</code> and only its <code>violations</code> change
+          type: <code>"text"</code> gives a ready-to-print <code>string</code>,
+          while <code>"by-element"</code>, <code>"by-rule"</code>, and
+          <code>"flat"</code> give a typed array in that shape
+          (<code>ByElement[]</code>, <code>ByRule[]</code>,
+          <code>Flat[]</code>), each free of live <code>Element</code>s so it
+          serializes straight to JSON. See <code>Formatted</code> below.
+        </p>
 
         <h3>Parameters</h3>
         <table class="spec api">
@@ -84,7 +94,9 @@
               <td class="type"><code>AuditOptions</code></td>
               <td>
                 Optional. Per-rule severity overrides. See
-                <a href="#options">Options &amp; severity</a>.
+                <a href="#options">Options &amp; severity</a>. Add
+                <code>format</code> to render <code>violations</code> to a
+                string instead (see above).
               </td>
             </tr>
             <tr>
@@ -133,9 +145,11 @@
             </tr>
             <tr>
               <td><code>violations</code></td>
-              <td class="type"><code>Violation[]</code></td>
+              <td class="type"><code>Violation[] | Formatted&lt;F&gt;</code></td>
               <td>
-                Every finding, across all enabled rules, at both severities.
+                One entry per offending element, each carrying the rules it
+                failed, across all enabled rules and both severities. Reshaped to
+                the <code>options.format</code> view when one is set (see above).
               </td>
             </tr>
           </tbody>
@@ -192,8 +206,46 @@
 
         <h3 id="violation">Violation<span class="kind">type</span></h3>
         <p class="note">
-          One entry per finding in <code>AuditResult.violations</code>.
+          One entry per offending <em>element</em> in
+          <code>AuditResult.violations</code>, carrying every rule it failed.
         </p>
+        <table class="spec api">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>element</code></td>
+              <td class="type"><code>Element</code></td>
+              <td>The offending element.</td>
+            </tr>
+            <tr>
+              <td><code>selector</code></td>
+              <td class="type"><code>string</code></td>
+              <td>A CSS-ish path to that element, for messages and logs.</td>
+            </tr>
+            <tr>
+              <td><code>orderIndex?</code></td>
+              <td class="type"><code>number</code></td>
+              <td>
+                Its position in the tab sequence, present only when it is a
+                stop.
+              </td>
+            </tr>
+            <tr>
+              <td><code>issues</code></td>
+              <td class="type"><code>Issue[]</code></td>
+              <td>The rules this element failed, error-severity first.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="issue">Issue<span class="kind">type</span></h3>
+        <p class="note">A single rule failure on one element.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -229,32 +281,13 @@
               <td>A spec link (WCAG, WAI-ARIA, or ARIA APG) for the rule.</td>
             </tr>
             <tr>
-              <td><code>element</code></td>
-              <td class="type"><code>Element</code></td>
-              <td>The offending element.</td>
-            </tr>
-            <tr>
-              <td><code>selector</code></td>
-              <td class="type"><code>string</code></td>
-              <td>A CSS-ish path to that element, for messages and logs.</td>
-            </tr>
-            <tr>
-              <td><code>orderIndex?</code></td>
-              <td class="type"><code>number</code></td>
-              <td>
-                Its position in the tab sequence, present only when it is a
-                stop.
-              </td>
-            </tr>
-            <tr>
               <td><code>relatedElements?</code></td>
               <td class="type"><code>Element[]</code></td>
               <td>
-                Other elements that share this finding's root cause. Ringed
-                alongside <code>element</code> but not reported as separate
-                violations, so one missing fix does not become N findings. The
-                overlay rings every one, and <code>formatViolations</code> lists
-                their selectors.
+                Other elements that share this issue's root cause. Ringed
+                alongside the violation's <code>element</code> but not reported
+                as separate violations, so one missing fix does not become N
+                findings.
               </td>
             </tr>
           </tbody>
@@ -298,7 +331,7 @@
         </table>
 
         <h3>AuditOptions<span class="kind">type</span></h3>
-        <p class="note">The overrides object, with a single field.</p>
+        <p class="note">The options object passed to <code>audit()</code>.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -319,6 +352,16 @@
                 that grade, or <code>"off"</code> to disable it.
               </td>
             </tr>
+            <tr>
+              <td><code>format?</code></td>
+              <td class="type"><code>AuditFormat</code></td>
+              <td>
+                Reshape the result's <code>violations</code> to this view:
+                <code>"text"</code> (a string), or <code>"by-element"</code>,
+                <code>"by-rule"</code>, <code>"flat"</code> (typed arrays). Omit
+                to keep the structured <code>Violation[]</code>.
+              </td>
+            </tr>
           </tbody>
         </table>
         <p class="note">
@@ -330,7 +373,7 @@
 
       <section class="group" id="helpers">
         <h2>Helpers &amp; exports</h2>
-        <p class="note">Three helper functions and one constant.</p>
+        <p class="note">Two helper functions.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -340,18 +383,6 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><code>formatViolations</code></td>
-              <td class="type">
-                <code>(violations: Violation[]) =&gt; string</code>
-              </td>
-              <td>
-                Renders violations into a readable multi-line block for test
-                messages and logs. Each finding gets its severity, rule id, tab
-                position, message, docs link, and the selectors of any related
-                elements.
-              </td>
-            </tr>
             <tr>
               <td><code>isInteractive</code></td>
               <td class="type"><code>(el: Element) =&gt; boolean</code></td>
@@ -395,7 +426,8 @@
               <td><code>id</code></td>
               <td class="type"><code>string</code></td>
               <td>
-                Surfaced on every <code>Violation</code> the rule produces.
+                Surfaced as <code>rule</code> on every <code>Issue</code> the
+                rule produces.
               </td>
             </tr>
             <tr>
@@ -486,8 +518,9 @@
         </table>
         <p class="note">
           <code>audit()</code> stamps the severity onto each finding, taken from
-          <code>defaultSeverity</code> or the caller's override. That is why a
-          <code>Finding</code> is a <code>Violation</code> without a severity.
+          <code>defaultSeverity</code> or the caller's override, then groups the
+          findings by element. That is why a <code>Finding</code> is an
+          <code>Issue</code> without a severity.
         </p>
         <pre class="code">
 import { audit } from "@out-of-order/core";

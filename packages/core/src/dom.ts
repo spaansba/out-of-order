@@ -115,8 +115,14 @@ export function isInert(element: Element): boolean {
   return element.closest("[inert]") !== null;
 }
 
-/** Resolved opacity is 0 on the element or any ancestor (so it paints nothing). */
+/** Resolved opacity is 0 on the element or any ancestor (so it paints nothing).
+    Prefers the native checkVisibility() (which folds in the opacity chain), falling
+    back to walking the ancestors on engines that lack it. */
 function isTransparent(element: Element): boolean {
+  const check = (element as HTMLElement).checkVisibility;
+  if (typeof check === "function") {
+    return !check.call(element, { opacityProperty: true });
+  }
   return (
     closestAncestor(
       element,
@@ -139,8 +145,11 @@ function isScreenReaderOnly(element: Element, rect: DOMRect): boolean {
   );
 }
 
-/** `element` lies entirely outside an ancestor that clips overflow on that axis, so
-    it's visually cut off even though it keeps its place in the tab order. */
+/** `element` lies entirely outside an ancestor that clips it away for good on that
+    axis. Only `overflow:clip` counts: it establishes no scroll container, so the
+    element can never be brought into view. `overflow:hidden` is a scroll container
+    the browser scrolls to reveal a focused descendant, so it isn't a dead end and is
+    excluded here (see the reveal-on-focus handling in `hiddenReason`). */
 function isClipped(element: Element, rect: DOMRect): boolean {
   for (let node = element.parentElement; node; node = node.parentElement) {
     const containerRect = node.getBoundingClientRect();
@@ -152,8 +161,8 @@ function isClipped(element: Element, rect: DOMRect): boolean {
       rect.right <= containerRect.left || rect.left >= containerRect.right;
     const outY =
       rect.bottom <= containerRect.top || rect.top >= containerRect.bottom;
-    const clipX = style.overflowX === "hidden" || style.overflowX === "clip";
-    const clipY = style.overflowY === "hidden" || style.overflowY === "clip";
+    const clipX = style.overflowX === "clip";
+    const clipY = style.overflowY === "clip";
     if ((outX && clipX) || (outY && clipY)) {
       return true;
     }
@@ -174,11 +183,10 @@ function isOffPage(element: Element, rect: DOMRect): boolean {
   return pageRight <= 0 || pageBottom <= 0;
 }
 
-/**
- * Why a tab stop is effectively invisible while still being tabbable, or null if
- * it's genuinely perceivable. Skips the intentional screen-reader-only pattern.
- */
-export function hiddenReason(element: Element, rect: DOMRect): string | null {
+/** Why `element` is invisible given a single measured `rect`, or null if it's
+    perceivable. Reads only the state as measured; the focus-reveal check lives in
+    the exported `hiddenReason`. Skips the intentional screen-reader-only pattern. */
+function staticHiddenReason(element: Element, rect: DOMRect): string | null {
   if (isScreenReaderOnly(element, rect)) {
     return null;
   }
@@ -199,9 +207,107 @@ export function hiddenReason(element: Element, rect: DOMRect): string | null {
     return "positioned off-screen (e.g. left:-9999px), invisible but still tabbable";
   }
   if (isClipped(element, rect)) {
-    return "clipped by an overflow:hidden ancestor";
+    return "clipped by an overflow:clip ancestor";
   }
   return null;
+}
+
+/** Properties whose value can flip an element from hidden to visible. A focus rule
+    that touches one of these can reveal the element; a focus rule that only tweaks
+    e.g. `outline` or `color` cannot, so it must not exonerate a hidden control. */
+const REVEALING_PROPS = [
+  "opacity",
+  "visibility",
+  "display",
+  "position",
+  "left",
+  "right",
+  "top",
+  "bottom",
+  "inset",
+  "clip",
+  "clip-path",
+  "transform",
+  "translate",
+  "scale",
+  "width",
+  "height",
+  "max-width",
+  "max-height",
+  "overflow",
+];
+
+function revealSelectors(rules: CSSRuleList): string[] {
+  return Array.from(rules).flatMap((rule) => {
+    // A CSSStyleRule also exposes cssRules (CSS nesting), so match it before the
+    // grouping-rule descent below, or every style rule gets swallowed as a group.
+    if (rule instanceof CSSStyleRule) {
+      if (
+        !/:focus/i.test(rule.selectorText) ||
+        !REVEALING_PROPS.some((p) => rule.style.getPropertyValue(p) !== "")
+      ) {
+        return [];
+      }
+      // Drop the focus pseudos so the selector matches the element at rest: what it
+      // looks like *before* focus is what we're grading against.
+      const resting = rule.selectorText
+        .replace(/:focus(?:-visible|-within)?/gi, "")
+        .trim();
+      return resting ? [resting] : [];
+    }
+    // Descend into @media / @supports / @layer groups.
+    return "cssRules" in rule
+      ? revealSelectors((rule as CSSGroupingRule).cssRules)
+      : [];
+  });
+}
+
+/**
+ * The resting-state selectors of every readable stylesheet rule that keys on focus
+ * *and* sets a property that could reveal a hidden element. A hidden tab stop that
+ * matches one of these is the reveal-on-focus pattern (skip links, on-focus
+ * controls), visible exactly when a keyboard user reaches it, so it isn't a bug.
+ */
+export function focusRevealSelectors(doc: Document): string[] {
+  const sheets = [
+    ...Array.from(doc.styleSheets),
+    ...(doc.adoptedStyleSheets ?? []),
+  ];
+  return sheets.flatMap((sheet) => {
+    try {
+      return revealSelectors(sheet.cssRules);
+    } catch {
+      return [];
+    }
+  });
+}
+
+/**
+ * Why a tab stop is effectively invisible while still being tabbable, or null if
+ * it's genuinely perceivable. A control hidden at rest but revealed when it
+ * receives focus (the skip-link / reveal-on-focus pattern) is perceivable exactly
+ * when a keyboard user reaches it, so it's exonerated. Pass `revealOnFocus` from
+ * {@link focusRevealSelectors} to enable that exemption.
+ */
+export function hiddenReason(
+  element: Element,
+  rect: DOMRect,
+  revealOnFocus: string[] = [],
+): string | null {
+  const reason = staticHiddenReason(element, rect);
+  if (!reason) {
+    return null;
+  }
+  // Hidden at rest, but a focus rule reveals it: not a bug. A stripped selector can
+  // be invalid (e.g. an emptied :not()), which matches nothing and exonerates nothing.
+  const revealed = revealOnFocus.some((selector) => {
+    try {
+      return element.matches(selector);
+    } catch {
+      return false;
+    }
+  });
+  return revealed ? null : reason;
 }
 
 /** Native HTML elements that are interactive (and focusable) on their own. A role

@@ -1,7 +1,6 @@
 import { expect } from "vitest";
 import {
   audit,
-  formatViolations,
   type AuditOptions,
   type AuditResult,
 } from "@out-of-order/core";
@@ -28,6 +27,11 @@ expect.extend({
     const result: AuditResult = audit(root, options);
     const { isNot } = this;
 
+    const issueCount = result.violations.reduce(
+      (total, violation) => total + violation.issues.length,
+      0,
+    );
+
     return {
       pass: result.valid,
       actual: result.violations,
@@ -35,8 +39,8 @@ expect.extend({
         isNot
           ? `Expected tab order to be invalid, but no violations were found ` +
             `(${result.sequence.length} focusable elements checked).`
-          : `Expected a valid tab order, found ${result.violations.length} violation(s):\n` +
-            formatViolations(result.violations),
+          : `Expected a valid tab order, found ${issueCount} issue(s):\n` +
+            audit(root, { ...options, format: "text" }).violations,
     };
   },
 });

@@ -2,9 +2,11 @@ import { defineConfig } from "tsup";
 
 export default defineConfig([
   {
-    entry: { inject: "src/inject.ts" },
+    entry: {
+      inject: "src/inject.ts",
+      "inject-overlay": "src/inject-overlay.ts",
+    },
     format: "iife",
-    globalName: "__ooo",
     platform: "browser",
     outDir: "dist",
     clean: true,

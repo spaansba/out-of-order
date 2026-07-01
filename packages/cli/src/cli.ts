@@ -4,23 +4,34 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium } from "playwright";
-import type { AuditResult, Violation } from "@out-of-order/core";
+import type { AuditFormat, AuditResult, Formatted } from "@out-of-order/core";
 
 type OooGlobal = {
-  audit: (root: Document) => AuditResult;
-  formatViolations: (violations: Violation[]) => string;
+  audit: <F extends AuditFormat>(
+    root: Document,
+    options: { format: F },
+  ) => AuditResult<Formatted<F>>;
 };
+
+const FORMATS = [
+  "by-element",
+  "by-rule",
+  "flat",
+  "text",
+] as const satisfies readonly AuditFormat[];
 
 const USAGE = `out-of-order <url> [options]
 
-  --json               Emit findings as JSON (grouped by rule) instead of text.
+  --format <name>      Output shape: ${FORMATS.join(" | ")} (default: text).
+  --overlay            Open a headed browser with the visual overlay; Ctrl-C to quit.
   --wait <selector>    Wait for a selector before auditing (JS-heavy pages).
   --help               Show this message.`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
-    json: { type: "boolean", default: false },
+    format: { type: "string", default: "text" },
+    overlay: { type: "boolean", default: false },
     wait: { type: "string" },
     help: { type: "boolean", default: false },
   },
@@ -37,12 +48,52 @@ if (!url) {
   process.exit(2);
 }
 
+const format = values.format as AuditFormat;
+if (!FORMATS.includes(format)) {
+  process.stderr.write(`Unknown --format "${format}".\n${USAGE}\n`);
+  process.exit(2);
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
+
+if (values.overlay) {
+  const overlaySource = readFileSync(
+    join(here, "inject-overlay.global.js"),
+    "utf8",
+  );
+  const browser = await chromium.launch({ headless: false });
+  // viewport:null uses the real window size; bypassCSP lets the overlay's <style>
+  // and script through on strict sites.
+  const context = await browser.newContext({
+    viewport: null,
+    bypassCSP: true,
+  });
+  const page = await context.newPage();
+  await page.addInitScript({ content: overlaySource });
+  const response = await page.goto(url, { waitUntil: "networkidle" });
+  if (response && !response.ok()) {
+    process.stderr.write(`${url} returned HTTP ${response.status()}\n`);
+    await browser.close();
+    process.exit(2);
+  }
+  if (values.wait) {
+    await page.waitForSelector(values.wait);
+  }
+  process.stderr.write("Overlay mounted. Ctrl-C to quit.\n");
+  await new Promise<void>((resolve) => {
+    browser.on("disconnected", () => resolve());
+    process.on("SIGINT", () => resolve());
+  });
+  await browser.close().catch(() => {});
+  process.exit(0);
+}
+
 const injectSource = readFileSync(join(here, "inject.global.js"), "utf8");
 
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
+  await page.addInitScript({ content: injectSource });
   const response = await page.goto(url, { waitUntil: "networkidle" });
   if (response && !response.ok()) {
     throw new Error(`${url} returned HTTP ${response.status()}`);
@@ -50,51 +101,19 @@ try {
   if (values.wait) {
     await page.waitForSelector(values.wait);
   }
-  await page.addScriptTag({ content: injectSource });
-
-  const out = await page.evaluate(() => {
+  const out = await page.evaluate((fmt) => {
     const ooo = (window as unknown as { __ooo: OooGlobal }).__ooo;
-    const result = ooo.audit(document);
-    // Group by element identity here, where it still exists: selectors aren't
-    // unique (repeated structures share one), so an array keyed by identity is
-    // the only faithful "one entry per element" shape once it crosses to JSON.
-    const byElement = new Map<
-      Element,
-      {
-        selector: string;
-        orderIndex?: number;
-        findings: {
-          rule: string;
-          severity: string;
-          message: string;
-          docs?: string;
-        }[];
-      }
-    >();
-    for (const v of result.violations) {
-      let entry = byElement.get(v.element);
-      if (!entry) {
-        entry = { selector: v.selector, orderIndex: v.orderIndex, findings: [] };
-        byElement.set(v.element, entry);
-      }
-      entry.findings.push({
-        rule: v.rule,
-        severity: v.severity,
-        message: v.message,
-        docs: v.docs,
-      });
-    }
-    return {
-      report: ooo.formatViolations(result.violations),
-      hasError: result.violations.some((v) => v.severity === "error"),
-      elements: [...byElement.values()],
-    };
-  });
+    const result = ooo.audit(document, { format: fmt });
+    const violations = result.violations;
+    const output =
+      typeof violations === "string"
+        ? violations
+        : JSON.stringify(violations, null, 2);
+    return { output, valid: result.valid };
+  }, format);
 
-  process.stdout.write(
-    (values.json ? JSON.stringify(out.elements, null, 2) : out.report) + "\n",
-  );
-  process.exitCode = out.hasError ? 1 : 0;
+  process.stdout.write(out.output + "\n");
+  process.exitCode = out.valid ? 0 : 1;
 } catch (err) {
   process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
   process.exitCode = 2;
