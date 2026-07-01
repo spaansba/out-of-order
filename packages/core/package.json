@@ -1,6 +1,7 @@
 {
   "name": "@out-of-order/core",
   "version": "0.1.0",
+  "private": false,
   "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
   "keywords": [
     "a11y",
@@ -10,10 +11,10 @@
     "tabbable",
     "tabindex"
   ],
-  "license": "MIT",
-  "author": "Bart Spaans",
   "homepage": "https://github.com/spaansba/out-of-order#readme",
   "bugs": "https://github.com/spaansba/out-of-order/issues",
+  "license": "MIT",
+  "author": "Bart Spaans",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/spaansba/out-of-order.git",
