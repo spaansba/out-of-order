@@ -1,6 +1,6 @@
 # Out of Order
 
-> ⚠️ **Heavy development.** Released, but the API is still changing and may break between versions.
+> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
 
 Focus and keyboard-accessibility validation that runs in **real browsers only**. No jsdom, no layout guessing, no silently-skipped checks.
 
@@ -17,7 +17,8 @@ Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequ
 | [`@out-of-order/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result. No framework or test-runner deps, just the DOM.                          |
 | [`@out-of-order/trace`](./packages/trace)   | Framework-agnostic live overlay built on the core analyzer: numbers the tab path, rings every finding in place, shows per-stop details on hover. |
 | [`@out-of-order/vitest`](./packages/vitest) | `expect(el).toHaveValidTabOrder()` matcher for Vitest Browser Mode, plus TypeScript augmentation.                                                |
-| [`@out-of-order/demo`](./packages/demo)     | Vite demo — an edge-cases page and a deliberately-broken page, both thin consumers of `@out-of-order/trace`.                                     |
+| [`@out-of-order/cli`](./packages/cli)       | Audit any URL's tab order from the terminal: findings to stdout for a CI gate or an AI agent, or a headed browser with the live overlay.         |
+| [`@out-of-order/demo`](./packages/demo)     | Vite demo, an edge-cases page and a deliberately-broken page, both thin consumers of `@out-of-order/trace`.                                      |
 
 A Playwright matcher shares the same core and can be added later.
 

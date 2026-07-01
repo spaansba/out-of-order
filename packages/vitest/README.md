@@ -1,5 +1,7 @@
 # @out-of-order/vitest
 
+> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
+
 `toHaveValidTabOrder()` matcher for [Vitest Browser Mode](https://vitest.dev/guide/browser/). Runs the [`@out-of-order/core`](../core) analyzer against a real Chromium DOM, so a passing assertion reflects what users actually experience.
 
 ## Install

@@ -1,5 +1,7 @@
 # @out-of-order/demo
 
+> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
+
 The project site: a set of docs pages plus two interactive demos, all thin consumers of [`@out-of-order/trace`](../trace). The overlay comes entirely from the library, so the demos could be rebuilt in React, Vue, or anything else without changing the core.
 
 **Interactive demos** (both run the overlay):

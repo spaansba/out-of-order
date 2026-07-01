@@ -1,5 +1,7 @@
 # @out-of-order/trace
 
+> ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
+
 Drops a visual overlay on any live page: every tab stop gets a numbered badge,
 each hop between stops is drawn as a line (red when it runs against reading
 order), and every accessibility finding is ringed in place with a tooltip
