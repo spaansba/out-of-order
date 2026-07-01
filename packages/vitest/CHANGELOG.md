@@ -1,5 +1,11 @@
 # @out-of-order/vitest
 
+## 0.1.2
+
+### Patch Changes
+
+- [#4](https://github.com/spaansba/out-of-order/pull/4) [`7e4250d`](https://github.com/spaansba/out-of-order/commit/7e4250dc40c8e8f23d93519227641ac21851773d) Thanks [@spaansba](https://github.com/spaansba)! - `toHaveValidTabOrder()` now throws a clear error when run under jsdom instead of silently producing misleading results. The matcher reads CSS layout, which jsdom cannot provide, so it needs a real browser (Vitest Browser Mode).
+
 ## 0.1.1
 
 ### Patch Changes
