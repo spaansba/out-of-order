@@ -1,7 +1,13 @@
 import { ensureRingStyles } from "./styles.js";
-import { RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./classes.js";
-import type { Severity } from "@out-of-order/core";
+import { OVERLAY_CLASS_PREFIX, type Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
+
+// The overlay's CSS namespace, shared with core so the prefix can't drift: core
+// strips any class starting with it when building selectors, so the overlay's own
+// rings/badges never leak into analysis.
+const RING_CLASS = `${OVERLAY_CLASS_PREFIX}ring`;
+const RING_BAD_CLASS = `${RING_CLASS}--bad`;
+const RING_WARN_CLASS = `${RING_CLASS}--warn`;
 
 /** All three ring states, so a rebuild/destroy can strip whichever one is set. */
 const RING_CLASSES = [RING_CLASS, RING_WARN_CLASS, RING_BAD_CLASS];

@@ -5,8 +5,8 @@ export type Severity = "error" | "warning";
 export type RuleOverride = Severity | "off";
 
 /** Serialized shape `audit` returns when asked to format its result: the findings
-    grouped by element, grouped by rule, flat, or as a human-readable text block. */
-export type AuditFormat = "by-element" | "by-rule" | "flat" | "text";
+    grouped by element, or as a human-readable text block. */
+export type AuditFormat = "by-element" | "text";
 
 /** A single rule failure on one element. */
 export interface Issue {
@@ -60,45 +60,13 @@ export interface ByElement {
   issues: SerializedIssue[];
 }
 
-/** `"by-rule"` format: one entry per failed rule, listing every element that hit it. */
-export interface ByRule {
-  rule: AnyRuleId;
-  severity: Severity;
-  docs?: string;
-  /** How many elements failed this rule (`elements.length`). */
-  issueCount: number;
-  elements: {
-    selector: string;
-    orderIndex?: number;
-    message: string;
-    related?: string[];
-    ignored?: boolean;
-  }[];
-}
-
-/** `"flat"` format: one row per (element, rule) pair, nothing nested. */
-export interface Flat {
-  rule: AnyRuleId;
-  severity: Severity;
-  selector: string;
-  orderIndex?: number;
-  message: string;
-  docs?: string;
-  related?: string[];
-  ignored?: boolean;
-}
-
 /** The type of {@link AuditResult.violations} for a given `format`: a string for
     `"text"`, the matching structured array for the others. */
 export type Formatted<F extends AuditFormat> = F extends "text"
   ? string
   : F extends "by-element"
     ? ByElement[]
-    : F extends "by-rule"
-      ? ByRule[]
-      : F extends "flat"
-        ? Flat[]
-        : never;
+    : never;
 
 export type RuleId = keyof typeof ALL_RULES;
 

@@ -134,26 +134,6 @@ describe("format", () => {
     expect(() => JSON.stringify(violations)).not.toThrow();
   });
 
-  test("by-rule groups every element under its rule", () => {
-    document.body.innerHTML = markup;
-    const groups = audit(document.body, { format: "by-rule" }).violations;
-    const rules = groups.map((group) => group.rule);
-    expect(rules).toContain("no-positive-tabindex");
-    const positive = groups.find(
-      (group) => group.rule === "no-positive-tabindex",
-    )!;
-    expect(positive.elements).toHaveLength(1);
-    expect(positive.issueCount).toBe(positive.elements.length);
-    expect(positive.elements[0]!.selector).toContain("button");
-  });
-
-  test("flat emits one row per element-rule pair", () => {
-    document.body.innerHTML = markup;
-    const rows = audit(document.body, { format: "flat" }).violations;
-    expect(rows.length).toBeGreaterThanOrEqual(2);
-    expect(rows.every((row) => typeof row.rule === "string")).toBe(true);
-    expect(rows.some((row) => row.rule === "no-positive-tabindex")).toBe(true);
-  });
 });
 
 describe("severity", () => {
@@ -237,13 +217,15 @@ describe("data-ooo-ignore", () => {
     expect(result.valid).toBe(false);
   });
 
-  test("text and flat views surface the approval", () => {
+  test("text and by-element views surface the approval", () => {
     document.body.innerHTML = "<button data-ooo-ignore></button>";
     expect(audit(document.body, { format: "text" }).violations).toContain(
       "ignored via data-ooo-ignore",
     );
-    const rows = audit(document.body, { format: "flat" }).violations;
-    expect(rows.some((row) => row.ignored)).toBe(true);
+    const entries = audit(document.body, { format: "by-element" }).violations;
+    expect(entries.some((entry) => entry.issues.some((i) => i.ignored))).toBe(
+      true,
+    );
   });
 });
 

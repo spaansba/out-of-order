@@ -15,8 +15,6 @@ type OooGlobal = {
 
 const FORMATS = [
   "by-element",
-  "by-rule",
-  "flat",
   "text",
 ] as const satisfies readonly AuditFormat[];
 

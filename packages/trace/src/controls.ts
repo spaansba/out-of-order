@@ -3,8 +3,6 @@ import type { ModifierKey } from "./index.js";
 
 const COPY_FORMATS: { value: AuditFormat; label: string }[] = [
   { value: "by-element", label: "By element" },
-  { value: "by-rule", label: "By rule" },
-  { value: "flat", label: "Flat" },
   { value: "text", label: "Text" },
 ];
 

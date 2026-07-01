@@ -60,21 +60,23 @@ export interface Rule {
     ~8px a sighted user doesn't perceive a row break. */
 const ROW_TOLERANCE_PX = 8;
 
-const noPositiveTabIndex: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
-    if (entry.tabIndex <= 0) {
-      continue;
-    }
+/** Map the tab sequence to at most one finding per entry: return a message to flag
+    the entry, or null to pass it. Collapses the boilerplate of the per-entry rules. */
+const flagEntries = (
+  sequence: SequenceEntry[],
+  message: (entry: SequenceEntry) => string | null,
+): Finding[] =>
+  sequence.flatMap((entry) => {
+    const msg = message(entry);
+    return msg ? [{ message: msg, target: entry }] : [];
+  });
 
-    out.push({
-      message: `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile; use 0 or restructure the DOM.`,
-      target: entry,
-    });
-  }
-
-  return out;
-};
+const noPositiveTabIndex: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) =>
+    entry.tabIndex > 0
+      ? `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile; use 0 or restructure the DOM.`
+      : null,
+  );
 
 /**
  * The tab sequence should match the visual reading order (top→bottom,
@@ -132,64 +134,37 @@ const visualOrderMismatch: RuleRun = (sequence) => {
   return out;
 };
 
-const missingAccessibleName: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
+const missingAccessibleName: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) => {
     if (!isInteractive(entry.element)) {
-      continue;
+      return null;
     }
-
     // Skip the costly subtree walk when a name is already guaranteed.
     if (hasExplicitName(entry.element)) {
-      continue;
+      return null;
     }
-
     if (computeAccessibleName(entry.element).trim() !== "") {
-      continue;
+      return null;
     }
+    return `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`;
+  });
 
-    out.push({
-      message: `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`,
-      target: entry,
-    });
-  }
-
-  return out;
-};
-
-const ariaHiddenFocusable: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
-    if (!inAriaHidden(entry.element)) {
-      continue;
-    }
-
-    out.push({
-      message: `"${entry.selector}" is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce. Add tabindex="-1"/inert, or remove aria-hidden.`,
-      target: entry,
-    });
-  }
-
-  return out;
-};
+const ariaHiddenFocusable: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) =>
+    inAriaHidden(entry.element)
+      ? `"${entry.selector}" is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce. Add tabindex="-1"/inert, or remove aria-hidden.`
+      : null,
+  );
 
 const hiddenWhileFocusable: RuleRun = (sequence, { container }) => {
   // Scan the page's focus-reveal rules once, not per element.
   const revealOnFocus = focusRevealSelectors(container.ownerDocument);
-  const out: Finding[] = [];
-  for (const entry of sequence) {
+  return flagEntries(sequence, (entry) => {
     const reason = hiddenReason(entry.element, entry.rect, revealOnFocus);
-
-    if (!reason) {
-      continue;
-    }
-
-    out.push({
-      message: `"${entry.selector}" is tabbable but ${reason}. Hide it from the tab order too (display:none, the hidden attribute, or tabindex="-1").`,
-      target: entry,
-    });
-  }
-  return out;
+    return reason
+      ? `"${entry.selector}" is tabbable but ${reason}. Hide it from the tab order too (display:none, the hidden attribute, or tabindex="-1").`
+      : null;
+  });
 };
 
 const clickableNotFocusable: RuleRun = (
@@ -312,61 +287,46 @@ const focusEscapesModal: RuleRun = (sequence, { container }) => {
   ];
 };
 
-const tabindexOnNoninteractive: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
+const tabindexOnNoninteractive: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) => {
     if (entry.tabIndex !== 0) {
-      continue;
+      return null;
     }
     if (entry.element.getAttribute("tabindex") === null) {
-      continue;
+      return null;
     } // implicitly focusable
     const element = entry.element as HTMLElement;
     if (isNativelyFocusable(element)) {
-      continue;
+      return null;
     }
     if (isInteractive(element)) {
-      continue;
+      return null;
     }
     if (element.isContentEditable) {
-      continue;
+      return null;
     }
     const role = element.getAttribute("role");
     if (role && role !== "presentation" && role !== "none") {
-      continue;
+      return null;
     }
     // A keyboard-scrollable region legitimately takes tabindex="0", even when it
     // isn't currently overflowing, so key on computed overflow, not a live size.
     if (isScrollContainer(element)) {
-      continue;
+      return null;
     }
-    out.push({
-      message: `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control). If it's decorative, remove the tabindex, since it adds a dead stop to the tab order; if it's meant to be a control, give it a real role (or use a <button>).`,
-      target: entry,
-    });
-  }
+    return `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control). If it's decorative, remove the tabindex, since it adds a dead stop to the tab order; if it's meant to be a control, give it a real role (or use a <button>).`;
+  });
 
-  return out;
-};
-
-const preferNativeElement: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
+const preferNativeElement: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) => {
     const native = nativeReplacement(entry.element);
     if (!native) {
-      continue;
+      return null;
     }
-
     const tag = entry.element.tagName.toLowerCase();
     const role = entry.element.getAttribute("role");
-    out.push({
-      message: `"${entry.selector}" is a <${tag}> with role="${role}". Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`,
-      target: entry,
-    });
-  }
-
-  return out;
-};
+    return `"${entry.selector}" is a <${tag}> with role="${role}". Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`;
+  });
 
 /** autofocus applies to any *focusable* element (even tabindex="-1" non-stops), and
     the browser focuses the first in *document* order — so scan the whole container,
@@ -436,28 +396,19 @@ const nestedInteractive: RuleRun = (sequence, { container, inSequence }) => {
     redundant markup that adds noise and invites a positive value to creep in later.
     tabindex="-1" (removed from the sequence) and positive values (no-positive-tabindex)
     aren't redundant and never reach here. */
-const redundantTabindex: RuleRun = (sequence) => {
-  const out: Finding[] = [];
-  for (const entry of sequence) {
+const redundantTabindex: RuleRun = (sequence) =>
+  flagEntries(sequence, (entry) => {
     if (entry.tabIndex !== 0) {
-      continue;
+      return null;
     }
-
     if (entry.element.getAttribute("tabindex") === null) {
-      continue;
+      return null;
     } // implicitly focusable, no attribute to remove
-
     if (!isNativelyFocusable(entry.element)) {
-      continue;
+      return null;
     }
-
-    out.push({
-      message: `"${entry.selector}" is already focusable, so its tabindex="0" is redundant. Remove the attribute; the element stays in the tab order on its own.`,
-      target: entry,
-    });
-  }
-  return out;
-};
+    return `"${entry.selector}" is already focusable, so its tabindex="0" is redundant. Remove the attribute; the element stays in the tab order on its own.`;
+  });
 
 export const ALL_RULES = {
   "no-positive-tabindex": {

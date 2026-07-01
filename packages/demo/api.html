@@ -3,37 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: API reference</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./src/styles.css" />
+    <title>Out of Order: API reference</title>    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <h1><a href="./index.html">Out of Order</a></h1>
-      <nav aria-label="Site">
-        <a href="./getting-started.html">start</a>
-        <a href="./concepts.html">concepts</a>
-        <a href="./rules.html">rules</a>
-        <a href="./api.html" aria-current="page">api</a>
-        <a href="./recipes.html">recipes</a>
-        <span class="nav-sep" aria-hidden="true"></span>
-        <a href="./playground.html">playground</a>
-        <a href="./tabbable.html">tabbable</a>
-      </nav>
-      <span class="spacer"></span>
-      <a
-        class="btn"
-        href="https://github.com/spaansba/out-of-order"
-        target="_blank"
-        rel="noopener"
-        >GitHub</a
-      >
-    </header>
 
     <main class="wrap">
       <div class="intro">
@@ -63,10 +35,8 @@
           You always get an <code>AuditResult</code>. Pass
           <code>options.format</code> and only its <code>violations</code> change
           type: <code>"text"</code> gives a ready-to-print <code>string</code>,
-          while <code>"by-element"</code>, <code>"by-rule"</code>, and
-          <code>"flat"</code> give a typed array in that shape
-          (<code>ByElement[]</code>, <code>ByRule[]</code>,
-          <code>Flat[]</code>), each free of live <code>Element</code>s so it
+          while <code>"by-element"</code> gives a typed
+          <code>ByElement[]</code>, free of live <code>Element</code>s so it
           serializes straight to JSON. See <code>Formatted</code> below.
         </p>
 
@@ -357,9 +327,9 @@
               <td class="type"><code>AuditFormat</code></td>
               <td>
                 Reshape the result's <code>violations</code> to this view:
-                <code>"text"</code> (a string), or <code>"by-element"</code>,
-                <code>"by-rule"</code>, <code>"flat"</code> (typed arrays). Omit
-                to keep the structured <code>Violation[]</code>.
+                <code>"text"</code> (a string), or <code>"by-element"</code>
+                (a typed array). Omit to keep the structured
+                <code>Violation[]</code>.
               </td>
             </tr>
           </tbody>

@@ -40,26 +40,20 @@ describe("no-positive-tabindex", () => {
       fired('<button>a</button><button tabindex="2.9">b</button>'),
     ).toContain("no-positive-tabindex");
   });
-  test.fails(
-    "06 should pass but currently FAILS: out-of-range tabindex reset to 0 by Chromium",
-    () => {
-      expect(
-        fired(
-          '<button>Save</button><button tabindex="99999999999">Cancel</button>',
-        ),
-      ).not.toContain("no-positive-tabindex");
-    },
-  );
-  test.fails(
-    '07 should fail but currently PASSES: tabindex="3px" parsed positive by Chromium',
-    () => {
-      expect(
-        fired(
-          '<button>First</button><button tabindex="3px">Jumped to front</button>',
-        ),
-      ).toContain("no-positive-tabindex");
-    },
-  );
+  test("06 passes: out-of-range tabindex is reset to 0", () => {
+    expect(
+      fired(
+        '<button>Save</button><button tabindex="99999999999">Cancel</button>',
+      ),
+    ).not.toContain("no-positive-tabindex");
+  });
+  test('07 fails: tabindex="3px" parses to a positive 3', () => {
+    expect(
+      fired(
+        '<button>First</button><button tabindex="3px">Jumped to front</button>',
+      ),
+    ).toContain("no-positive-tabindex");
+  });
   test("08 flags a meaning-preserving positive-tabindex order (best-practice vs 2.4.3)", () => {
     expect(
       fired(

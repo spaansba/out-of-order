@@ -1,4 +1,4 @@
-import { tabbable } from "tabbable";
+import { tabbable, getTabIndex } from "tabbable";
 import type {
   AuditOptions,
   AuditFormat,
@@ -9,8 +9,6 @@ import type {
   Issue,
   Violation,
   ByElement,
-  ByRule,
-  Flat,
   RuleId,
 } from "./types.js";
 import { selectorFor, isRuleIgnored } from "./dom.js";
@@ -84,7 +82,7 @@ export function audit(
   root: ParentNode = document,
   options: AuditOptions = {},
   customRules: Rule[] = [],
-): AuditResult<Violation[] | string | ByElement[] | ByRule[] | Flat[]> {
+): AuditResult<Violation[] | string | ByElement[]> {
   const container =
     root.nodeType === 9 /* Node.DOCUMENT_NODE */
       ? (root as Document).documentElement
@@ -102,7 +100,7 @@ export function audit(
     element,
     orderIndex,
     selector: selectorFor(element),
-    tabIndex: Number(element.getAttribute("tabindex")) || 0,
+    tabIndex: getTabIndex(element),
     rect: element.getBoundingClientRect(),
   }));
 
@@ -160,7 +158,7 @@ export function audit(
 function finalize(
   result: AuditResult,
   format?: AuditFormat,
-): AuditResult<Violation[] | string | ByElement[] | ByRule[] | Flat[]> {
+): AuditResult<Violation[] | string | ByElement[]> {
   if (!format) {
     return result;
   }
@@ -170,16 +168,12 @@ function finalize(
 function reshape(
   violations: Violation[],
   format: AuditFormat,
-): string | ByElement[] | ByRule[] | Flat[] {
+): string | ByElement[] {
   switch (format) {
     case "text":
       return renderText(violations);
     case "by-element":
       return byElement(violations);
-    case "by-rule":
-      return byRule(violations);
-    case "flat":
-      return flat(violations);
   }
 }
 
@@ -200,49 +194,6 @@ function byElement(violations: Violation[]): ByElement[] {
       ignored: issue.ignored,
     })),
   }));
-}
-
-function byRule(violations: Violation[]): ByRule[] {
-  const groups = new Map<string, ByRule>();
-  for (const violation of violations) {
-    for (const issue of violation.issues) {
-      let group = groups.get(issue.rule);
-      if (!group) {
-        group = {
-          rule: issue.rule,
-          severity: issue.severity,
-          docs: issue.docs,
-          issueCount: 0,
-          elements: [],
-        };
-        groups.set(issue.rule, group);
-      }
-      group.elements.push({
-        selector: violation.selector,
-        orderIndex: violation.orderIndex,
-        message: issue.message,
-        related: related(issue),
-        ignored: issue.ignored,
-      });
-      group.issueCount = group.elements.length;
-    }
-  }
-  return [...groups.values()];
-}
-
-function flat(violations: Violation[]): Flat[] {
-  return violations.flatMap((violation) =>
-    violation.issues.map((issue) => ({
-      rule: issue.rule,
-      severity: issue.severity,
-      selector: violation.selector,
-      orderIndex: violation.orderIndex,
-      message: issue.message,
-      docs: issue.docs,
-      related: related(issue),
-      ignored: issue.ignored,
-    })),
-  );
 }
 
 function renderText(violations: Violation[]): string {

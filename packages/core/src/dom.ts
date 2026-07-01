@@ -112,7 +112,7 @@ export function isInert(element: Element): boolean {
   return element.closest("[inert]") !== null;
 }
 
-export const IGNORE_ATTRIBUTE = "data-ooo-ignore";
+const IGNORE_ATTRIBUTE = "data-ooo-ignore";
 
 /** Whether `element` opts out of `ruleId` via {@link IGNORE_ATTRIBUTE}. Element-scoped:
     the attribute must sit on the flagged element itself, it is not inherited by

@@ -6,7 +6,6 @@ export {
   isScreenReaderOnly,
   selectorFor,
   isRuleIgnored,
-  IGNORE_ATTRIBUTE,
 } from "./dom.js";
 export { OVERLAY_CLASS_PREFIX } from "./overlay-classes.js";
 export type {
@@ -14,8 +13,6 @@ export type {
   AuditFormat,
   Formatted,
   ByElement,
-  ByRule,
-  Flat,
   SerializedIssue,
   RuleId,
   RuleOverride,

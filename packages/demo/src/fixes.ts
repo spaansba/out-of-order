@@ -516,22 +516,16 @@ function setAttrs(
     writeAttr(clone, name, value);
   }
 
+  const changed = edits.filter(
+    ([name, value]) => element.getAttribute(name) !== value,
+  );
   const beforeChanged = new Set(
-    edits
-      .filter(
-        ([name, value]) =>
-          element.getAttribute(name) !== null &&
-          element.getAttribute(name) !== value,
-      )
+    changed
+      .filter(([name]) => element.getAttribute(name) !== null)
       .map(([name]) => name),
   );
   const afterChanged = new Set(
-    edits
-      .filter(
-        ([name, value]) =>
-          value !== null && element.getAttribute(name) !== value,
-      )
-      .map(([name]) => name),
+    changed.filter(([, value]) => value !== null).map(([name]) => name),
   );
   return {
     apply: () =>
@@ -540,6 +534,28 @@ function setAttrs(
       originals.forEach(([name, value]) => writeAttr(element, name, value)),
     before: [tagOf(element, beforeChanged)],
     after: [tagOf(clone, afterChanged)],
+  };
+}
+
+// Sort a container's children by a numeric key and hand back the resequencing
+// mechanics: the original and sorted element lists plus apply/revert that reappend
+// them in order (appendChild moves, so re-adding in sequence reorders in place).
+function reorderChildren(
+  container: HTMLElement,
+  key: (element: HTMLElement) => number,
+): {
+  original: HTMLElement[];
+  sorted: HTMLElement[];
+  apply: () => void;
+  revert: () => void;
+} {
+  const original = Array.from(container.children) as HTMLElement[];
+  const sorted = [...original].sort((first, second) => key(first) - key(second));
+  return {
+    original,
+    sorted,
+    apply: () => sorted.forEach((element) => container.appendChild(element)),
+    revert: () => original.forEach((element) => container.appendChild(element)),
   };
 }
 
@@ -553,11 +569,9 @@ function paintInDomOrder(toolbar: HTMLElement | null): Fix {
   if (!toolbar) {
     return NOOP;
   }
-  const items = Array.from(toolbar.children) as HTMLElement[];
-  const original = items.slice();
-  const sorted = [...items].sort(
-    (first, second) =>
-      first.getBoundingClientRect().left - second.getBoundingClientRect().left,
+  const { original, sorted, apply, revert } = reorderChildren(
+    toolbar,
+    (element) => element.getBoundingClientRect().left,
   );
   const styleEdits: [string, string][] = [
     ["flex-direction", "row"],
@@ -586,7 +600,7 @@ function paintInDomOrder(toolbar: HTMLElement | null): Fix {
       styleEdits.forEach(([prop, value]) =>
         toolbar.style.setProperty(prop, value),
       );
-      sorted.forEach((element) => toolbar.appendChild(element));
+      apply();
     },
     revert: () => {
       originalStyles.forEach(([prop, value]) =>
@@ -594,7 +608,7 @@ function paintInDomOrder(toolbar: HTMLElement | null): Fix {
           ? toolbar.style.setProperty(prop, value)
           : toolbar.style.removeProperty(prop),
       );
-      original.forEach((element) => toolbar.appendChild(element));
+      revert();
     },
     before: [wrap(toolbar, original)],
     after: [wrap(fixedTag, sorted)],
@@ -605,22 +619,15 @@ function reorderByTop(stack: HTMLElement | null): Fix {
   if (!stack) {
     return NOOP;
   }
-  const items = Array.from(stack.children) as HTMLElement[];
-  const original = items.slice();
-  const sorted = [...items].sort(
-    (first, second) =>
-      parseFloat(first.style.top) - parseFloat(second.style.top),
+  const { original, sorted, apply, revert } = reorderChildren(
+    stack,
+    (element) => parseFloat(element.style.top),
   );
   // A reorder changes no attributes; the fix reads as the line order flipping.
   const none = new Set<string>();
   const tags = (els: HTMLElement[]) =>
     els.map((element) => tagOf(element, none));
-  return {
-    apply: () => sorted.forEach((element) => stack.appendChild(element)),
-    revert: () => original.forEach((element) => stack.appendChild(element)),
-    before: tags(items),
-    after: tags(sorted),
-  };
+  return { apply, revert, before: tags(original), after: tags(sorted) };
 }
 
 function combine(...fixes: Fix[]): Fix {
