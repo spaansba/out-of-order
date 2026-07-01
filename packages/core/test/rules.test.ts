@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { analyzeTabOrder } from "../src/index.js";
+import { audit } from "../src/index.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -7,7 +7,7 @@ afterEach(() => {
 
 function fired(html: string): Set<string> {
   document.body.innerHTML = html;
-  return new Set(analyzeTabOrder(document.body).violations.map((v) => v.rule));
+  return new Set(audit(document.body).violations.map((v) => v.rule));
 }
 
 describe("no-positive-tabindex", () => {
@@ -850,7 +850,7 @@ describe("duplicate-autofocus", () => {
   test("04 reports one finding per extra (two extras → two findings)", () => {
     document.body.innerHTML =
       "<input autofocus><input autofocus><input autofocus>";
-    const dupes = analyzeTabOrder(document.body).violations.filter(
+    const dupes = audit(document.body).violations.filter(
       (v) => v.rule === "duplicate-autofocus",
     );
     expect(dupes).toHaveLength(2);
@@ -865,7 +865,7 @@ describe("duplicate-autofocus", () => {
   test("06 winner is first in document order; the later one is flagged", () => {
     document.body.innerHTML =
       '<div tabindex="-1" autofocus>x</div><input autofocus>';
-    const dupes = analyzeTabOrder(document.body).violations.filter(
+    const dupes = audit(document.body).violations.filter(
       (v) => v.rule === "duplicate-autofocus",
     );
     expect(dupes).toHaveLength(1);
@@ -924,7 +924,7 @@ describe("nested-interactive", () => {
   });
   test("06 flags the inner control, not the outer wrapper", () => {
     document.body.innerHTML = '<a href="#"><button>Buy</button></a>';
-    const nested = analyzeTabOrder(document.body).violations.filter(
+    const nested = audit(document.body).violations.filter(
       (v) => v.rule === "nested-interactive",
     );
     expect(nested).toHaveLength(1);
@@ -989,7 +989,7 @@ describe("redundant-tabindex", () => {
   });
   test("11 flags the element itself, not a sibling", () => {
     document.body.innerHTML = '<input tabindex="0"><button>Save</button>';
-    const redundant = analyzeTabOrder(document.body).violations.filter(
+    const redundant = audit(document.body).violations.filter(
       (v) => v.rule === "redundant-tabindex",
     );
     expect(redundant).toHaveLength(1);

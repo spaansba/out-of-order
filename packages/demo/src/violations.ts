@@ -1,9 +1,31 @@
 import { reveal } from "@focuspocus/reveal";
+import type { Rule } from "@focuspocus/core";
 import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { restoreAutofocus, wireTriage } from "./triage.js";
 
-const overlay = reveal();
+// A custom rule (not built into core), passed through reveal's `rules` option so it
+// runs on the overlay alongside the built-ins - see the "unsafe target=_blank" card.
+// Flags a link that opens a new tab without rel="noopener", which hands the new page a
+// live window.opener back to this one. Mirrors the snippet on the recipes page.
+const noUnsafeBlank: Rule = {
+  id: "no-unsafe-blank",
+  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
+  defaultSeverity: "warning",
+  run: (sequence) =>
+    sequence
+      .filter(
+        (entry) =>
+          entry.element.matches('a[target="_blank"]') &&
+          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
+      )
+      .map((entry) => ({
+        message: 'Link opens a new tab without rel="noopener".',
+        target: entry,
+      })),
+};
+
+const overlay = reveal({ rules: [noUnsafeBlank] });
 
 // Collect a teardown for every side effect this module plants on the persistent
 // page DOM, so the HMR dispose can undo all of them - not just the overlay.

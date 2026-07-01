@@ -21,7 +21,6 @@
         <a href="./rules.html">rules</a>
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
-        <a href="./faq.html">faq</a>
         <span class="nav-sep" aria-hidden="true"></span>
         <a href="./violations.html">violations</a>
         <a href="./tabbable.html">tabbable</a>
@@ -73,6 +72,32 @@ pnpm --filter @focuspocus/demo dev</pre>
       </section>
 
       <section class="group">
+        <h2>Which package, and which mode</h2>
+        <p class="note">
+          One analyzer, two ways to run it. <strong>See it</strong> on a live
+          page with the overlay, or <strong>check it</strong> headless in a test,
+          in CI, or from an AI agent. Installing <code>@focuspocus/reveal</code>
+          covers both: it re-exports the analyzer, so the overlay and the
+          headless API come from a single import.
+        </p>
+        <p class="note"><strong>See it</strong>, the overlay:</p>
+        <pre class="code">npm i @focuspocus/reveal
+
+import { reveal } from "@focuspocus/reveal";
+reveal();</pre>
+        <p class="note"><strong>Check it</strong>, headless:</p>
+        <pre class="code">npm i @focuspocus/core
+
+import { audit, formatViolations } from "@focuspocus/core";
+const result = audit(document.body);</pre>
+        <p class="note">
+          Reach for <code>@focuspocus/core</code> on its own only when you never
+          draw the overlay, for a test-runner matcher or a Playwright
+          <code>page.evaluate</code>, where the smaller install matters.
+        </p>
+      </section>
+
+      <section class="group" id="overlay">
         <h2>Add the overlay to your page</h2>
         <p class="note">
           <code>@focuspocus/reveal</code> is the shipped, framework-agnostic
@@ -99,18 +124,28 @@ overlay.destroy();</pre>
           <code>@focuspocus/reveal</code>. Until they are published, consume them
           from the workspace (or a git install) as the demo does.
         </p>
+        <p class="note">
+          Only need the verdict, not the picture? Skip the overlay and call
+          <code>audit()</code> directly, covered
+          <a href="#headless">just below</a>.
+        </p>
       </section>
 
-      <section class="group">
+      <section class="group" id="headless">
         <h2>Analyze without the overlay</h2>
         <p class="note">
           The overlay is optional. <code>@focuspocus/core</code> gives you the
           verdict as plain data, which is what you would assert in a test or feed
           into your own UI.
         </p>
-        <pre class="code">import { analyzeTabOrder, formatViolations } from "@focuspocus/core";
+        <p class="note">
+          Want to see these findings on the page instead of asserting them? Mount
+          the overlay with <code>reveal()</code>, covered
+          <a href="#overlay">just above</a>.
+        </p>
+        <pre class="code">import { audit, formatViolations } from "@focuspocus/core";
 
-const result = analyzeTabOrder(document.body);
+const result = audit(document.body);
 
 result.valid; // boolean, true when there are no error-severity violations
 result.sequence; // elements in tab order, each with tabIndex + rect
@@ -135,7 +170,7 @@ if (!result.valid) {
           call. Re-grade a noisy one to a warning, promote another to an error,
           or switch one off entirely.
         </p>
-        <pre class="code">analyzeTabOrder(document.body, {
+        <pre class="code">audit(document.body, {
   rules: {
     "visual-order-mismatch": "warning", // re-grade
     "redundant-tabindex": "error", // promote
@@ -143,15 +178,14 @@ if (!result.valid) {
   },
 });
 
-// The same overrides reach the overlay through its `analyze` option.
-reveal({ analyze: { rules: { "prefer-native-element": "off" } } });</pre>
+// The same overrides reach the overlay through its `audit` option.
+reveal({ audit: { rules: { "prefer-native-element": "off" } } });</pre>
         <p class="note">
-          The built-in defaults are exported as <code>DEFAULT_SEVERITY</code>.
           The full list, with what each rule catches, is on the
           <a href="./rules.html">rules page</a>.
         </p>
         <div class="cta">
-          <a class="btn btn--primary" href="./concepts.html">Next: concepts</a>
+          <a class="btn" href="./concepts.html">Next: concepts</a>
           <a class="btn" href="./recipes.html">Recipes &amp; CI</a>
         </div>
       </section>

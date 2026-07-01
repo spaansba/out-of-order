@@ -127,7 +127,7 @@ function buildBody(
   const peekSwitch = addSwitch(
     body,
     "peek",
-    "Click-through",
+    "Peek",
     onTogglePeek,
     signal,
   );

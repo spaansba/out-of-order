@@ -134,14 +134,6 @@ code {
 .btn:hover {
   border-color: var(--ink);
 }
-.btn--primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-.btn--primary:hover {
-  background: #000;
-}
 
 /* ---- column ---- */
 .wrap {
@@ -328,6 +320,20 @@ section.group::after {
   content: "warning";
   color: var(--warn);
   background: var(--warn-soft);
+}
+/* a rule passed through reveal's `rules` option rather than shipped in core: an accent
+   "custom" pill after the id, so it reads distinctly from the built-ins */
+.rule-tag.is-custom::after {
+  content: "custom";
+  font: 600 9.5px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.22em 0.42em;
+  margin-left: 0.5em;
+  border-radius: 2px;
+  vertical-align: 0.08em;
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 section.group > h2 {
   margin: 0 0 0.45rem;
@@ -920,7 +926,7 @@ dialog.modal-native::backdrop {
   }
 }
 
-/* ---- docs pages (home, getting-started, concepts, rules, api, recipes, faq) ----
+/* ---- docs pages (home, getting-started, concepts, rules, api, recipes) ----
    Prose-only pages. They borrow the same ledger sections (section.group) and chrome
    as the demos; only these few text primitives are extra. No JS runs on them. */
 
@@ -949,6 +955,17 @@ dialog.modal-native::backdrop {
 }
 .cta .btn {
   text-decoration: none;
+}
+
+.kind {
+  font: 500 11.5px/1 var(--font-mono);
+  color: var(--muted);
+  vertical-align: 0.08em;
+}
+.kind::before {
+  content: "·";
+  margin: 0 0.4rem;
+  color: var(--line-2);
 }
 
 /* a neutral code block (no diff caption); same inset as .snippet pre */
@@ -982,25 +999,23 @@ section.group > h3 {
   color: var(--ink);
 }
 
-/* option/field definition rows used in the API and recipes pages */
-.defs {
-  margin: 0 0 1rem;
-  max-width: 70ch;
-}
-.defs dt {
-  font: 500 12.5px/1.4 var(--font-mono);
-  color: var(--accent);
-}
-.defs dt code {
+/* API reference property/parameter tables: the spec table, with the symbol name
+   voiced in accent mono (like the old definition-list term) and the type column
+   free to wrap on long generic signatures instead of overflowing the row. */
+table.spec.api td:first-child code {
   background: none;
   padding: 0;
-  color: inherit;
-  font-size: 1em;
+  color: var(--accent);
+  font-weight: 500;
 }
-.defs dd {
-  margin: 0.18rem 0 0.75rem;
-  color: var(--muted);
-  font-size: 13.5px;
+table.spec.api td.type {
+  white-space: normal;
+}
+table.spec.api td.type code {
+  white-space: normal;
+  background: none;
+  padding: 0;
+  color: var(--ink);
 }
 
 /* a spec-sheet table: hairline rules, mono uppercase header, no card or zebra */
@@ -1025,9 +1040,6 @@ table.spec td {
   border-bottom: 1px solid var(--line);
   vertical-align: top;
   color: var(--ink);
-}
-table.spec tr:hover td {
-  background: var(--accent-soft);
 }
 table.spec th:last-child,
 table.spec td:last-child {

@@ -42,7 +42,6 @@ export default defineConfig({
         rules: resolve(__dirname, "rules.html"),
         api: resolve(__dirname, "api.html"),
         recipes: resolve(__dirname, "recipes.html"),
-        faq: resolve(__dirname, "faq.html"),
       },
     },
   },

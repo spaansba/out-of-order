@@ -164,6 +164,7 @@ function collectSolvers(
   const autofocus = qsa("#autofocus-demo input");
   const nestedLink = queryOne<HTMLElement>(".nested-link");
   const nestedBtn = queryOne<HTMLElement>(".nested-link button");
+  const unsafeBlank = queryOne<HTMLElement>(".unsafe-blank");
 
   return [
     // A · drop every positive tabindex; the DOM order is already correct.
@@ -258,6 +259,13 @@ function collectSolvers(
     // N · a <button> nested inside an <a href> stacks two tab stops on one spot.
     // Lift the button out so the link and the button become siblings.
     { anchor: nestedLink, fix: unnest(nestedLink, nestedBtn) },
+    // P · the custom rule's card (no-unsafe-blank, run via reveal's `rules` option):
+    // a target="_blank" link with no rel="noopener" leaks window.opener to the new
+    // tab. Add rel="noopener".
+    {
+      anchor: unsafeBlank,
+      fix: setAttrs(unsafeBlank, [["rel", "noopener"]]),
+    },
   ];
 }
 

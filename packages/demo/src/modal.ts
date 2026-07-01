@@ -23,7 +23,7 @@ function nativeDialog(): HTMLDialogElement {
     "<strong>Delete this item?</strong>" +
     '<div class="row">' +
     '<button class="demo-btn" type="button" data-close>Cancel</button>' +
-    '<button class="demo-btn btn--primary" type="button" data-close>Delete</button>' +
+    '<button class="demo-btn" type="button" data-close>Delete</button>' +
     "</div>";
   for (const btn of dialog.querySelectorAll("[data-close]")) {
     btn.addEventListener("click", () => setOpen(false));

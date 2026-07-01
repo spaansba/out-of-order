@@ -21,7 +21,6 @@
         <a href="./rules.html" aria-current="page">rules</a>
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
-        <a href="./faq.html">faq</a>
         <span class="nav-sep" aria-hidden="true"></span>
         <a href="./violations.html">violations</a>
         <a href="./tabbable.html">tabbable</a>
@@ -48,7 +47,7 @@
           HTML-spec clause, linked at the end of its row.
         </p>
         <div class="cta">
-          <a class="btn btn--primary" href="./violations.html"
+          <a class="btn" href="./violations.html"
             >See every rule fail (and get fixed) live</a
           >
         </div>
@@ -265,34 +264,23 @@
             </tr>
           </tbody>
         </table>
-        <p class="note">
-          The defaults are exported as <code>DEFAULT_SEVERITY</code>, a
-          <code>Record&lt;RuleId, Severity&gt;</code>, so your own tooling can
-          read the same source of truth the analyzer uses.
-        </p>
       </section>
 
       <section class="group" id="changing">
         <h2>Changing a rule's grade</h2>
         <p class="note">
-          Pass per-rule overrides through <code>AnalyzeOptions.rules</code>. A
+          Pass per-rule overrides through <code>AuditOptions.rules</code>. A
           rule you do not list keeps its default. For any other rule, re-grade it
           to <code>"error"</code> or <code>"warning"</code>, or switch it
           <code>"off"</code>.
         </p>
-        <pre class="code">analyzeTabOrder(document.body, {
+        <pre class="code">audit(document.body, {
   rules: {
     "visual-order-mismatch": "warning",
     "redundant-tabindex": "error",
     "prefer-native-element": "off",
   },
 });</pre>
-        <p class="note">
-          Only <code>error</code>-severity findings flip
-          <code>result.valid</code>, so demoting a rule to a warning keeps it
-          reported without failing a gate. The same overrides reach the overlay
-          through <code>reveal({ analyze: { rules: ... } })</code>.
-        </p>
       </section>
 
       <section class="group">

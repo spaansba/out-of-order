@@ -1,9 +1,9 @@
 import { expect } from "vitest";
 import {
-  analyzeTabOrder,
+  audit,
   formatViolations,
-  type AnalyzeOptions,
-  type TabOrderResult,
+  type AuditOptions,
+  type AuditResult,
 } from "@focuspocus/core";
 
 /** Accept an Element or a Document/DocumentFragment as the assertion target. */
@@ -23,9 +23,9 @@ function resolveRoot(received: unknown): ParentNode {
 }
 
 expect.extend({
-  toHaveValidTabOrder(received: unknown, options?: AnalyzeOptions) {
+  toHaveValidTabOrder(received: unknown, options?: AuditOptions) {
     const root = resolveRoot(received);
-    const result: TabOrderResult = analyzeTabOrder(root, options);
+    const result: AuditResult = audit(root, options);
     const { isNot } = this;
 
     return {
@@ -46,7 +46,7 @@ interface TabOrderMatchers<Ret = unknown> {
    * Assert the focusable elements within the target form a valid tab order. Must
    * run in a real browser (Vitest Browser Mode); the checks rely on CSS layout.
    */
-  toHaveValidTabOrder(options?: AnalyzeOptions): Ret;
+  toHaveValidTabOrder(options?: AuditOptions): Ret;
 }
 
 declare module "vitest" {
@@ -55,5 +55,5 @@ declare module "vitest" {
   interface AsymmetricMatchersContaining extends TabOrderMatchers {}
 }
 
-export { analyzeTabOrder };
-export type { AnalyzeOptions, TabOrderResult } from "@focuspocus/core";
+export { audit };
+export type { AuditOptions, AuditResult } from "@focuspocus/core";

@@ -1,9 +1,9 @@
 import { tabbable } from "tabbable";
 import type {
-  AnalyzeOptions,
+  AuditOptions,
   SequenceEntry,
   Severity,
-  TabOrderResult,
+  AuditResult,
   Violation,
   RuleId,
 } from "./types.js";
@@ -14,7 +14,7 @@ import { ALL_RULES, type Finding, type Rule } from "./rules.js";
     on, and at what severity? A missing override keeps the default; `"off"`
     disables it; a severity string re-grades it. */
 function resolveRule(
-  options: AnalyzeOptions,
+  options: AuditOptions,
   rule: Rule,
 ): { enabled: boolean; severity: Severity } {
   // Custom rule ids aren't in the RuleId union. A miss returns undefined.
@@ -59,11 +59,11 @@ function toViolation(
  * Browser-only by design: `tabbable` uses real CSS layout to decide visibility and
  * the visual-order rule reads bounding rects, neither meaningful under jsdom.
  */
-export function analyzeTabOrder(
+export function audit(
   root: ParentNode = document,
-  options: AnalyzeOptions = {},
+  options: AuditOptions = {},
   customRules: Rule[] = [],
-): TabOrderResult {
+): AuditResult {
   const container =
     root.nodeType === 9 /* Node.DOCUMENT_NODE */
       ? (root as Document).documentElement

@@ -1,9 +1,9 @@
 import {
-  analyzeTabOrder,
-  type AnalyzeOptions,
+  audit,
+  type AuditOptions,
   type Rule,
   type Severity,
-  type TabOrderResult,
+  type AuditResult,
   type Violation,
 } from "@focuspocus/core";
 import {
@@ -19,6 +19,11 @@ import { Mutations } from "./mutations.js";
 import { badgeTip, segTip } from "./tip-content.js";
 import { setupControls, loadPanelState, patchPanelState } from "./controls.js";
 
+// Overlay users get the analyzer from this one package: re-export core's public
+// API so reveal() and audit()/formatViolations() come from a single
+// import, without also depending on @focuspocus/core directly.
+export * from "@focuspocus/core";
+
 export type MotionMode = "auto" | "on" | "off";
 
 export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
@@ -26,8 +31,8 @@ export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
 export interface RevealOptions {
   /** Subtree to analyze. Defaults to document. */
   root?: ParentNode;
-  /** Forwarded to analyzeTabOrder (rule toggles). */
-  analyze?: AnalyzeOptions;
+  /** Forwarded to audit (rule toggles). */
+  audit?: AuditOptions;
   /** Extra custom rules, run alongside the built-ins on every analysis. */
   rules?: Rule[];
   /** Motion behaviour. Defaults to "auto". */
@@ -47,7 +52,7 @@ export interface RevealHandle {
   /** Remove the overlay layer, observers, and listeners. */
   destroy(): void;
   /** Latest analysis result, or null before the first draw. */
-  result: TabOrderResult | null;
+  result: AuditResult | null;
 }
 
 export function reveal(options: RevealOptions = {}): RevealHandle {
@@ -161,9 +166,9 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
 
   /** Re-analyze, turn the result into a draw model, render it, and (re)observe. */
   function build(): void {
-    const result = analyzeTabOrder(
+    const result = audit(
       options.root ?? document,
-      options.analyze,
+      options.audit,
       options.rules,
     );
 
@@ -263,7 +268,7 @@ function elementId(element: Element): number {
 // A stable string of everything the overlay renders: the ordered stops plus each
 // element's rule ids. Same signature means a rebuild would draw the same thing.
 // Geometry is excluded; the position tracker handles movement without a re-analyze.
-function resultSignature(result: TabOrderResult): string {
+function resultSignature(result: AuditResult): string {
   const order = result.sequence
     .map((entry) => elementId(entry.element))
     .join(">");

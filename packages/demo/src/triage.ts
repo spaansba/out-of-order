@@ -1,8 +1,7 @@
 // Triage chrome for the violations page. Grades every card by the severity of the
-// rules it trips (DEFAULT_SEVERITY is the analyzer's own source of truth, so the
-// badges can't drift from what it reports), marks each rule tag with its severity,
-// drops the warning-only cards to the end of the page, and builds a compact index up
-// top linking to each card in that final order.
+// rules it trips, marks each rule tag with its severity, drops the warning-only
+// cards to the end of the page, and builds a compact index up top linking to each
+// card in that final order.
 
 import { DEFAULT_SEVERITY, type RuleId, type Severity } from "@focuspocus/core";
 
@@ -107,7 +106,11 @@ function gradeSection(section: Element): Severity {
   let severity: Severity = "warning";
   for (const tag of section.querySelectorAll<HTMLElement>(".rule-tag")) {
     const rule = tag.textContent?.trim() as RuleId | undefined;
-    const ruleSeverity = rule ? DEFAULT_SEVERITY[rule] : undefined;
+    // Built-ins grade from DEFAULT_SEVERITY; a custom rule isn't in it, so fall back to
+    // the tag's own data-severity.
+    const ruleSeverity =
+      (rule ? DEFAULT_SEVERITY[rule] : undefined) ??
+      (tag.dataset.severity as Severity | undefined);
     if (!ruleSeverity) {
       continue;
     }

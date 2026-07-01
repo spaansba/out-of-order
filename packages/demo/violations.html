@@ -21,7 +21,6 @@
         <a href="./rules.html">rules</a>
         <a href="./api.html">api</a>
         <a href="./recipes.html">recipes</a>
-        <a href="./faq.html">faq</a>
         <span class="nav-sep" aria-hidden="true"></span>
         <a href="./violations.html" aria-current="page">violations</a>
         <a href="./tabbable.html">tabbable</a>
@@ -575,6 +574,36 @@
             </a>
           </section>
 
+          <section class="group">
+            <h2>A link that opens a new tab unsafely</h2>
+            <div class="rule-tags">
+              <code class="rule-tag is-custom" data-severity="warning"
+                >no-unsafe-blank</code
+              >
+            </div>
+            <p class="note">
+              This one isn't built in. It's a
+              <strong>custom rule</strong> handed to
+              <code>reveal({ rules: [...] })</code>, running on the overlay
+              right alongside the built-ins. It flags a link with
+              <code>target="_blank"</code> but no <code>rel="noopener"</code>,
+              which leaks a live <code>window.opener</code> reference back to
+              this page. Flags <code>no-unsafe-blank</code>. See
+              <a
+                href="https://html.spec.whatwg.org/multipage/links.html#link-type-noopener"
+                target="_blank"
+                rel="noopener"
+                >link type noopener</a
+              >, or the recipe for
+              <a href="./recipes.html#custom-rule">adding a custom rule</a>.
+            </p>
+            <a
+              class="demo-link unsafe-blank"
+              href="https://example.com"
+              target="_blank"
+              >Open report in new tab</a
+            >
+          </section>
         </div>
 
         <section class="group" id="modal-demo-section">
@@ -620,7 +649,7 @@
         <strong>Delete this item?</strong>
         <div class="row">
           <button class="demo-btn" type="button" data-close>Cancel</button>
-          <button class="demo-btn btn--primary" type="button" data-close>
+          <button class="demo-btn" type="button" data-close>
             Delete
           </button>
         </div>

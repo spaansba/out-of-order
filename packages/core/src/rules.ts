@@ -50,7 +50,7 @@ export interface Rule {
   id: string;
   /** Spec link the rule is grounded in (WCAG, WAI-ARIA, or ARIA APG). */
   docs: string;
-  /** Severity the rule fires at unless overridden via `AnalyzeOptions.rules`. */
+  /** Severity the rule fires at unless overridden via `AuditOptions.rules`. */
   defaultSeverity: Severity;
   run: RuleRun;
 }
@@ -553,12 +553,7 @@ export const ALL_RULES = {
   },
 } satisfies Record<string, Omit<Rule, "id">>;
 
-/** Per-rule spec links, derived from {@link ALL_RULES}. */
-export const RULE_DOCS = Object.fromEntries(
-  Object.entries(ALL_RULES).map(([id, rule]) => [id, rule.docs]),
-) as Record<RuleId, string>;
-
-/** Per-rule default severities, derived from {@link ALL_RULES}. */
+/** Per-rule default severities, keyed by rule id. */
 export const DEFAULT_SEVERITY = Object.fromEntries(
   Object.entries(ALL_RULES).map(([id, rule]) => [id, rule.defaultSeverity]),
 ) as Record<RuleId, Severity>;

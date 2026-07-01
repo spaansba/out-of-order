@@ -2,7 +2,7 @@ import type { ALL_RULES } from "./rules.js";
 
 export type Severity = "error" | "warning";
 
-export type RuleSetting = Severity | "off";
+export type RuleOverride = Severity | "off";
 
 /** A single problem found with the tab order. */
 export interface Violation {
@@ -10,7 +10,7 @@ export interface Violation {
       reports under (the `string & {}` keeps built-in ids as autocomplete). */
   rule: RuleId | (string & {});
   /** How serious this finding is: the rule's default unless overridden via
-      {@link AnalyzeOptions.rules}. */
+      {@link AuditOptions.rules}. */
   severity: Severity;
   /** Human-readable description of what's wrong. */
   message: string;
@@ -41,7 +41,7 @@ export interface SequenceEntry {
   rect: DOMRect;
 }
 
-export interface TabOrderResult {
+export interface AuditResult {
   /** True when no enabled rule produced an `error`. Warnings are advisory and do
       not flip this; check `violations` if you need to surface them too. */
   valid: boolean;
@@ -51,9 +51,9 @@ export interface TabOrderResult {
   violations: Violation[];
 }
 
-export interface AnalyzeOptions {
+export interface AuditOptions {
   /** Per-rule overrides. Every rule runs at its default severity unless listed
       here: set `"off"` to disable it, or `"error"`/`"warning"` to
-      re-grade it. See {@link RuleSetting}. */
-  rules?: Partial<Record<RuleId, RuleSetting>>;
+      re-grade it. See {@link RuleOverride}. */
+  rules?: Partial<Record<RuleId, RuleOverride>>;
 }

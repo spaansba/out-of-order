@@ -5,9 +5,9 @@ Pure focus & keyboard-accessibility analyzer. Wraps [`tabbable`](https://github.
 > Runs in a real browser only. It reads CSS layout (visibility + bounding rects), which jsdom does not provide.
 
 ```ts
-import { analyzeTabOrder, formatViolations } from "@focuspocus/core";
+import { audit, formatViolations } from "@focuspocus/core";
 
-const result = analyzeTabOrder(document.body);
+const result = audit(document.body);
 // result.valid      -> boolean (true when there are no `error`-severity violations)
 // result.sequence   -> elements in tab order, with tabIndex + rect
 // result.violations -> [{ rule, severity, message, element, selector, orderIndex }]
@@ -17,7 +17,7 @@ if (!result.valid) console.log(formatViolations(result.violations));
 
 ## API
 
-`analyzeTabOrder(root = document, options?) => TabOrderResult`
+`audit(root = document, options?) => AuditResult`
 
 Each rule carries a default severity (see the table below). `error` marks a real barrier (a control is unreachable, unannounced, invisible, or trapped); `warning` marks dead/no-op markup or a best-practice nit that doesn't block anyone. Only an `error` makes `result.valid` false, so warnings won't fail a build gate.
 
@@ -25,7 +25,7 @@ Each rule carries a default severity (see the table below). `error` marks a real
 type Severity = "error" | "warning";
 type RuleSetting = Severity | "off";
 
-interface AnalyzeOptions {
+interface AuditOptions {
   // Per-rule overrides. Omit a rule to keep its default; otherwise:
   //   "error" | "warning" -> enable, graded at that severity
   //   "off"               -> disable the rule
@@ -33,7 +33,7 @@ interface AnalyzeOptions {
 }
 
 // e.g. demote a noisy rule, promote another, and turn one off:
-analyzeTabOrder(document.body, {
+audit(document.body, {
   rules: {
     "visual-order-mismatch": "warning",
     "redundant-tabindex": "error",
@@ -42,11 +42,9 @@ analyzeTabOrder(document.body, {
 });
 ```
 
-The built-in defaults are exported as `DEFAULT_SEVERITY` (a `Record<RuleId, Severity>`).
-
 ## Rules
 
-All rules are on by default. "Severity" is the default grade, overridable per `AnalyzeOptions.rules`.
+All rules are on by default. "Severity" is the default grade, overridable per `AuditOptions.rules`.
 
 | Rule                         | Severity | Needs layout? | What it catches                                                    |
 | ---------------------------- | -------- | ------------- | ------------------------------------------------------------------ |
@@ -65,8 +63,8 @@ All rules are on by default. "Severity" is the default grade, overridable per `A
 | `nested-interactive`         | error    | no            | a focusable control nested inside another focusable element        |
 | `redundant-tabindex`         | warning  | no            | `tabindex="0"` on an already-focusable native control (a no-op)    |
 
-Adding a rule is just a pure function `(sequence, ctx) => Finding[]` (a `Finding` is a `Violation` minus `severity`, which `analyzeTabOrder` stamps on from `DEFAULT_SEVERITY` or the caller's override); see `src/rules.ts`.
+Adding a rule is just a pure function `(sequence, ctx) => Finding[]` (a `Finding` is a `Violation` minus `severity`, which `audit` stamps on from the rule's default severity or the caller's override); see `src/rules.ts`.
 
 ## Live overlay
 
-The visual overlay (a numbered path through the tab sequence, every finding ringed in place, details on hover) lives in its own package, [`@focuspocus/reveal`](../reveal), built on this analyzer. Keeping it separate is deliberate: `analyzeTabOrder` stays dependency-light apart from `tabbable`, so the core export remains easy to run inside `page.evaluate` (e.g. for a Playwright adapter).
+The visual overlay (a numbered path through the tab sequence, every finding ringed in place, details on hover) lives in its own package, [`@focuspocus/reveal`](../reveal), built on this analyzer. Keeping it separate is deliberate: `audit` stays dependency-light apart from `tabbable`, so the core export remains easy to run inside `page.evaluate` (e.g. for a Playwright adapter).

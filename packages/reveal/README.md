@@ -6,7 +6,7 @@ order), and every accessibility finding is ringed in place with a tooltip
 spelling out the accessible name, role, and rule.
 
 It is a thin visual layer over [`@focuspocus/core`](../core): the analysis comes
-entirely from `analyzeTabOrder`, so the same verdicts you assert in tests are
+entirely from `audit`, so the same verdicts you assert in tests are
 what you see on screen.
 
 ```ts
