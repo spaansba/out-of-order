@@ -101,12 +101,7 @@ function renderTags(tags: Tag[], fixed: boolean): DocumentFragment {
   return frag;
 }
 
-function appendTag(
-  frag: DocumentFragment,
-  tag: Tag,
-  fixed: boolean,
-  indent: string,
-): void {
+function appendTag(frag: DocumentFragment, tag: Tag, fixed: boolean, indent: string): void {
   frag.append(`${indent}<${tag.name}`);
   for (const attr of tag.attrs) {
     frag.append(" ");
@@ -138,9 +133,7 @@ function pulse(section: Element): void {
   section.classList.add("ooo-pulse");
 }
 
-function collectSolvers(
-  reimplPairs: ReimplPair[],
-): { anchor: Element | null; fix: Fix }[] {
+function collectSolvers(reimplPairs: ReimplPair[]): { anchor: Element | null; fix: Fix }[] {
   const queryOne = <ElementType extends Element>(selector: string) =>
     document.querySelector(selector) as ElementType | null;
   const qsa = (selector: string) =>
@@ -161,9 +154,7 @@ function collectSolvers(
     // A · drop every positive tabindex; the DOM order is already correct.
     {
       anchor: scramble[0] ?? null,
-      fix: combine(
-        ...scramble.map((input) => setAttrs(input, [["tabindex", null]])),
-      ),
+      fix: combine(...scramble.map((input) => setAttrs(input, [["tabindex", null]]))),
     },
     // B · reorder the stacked buttons to match their visual top-to-bottom position.
     { anchor: stacked, fix: reorderByTop(stacked) },
@@ -180,9 +171,7 @@ function collectSolvers(
     // rather than revealing something the author meant to keep hidden.
     {
       anchor: invisible[0] ?? null,
-      fix: combine(
-        ...invisible.map((input) => setAttrs(input, [["tabindex", "-1"]])),
-      ),
+      fix: combine(...invisible.map((input) => setAttrs(input, [["tabindex", "-1"]]))),
     },
     {
       anchor: queryOne(".icon-btn"),
@@ -199,9 +188,7 @@ function collectSolvers(
       fix: within(
         queryOne('[role="toolbar"]'),
         combine(
-          ...toolbar.map((btn, index) =>
-            setAttrs(btn, [["tabindex", index === 0 ? "0" : "-1"]]),
-          ),
+          ...toolbar.map((btn, index) => setAttrs(btn, [["tabindex", index === 0 ? "0" : "-1"]])),
         ),
       ),
     },
@@ -214,9 +201,7 @@ function collectSolvers(
     // own. One combined fix across the whole showcase.
     {
       anchor: redundant[0] ?? null,
-      fix: combine(
-        ...redundant.map((element) => setAttrs(element, [["tabindex", null]])),
-      ),
+      fix: combine(...redundant.map((element) => setAttrs(element, [["tabindex", null]]))),
     },
     // J · the dialog is a real full-page modal that never inerts the page behind
     // it, so focus leaks to every background control. The fix swaps it for a native
@@ -228,11 +213,7 @@ function collectSolvers(
     // so the role and tabindex fall away. One combined fix for the whole showcase.
     {
       anchor: reimplPairs[0]?.fake ?? null,
-      fix: combine(
-        ...reimplPairs.map(({ fake, native }) =>
-          useNativeElement(fake, native),
-        ),
-      ),
+      fix: combine(...reimplPairs.map(({ fake, native }) => useNativeElement(fake, native))),
     },
     // L · two elements claim autofocus; only the first wins. Drop autofocus from
     // every one after the first.
@@ -256,9 +237,7 @@ function collectSolvers(
 // input is shown alongside (unchanged) so the snippet makes clear there are two
 // and which one is the bug, rather than showing only the edited second input.
 function dropExtraAutofocus(inputs: HTMLElement[]): Fix {
-  const fix = combine(
-    ...inputs.slice(1).map((input) => setAttrs(input, [["autofocus", null]])),
-  );
+  const fix = combine(...inputs.slice(1).map((input) => setAttrs(input, [["autofocus", null]])));
   const first = inputs[0];
   if (!first) {
     return fix;
@@ -302,11 +281,7 @@ function unnest(wrapper: HTMLElement | null, inner: HTMLElement | null): Fix {
   };
 }
 
-function make(
-  tag: string,
-  attrs: Record<string, string>,
-  text?: string,
-): HTMLElement {
+function make(tag: string, attrs: Record<string, string>, text?: string): HTMLElement {
   const element = document.createElement(tag);
   for (const [name, value] of Object.entries(attrs)) {
     element.setAttribute(name, value);
@@ -317,11 +292,7 @@ function make(
   return element;
 }
 
-const reimplFake = (
-  role: string,
-  label: string,
-  extra: Record<string, string> = {},
-): HTMLElement =>
+const reimplFake = (role: string, label: string, extra: Record<string, string> = {}): HTMLElement =>
   make("div", { class: "reimpl-fake", role, tabindex: "0", ...extra }, label);
 
 // Mirrors NATIVE_FOR_ROLE in core/dom.ts: one source of truth per role drives both
@@ -334,17 +305,12 @@ const REIMPL_DEMOS: {
   {
     role: "button",
     fake: () =>
-      make(
-        "div",
-        { class: "demo-btn reimpl-btn", role: "button", tabindex: "0" },
-        "Save",
-      ),
+      make("div", { class: "demo-btn reimpl-btn", role: "button", tabindex: "0" }, "Save"),
     native: () => make("button", { class: "demo-btn reimpl-btn" }, "Save"),
   },
   {
     role: "link",
-    fake: () =>
-      make("span", { class: "demo-link", role: "link", tabindex: "0" }, "Docs"),
+    fake: () => make("span", { class: "demo-link", role: "link", tabindex: "0" }, "Docs"),
     native: () => make("a", { class: "demo-link", href: "#" }, "Docs"),
   },
   {
@@ -360,8 +326,7 @@ const REIMPL_DEMOS: {
   {
     role: "radio",
     fake: () => reimplFake("radio", "Email me", { "aria-checked": "true" }),
-    native: () =>
-      make("input", { type: "radio", checked: "", "aria-label": "Email me" }),
+    native: () => make("input", { type: "radio", checked: "", "aria-label": "Email me" }),
   },
   {
     role: "switch",
@@ -382,14 +347,12 @@ const REIMPL_DEMOS: {
         "aria-valuemin": "0",
         "aria-valuemax": "100",
       }),
-    native: () =>
-      make("input", { type: "range", value: "50", "aria-label": "Volume" }),
+    native: () => make("input", { type: "range", value: "50", "aria-label": "Volume" }),
   },
   {
     role: "spinbutton",
     fake: () => reimplFake("spinbutton", "Quantity", { "aria-valuenow": "1" }),
-    native: () =>
-      make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
+    native: () => make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
   },
   {
     role: "searchbox",
@@ -441,9 +404,7 @@ function buildReimplDemos(): { pairs: ReimplPair[]; created: Element[] } {
   for (const demo of REIMPL_DEMOS) {
     const fake = demo.fake();
     const cell = make("div", { class: "reimpl-cell" });
-    cell.appendChild(
-      make("code", { class: "reimpl-role" }, `role="${demo.role}"`),
-    );
+    cell.appendChild(make("code", { class: "reimpl-role" }, `role="${demo.role}"`));
     cell.appendChild(fake);
     host.appendChild(cell);
     created.push(cell);
@@ -501,37 +462,24 @@ function setText(element: Element | null, text: string): Fix {
 // survives in the snippet), so the DOM isn't touched until `apply`. An attribute is
 // flagged "changed" on the side where its presence/value differs (removed → flagged
 // side, added → fixed side, both for a value change).
-function setAttrs(
-  element: Element | null,
-  edits: [name: string, value: string | null][],
-): Fix {
+function setAttrs(element: Element | null, edits: [name: string, value: string | null][]): Fix {
   if (!element) {
     return NOOP;
   }
-  const originals = edits.map(
-    ([name]) => [name, element.getAttribute(name)] as const,
-  );
+  const originals = edits.map(([name]) => [name, element.getAttribute(name)] as const);
   const clone = element.cloneNode(true) as Element;
   for (const [name, value] of edits) {
     writeAttr(clone, name, value);
   }
 
-  const changed = edits.filter(
-    ([name, value]) => element.getAttribute(name) !== value,
-  );
+  const changed = edits.filter(([name, value]) => element.getAttribute(name) !== value);
   const beforeChanged = new Set(
-    changed
-      .filter(([name]) => element.getAttribute(name) !== null)
-      .map(([name]) => name),
+    changed.filter(([name]) => element.getAttribute(name) !== null).map(([name]) => name),
   );
-  const afterChanged = new Set(
-    changed.filter(([, value]) => value !== null).map(([name]) => name),
-  );
+  const afterChanged = new Set(changed.filter(([, value]) => value !== null).map(([name]) => name));
   return {
-    apply: () =>
-      edits.forEach(([name, value]) => writeAttr(element, name, value)),
-    revert: () =>
-      originals.forEach(([name, value]) => writeAttr(element, name, value)),
+    apply: () => edits.forEach(([name, value]) => writeAttr(element, name, value)),
+    revert: () => originals.forEach(([name, value]) => writeAttr(element, name, value)),
     before: [tagOf(element, beforeChanged)],
     after: [tagOf(clone, afterChanged)],
   };
@@ -584,9 +532,7 @@ function paintInDomOrder(toolbar: HTMLElement | null): Fix {
   // Attrs-only clone (no children) carrying the fixed style, so the "after" tag
   // shows the normalised style without touching the live DOM until apply().
   const fixedTag = toolbar.cloneNode(false) as HTMLElement;
-  styleEdits.forEach(([prop, value]) =>
-    fixedTag.style.setProperty(prop, value),
-  );
+  styleEdits.forEach(([prop, value]) => fixedTag.style.setProperty(prop, value));
 
   const none = new Set<string>();
   const wrap = (container: HTMLElement, kids: HTMLElement[]): Tag => ({
@@ -597,16 +543,12 @@ function paintInDomOrder(toolbar: HTMLElement | null): Fix {
 
   return {
     apply: () => {
-      styleEdits.forEach(([prop, value]) =>
-        toolbar.style.setProperty(prop, value),
-      );
+      styleEdits.forEach(([prop, value]) => toolbar.style.setProperty(prop, value));
       apply();
     },
     revert: () => {
       originalStyles.forEach(([prop, value]) =>
-        value
-          ? toolbar.style.setProperty(prop, value)
-          : toolbar.style.removeProperty(prop),
+        value ? toolbar.style.setProperty(prop, value) : toolbar.style.removeProperty(prop),
       );
       revert();
     },
@@ -619,14 +561,12 @@ function reorderByTop(stack: HTMLElement | null): Fix {
   if (!stack) {
     return NOOP;
   }
-  const { original, sorted, apply, revert } = reorderChildren(
-    stack,
-    (element) => parseFloat(element.style.top),
+  const { original, sorted, apply, revert } = reorderChildren(stack, (element) =>
+    parseFloat(element.style.top),
   );
   // A reorder changes no attributes; the fix reads as the line order flipping.
   const none = new Set<string>();
-  const tags = (els: HTMLElement[]) =>
-    els.map((element) => tagOf(element, none));
+  const tags = (els: HTMLElement[]) => els.map((element) => tagOf(element, none));
   return { apply, revert, before: tags(original), after: tags(sorted) };
 }
 

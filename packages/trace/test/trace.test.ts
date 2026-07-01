@@ -40,9 +40,7 @@ describe("trace", () => {
   test("rings and badges a violating stop in red", () => {
     mount('<button>Fine</button><button tabindex="2">Jumped</button>');
     expect(layer().querySelector(".ooo-badge--bad")).not.toBeNull();
-    expect(
-      root.querySelector('[tabindex="2"]')!.classList.contains("ooo-ring--bad"),
-    ).toBe(true);
+    expect(root.querySelector('[tabindex="2"]')!.classList.contains("ooo-ring--bad")).toBe(true);
   });
 
   test("marks an interactive-but-unreachable control with an off-sequence glyph", () => {

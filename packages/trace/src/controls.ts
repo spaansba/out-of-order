@@ -31,10 +31,7 @@ export function loadPanelState(): Partial<PanelState> {
 }
 export function patchPanelState(patch: Partial<PanelState>): void {
   try {
-    sessionStorage.setItem(
-      PANEL_STATE_KEY,
-      JSON.stringify({ ...loadPanelState(), ...patch }),
-    );
+    sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify({ ...loadPanelState(), ...patch }));
   } catch {}
 }
 
@@ -54,19 +51,9 @@ interface Controls {
   teardown(): void;
 }
 
-export function setupControls(
-  layer: HTMLElement,
-  opts: ControlsOptions,
-): Controls {
-  const {
-    peekKey,
-    open,
-    copyFormat,
-    onToggleVisible,
-    onTogglePeek,
-    onToggleOpen,
-    getReport,
-  } = opts;
+export function setupControls(layer: HTMLElement, opts: ControlsOptions): Controls {
+  const { peekKey, open, copyFormat, onToggleVisible, onTogglePeek, onToggleOpen, getReport } =
+    opts;
   const abort = new AbortController();
   const signal = abort.signal;
 
@@ -145,13 +132,7 @@ function buildBody(
   body.className = "ooo-panel-body";
 
   const visSwitch = addSwitch(body, "vis", "Overlay", onToggleVisible, signal);
-  const peekSwitch = addSwitch(
-    body,
-    "peek",
-    "Peek",
-    onTogglePeek,
-    signal,
-  );
+  const peekSwitch = addSwitch(body, "peek", "Peek", onTogglePeek, signal);
   setSwitch(visSwitch, true); // overlay starts shown, peek starts off
   setSwitch(peekSwitch, false);
 
@@ -321,11 +302,7 @@ function setSwitch(sw: HTMLButtonElement, on: boolean): void {
   sw.classList.toggle("ooo-switch--on", on);
 }
 
-function listenForPeekKey(
-  peekKey: ModifierKey,
-  signal: AbortSignal,
-  onTap: () => void,
-): void {
+function listenForPeekKey(peekKey: ModifierKey, signal: AbortSignal, onTap: () => void): void {
   let armed = false;
   window.addEventListener(
     "keydown",

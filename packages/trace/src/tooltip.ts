@@ -35,9 +35,7 @@ export class Tooltip {
       endpoints can sit far from where you hover, so the pointer suits both. */
   wire(target: Element, tip: Tip): void {
     const html = resolver(tip);
-    target.addEventListener("mouseenter", (event) =>
-      this.show(html(), event as MouseEvent),
-    );
+    target.addEventListener("mouseenter", (event) => this.show(html(), event as MouseEvent));
     target.addEventListener("mouseleave", () => this.scheduleHide());
   }
 

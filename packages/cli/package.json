@@ -7,17 +7,17 @@
     "accessibility",
     "cli",
     "focus",
-    "tab-order",
-    "playwright"
+    "playwright",
+    "tab-order"
   ],
   "license": "MIT",
-  "type": "module",
   "bin": {
     "out-of-order": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

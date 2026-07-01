@@ -26,8 +26,7 @@
   --warn-soft: color-mix(in srgb, var(--warn) 10%, transparent);
   --ok-soft: color-mix(in srgb, var(--ok) 11%, transparent);
 
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -757,12 +756,7 @@ fieldset.radio-group label {
     height: 18px;
     border-radius: 999px;
     background:
-      radial-gradient(
-        circle 6px at calc(100% - 9px) 9px,
-        #fff 96%,
-        transparent 98%
-      ),
-      var(--accent);
+      radial-gradient(circle 6px at calc(100% - 9px) 9px, #fff 96%, transparent 98%), var(--accent);
   }
 
   /* slider: a thin track with the thumb at the midpoint */
@@ -771,11 +765,7 @@ fieldset.radio-group label {
     width: 90px;
     height: 16px;
     background:
-      radial-gradient(
-        circle 7px at 45px 8px,
-        var(--accent) 96%,
-        transparent 98%
-      ),
+      radial-gradient(circle 7px at 45px 8px, var(--accent) 96%, transparent 98%),
       linear-gradient(
         to bottom,
         transparent 6px,

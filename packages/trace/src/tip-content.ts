@@ -15,17 +15,7 @@ interface BadgeTipData {
 }
 
 export function badgeTip(data: BadgeTipData): string {
-  const {
-    num,
-    selector,
-    tabIndex,
-    issues,
-    name,
-    role,
-    description,
-    autofocus,
-    srOnly,
-  } = data;
+  const { num, selector, tabIndex, issues, name, role, description, autofocus, srOnly } = data;
 
   // Stop number, or ⊘ for an off-sequence (interactive-but-unreachable) marker.
   const idx =
@@ -40,9 +30,7 @@ export function badgeTip(data: BadgeTipData): string {
     field("name", name ? escapeHtml(name) : null) +
     field("role", role ? mono(escapeHtml(role)) : null) +
     (description ? field("description", escapeHtml(description)) : "") +
-    (tabIndex && tabIndex !== 0
-      ? field("tabindex", mono(String(tabIndex)))
-      : "") +
+    (tabIndex && tabIndex !== 0 ? field("tabindex", mono(String(tabIndex))) : "") +
     (autofocus ? field("autofocus", mono("yes")) : "") +
     (srOnly ? field("sr-only", mono("yes")) : "");
 
@@ -60,9 +48,7 @@ export function badgeTip(data: BadgeTipData): string {
     `data-ooo-ignore`, a note that it's silenced (so a muted badge still explains
     itself instead of looking clean-by-accident). */
 function issueItem(issue: Issue): string {
-  const cls = issue.ignored
-    ? "ooo-tip-item ooo-tip-item--ignored"
-    : "ooo-tip-item";
+  const cls = issue.ignored ? "ooo-tip-item ooo-tip-item--ignored" : "ooo-tip-item";
   const note = issue.ignored
     ? `<span class="ooo-tip-ignored">Ignored via <code>data-ooo-ignore</code></span>`
     : "";
@@ -108,10 +94,7 @@ const EXTERNAL_ICON =
 // stops the analyzer (which reads the live DOM) from numbering it as a stray stop.
 function ruleLabel(issue: Issue): string {
   // Amber for warnings, red (the default) for errors, matching badge and ring.
-  const cls =
-    issue.severity === "warning"
-      ? "ooo-tip-rule ooo-tip-rule--warn"
-      : "ooo-tip-rule";
+  const cls = issue.severity === "warning" ? "ooo-tip-rule ooo-tip-rule--warn" : "ooo-tip-rule";
   if (!issue.docs) {
     return `<span class="${cls}">${issue.rule}</span>`;
   }

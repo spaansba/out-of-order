@@ -73,10 +73,7 @@ const COMPOSITE_ROLES_NO_NATIVE = [
   "treeitem",
 ];
 
-const INTERACTIVE_ROLES = [
-  ...Object.keys(NATIVE_FOR_ROLE),
-  ...COMPOSITE_ROLES_NO_NATIVE,
-];
+const INTERACTIVE_ROLES = [...Object.keys(NATIVE_FOR_ROLE), ...COMPOSITE_ROLES_NO_NATIVE];
 
 export function isInteractive(element: Element): boolean {
   const tag = element.tagName.toLowerCase();
@@ -136,10 +133,8 @@ function isTransparent(element: Element): boolean {
     return !check.call(element, { opacityProperty: true });
   }
   return (
-    closestAncestor(
-      element,
-      (node) => parseFloat(getComputedStyle(node).opacity || "1") === 0,
-    ) !== null
+    closestAncestor(element, (node) => parseFloat(getComputedStyle(node).opacity || "1") === 0) !==
+    null
   );
 }
 
@@ -172,10 +167,8 @@ function isClipped(element: Element, rect: DOMRect): boolean {
       continue;
     }
     const style = getComputedStyle(node);
-    const outX =
-      rect.right <= containerRect.left || rect.left >= containerRect.right;
-    const outY =
-      rect.bottom <= containerRect.top || rect.top >= containerRect.bottom;
+    const outX = rect.right <= containerRect.left || rect.left >= containerRect.right;
+    const outY = rect.bottom <= containerRect.top || rect.top >= containerRect.bottom;
     const clipX = style.overflowX === "clip";
     const clipY = style.overflowY === "clip";
     if ((outX && clipX) || (outY && clipY)) {
@@ -265,14 +258,10 @@ function revealSelectors(rules: CSSRuleList): string[] {
       }
       // Drop the focus pseudos so the selector matches the element at rest: what it
       // looks like *before* focus is what we're grading against.
-      const resting = rule.selectorText
-        .replace(/:focus(?:-visible|-within)?/gi, "")
-        .trim();
+      const resting = rule.selectorText.replace(/:focus(?:-visible|-within)?/gi, "").trim();
       return resting ? [resting] : [];
     }
-    return "cssRules" in rule
-      ? revealSelectors((rule as CSSGroupingRule).cssRules)
-      : [];
+    return "cssRules" in rule ? revealSelectors((rule as CSSGroupingRule).cssRules) : [];
   });
 }
 
@@ -283,10 +272,7 @@ function revealSelectors(rules: CSSRuleList): string[] {
  * controls), visible exactly when a keyboard user reaches it, so it isn't a bug.
  */
 export function focusRevealSelectors(doc: Document): string[] {
-  const sheets = [
-    ...Array.from(doc.styleSheets),
-    ...(doc.adoptedStyleSheets ?? []),
-  ];
+  const sheets = [...Array.from(doc.styleSheets), ...(doc.adoptedStyleSheets ?? [])];
   return sheets.flatMap((sheet) => {
     try {
       return revealSelectors(sheet.cssRules);
@@ -327,15 +313,7 @@ export function hiddenReason(
 /** Native HTML elements that are interactive (and focusable) on their own. A role
     on one of these is at most redundant, never a reimplementation, so they're the
     elements `looksClickable`/`nativeReplacement` skip. */
-const NATIVE_INTERACTIVE_TAGS = [
-  "a",
-  "button",
-  "input",
-  "select",
-  "textarea",
-  "summary",
-  "option",
-];
+const NATIVE_INTERACTIVE_TAGS = ["a", "button", "input", "select", "textarea", "summary", "option"];
 
 /** Looks interactive (an interactive role or an inline click handler) but is not
     a natively focusable element, the signature of a mouse-only control. */
@@ -389,8 +367,7 @@ export function isNativelyFocusable(element: Element): boolean {
     // Only the first <summary> child of a <details> is focusable.
     const parent = element.parentElement;
     return (
-      parent?.tagName.toLowerCase() === "details" &&
-      parent.querySelector("summary") === element
+      parent?.tagName.toLowerCase() === "details" && parent.querySelector("summary") === element
     );
   }
   return false;
@@ -470,12 +447,7 @@ function isDisplayed(element: Element): boolean {
     return check.call(element, { visibilityProperty: true });
   }
   // Fallback for engines without checkVisibility: walk the display chain.
-  return (
-    closestAncestor(
-      element,
-      (node) => getComputedStyle(node).display === "none",
-    ) === null
-  );
+  return closestAncestor(element, (node) => getComputedStyle(node).display === "none") === null;
 }
 
 /** The first genuinely-modal, on-screen container in `root`: a `<dialog>:modal`
@@ -483,9 +455,7 @@ function isDisplayed(element: Element): boolean {
     (show() or a bare `open`) and hidden ones are excluded, since their background is
     meant to stay interactive. */
 export function openModal(root: ParentNode): Element | null {
-  for (const element of root.querySelectorAll(
-    'dialog:modal, [aria-modal="true"]',
-  )) {
+  for (const element of root.querySelectorAll('dialog:modal, [aria-modal="true"]')) {
     if (isDisplayed(element)) {
       return element;
     }

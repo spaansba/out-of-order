@@ -40,10 +40,7 @@ export interface Finding {
 }
 
 /** Takes the tab sequence (plus context) and returns any findings. Pure. */
-export type RuleRun = (
-  sequence: SequenceEntry[],
-  ctx: RuleContext,
-) => Finding[];
+export type RuleRun = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
 
 export interface Rule {
   /** Stable rule identifier, surfaced on every Violation it produces. */
@@ -100,10 +97,7 @@ const visualOrderMismatch: RuleRun = (sequence) => {
     // other outside, or in separate boxes), then their up/down/left/right
     // relationship moves with a scrollbar, so a "backward hop" between them isn't
     // real. Skip the pair.
-    if (
-      floats[idx - 1] !== floats[idx] ||
-      scrollers[idx - 1] !== scrollers[idx]
-    ) {
+    if (floats[idx - 1] !== floats[idx] || scrollers[idx - 1] !== scrollers[idx]) {
       continue;
     }
 
@@ -117,10 +111,8 @@ const visualOrderMismatch: RuleRun = (sequence) => {
     const nextColumn = cur.rect.left >= prev.rect.right;
 
     const earlierRow = cur.rect.bottom <= prev.rect.top + ROW_TOLERANCE_PX;
-    const sameRow =
-      !earlierRow && cur.rect.top < prev.rect.bottom - ROW_TOLERANCE_PX;
-    const backwardHop =
-      !nextColumn && (earlierRow || (sameRow && curX < prevX - 1));
+    const sameRow = !earlierRow && cur.rect.top < prev.rect.bottom - ROW_TOLERANCE_PX;
+    const backwardHop = !nextColumn && (earlierRow || (sameRow && curX < prevX - 1));
     if (!backwardHop) {
       continue;
     }
@@ -167,10 +159,7 @@ const hiddenWhileFocusable: RuleRun = (sequence, { container }) => {
   });
 };
 
-const clickableNotFocusable: RuleRun = (
-  _sequence,
-  { container, inSequence },
-) => {
+const clickableNotFocusable: RuleRun = (_sequence, { container, inSequence }) => {
   // Every ancestor-or-self of a tab stop, collected once. A clickable element
   // that's in this set merely wraps a real focusable control, so the keyboard
   // can still get in, so skip it.
@@ -332,9 +321,9 @@ const preferNativeElement: RuleRun = (sequence) =>
     the browser focuses the first in *document* order — so scan the whole container,
     not `sequence`. The first focusable one wins; the rest are dead intent. */
 const duplicateAutofocus: RuleRun = (_sequence, { container }) => {
-  const focusableAutofocus = Array.from(
-    container.querySelectorAll("[autofocus]"),
-  ).filter((element) => isFocusable(element, { getShadowRoot: true }));
+  const focusableAutofocus = Array.from(container.querySelectorAll("[autofocus]")).filter(
+    (element) => isFocusable(element, { getShadowRoot: true }),
+  );
   if (focusableAutofocus.length < 2) {
     return [];
   }
@@ -370,11 +359,7 @@ const nestedInteractive: RuleRun = (sequence, { container, inSequence }) => {
   const stop = container.parentElement;
   const out: Finding[] = [];
   for (const entry of sequence) {
-    for (
-      let node = entry.element.parentElement;
-      node && node !== stop;
-      node = node.parentElement
-    ) {
+    for (let node = entry.element.parentElement; node && node !== stop; node = node.parentElement) {
       if (!inSequence.has(node) && !isInteractive(node)) {
         continue;
       }

@@ -3,20 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: playground</title>    <link rel="stylesheet" href="./src/styles.css" />
+    <title>Out of Order: playground</title>
+    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-
     <main class="wrap">
       <div class="intro">
         <span class="kicker">Playground</span>
         <h2>Every way focus goes wrong</h2>
         <p>
-          Focus can fail a keyboard or screen-reader user in plenty of ways: an
-          order that jumps around, a control that can't be reached, one that's
-          invisible or never announced. Each entry below trips one of the rules
-          <code>@out-of-order/core</code> checks today, with the overlay tracing
-          the real tab path. For the same overlay on a page that behaves, see
+          Focus can fail a keyboard or screen-reader user in plenty of ways: an order that jumps
+          around, a control that can't be reached, one that's invisible or never announced. Each
+          entry below trips one of the rules
+          <code>@out-of-order/core</code> checks today, with the overlay tracing the real tab path.
+          For the same overlay on a page that behaves, see
           <a href="./tabbable.html">What's tabbable</a>.
         </p>
       </div>
@@ -29,9 +29,9 @@
               <code class="rule-tag">duplicate-autofocus</code>
             </div>
             <p class="note">
-              Both inputs carry <code>autofocus</code>, but only the first in
-              the DOM actually receives focus on load. The second is dead intent
-              and flags <code>duplicate-autofocus</code>. See the
+              Both inputs carry <code>autofocus</code>, but only the first in the DOM actually
+              receives focus on load. The second is dead intent and flags
+              <code>duplicate-autofocus</code>. See the
               <a
                 href="https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
                 target="_blank"
@@ -57,12 +57,10 @@
               <code class="rule-tag">autofocus-not-focusable</code>
             </div>
             <p class="note">
-              This banner carries <code>autofocus</code> to grab focus on load,
-              but a bare <code>&lt;div&gt;</code> isn't focusable (no
-              <code>tabindex</code>, not a form control), so the attribute does
-              nothing. Drop the dead attribute, or add
-              <code>tabindex="-1"</code> to make the element actually focusable.
-              See the
+              This banner carries <code>autofocus</code> to grab focus on load, but a bare
+              <code>&lt;div&gt;</code> isn't focusable (no <code>tabindex</code>, not a form
+              control), so the attribute does nothing. Drop the dead attribute, or add
+              <code>tabindex="-1"</code> to make the element actually focusable. See the
               <a
                 href="https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
                 target="_blank"
@@ -83,9 +81,8 @@
             </div>
             <p class="note">
               Visually this reads top-to-bottom. But the
-              <code>tabindex</code> values force the order 4 → 2 → 5 → 1 → 3, so
-              focus hops around unpredictably. Flags
-              <code>no-positive-tabindex</code> +
+              <code>tabindex</code> values force the order 4 → 2 → 5 → 1 → 3, so focus hops around
+              unpredictably. Flags <code>no-positive-tabindex</code> +
               <code>visual-order-mismatch</code>. Both fail WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
@@ -124,9 +121,9 @@
               <code class="rule-tag">visual-order-mismatch</code>
             </div>
             <p class="note">
-              There's no positive tabindex here, but the visually-first button
-              is last in the DOM (stacked via absolute positioning), so the
-              natural order still runs bottom-to-top. Flags
+              There's no positive tabindex here, but the visually-first button is last in the DOM
+              (stacked via absolute positioning), so the natural order still runs bottom-to-top.
+              Flags
               <code>visual-order-mismatch</code>. Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
@@ -144,22 +141,13 @@
                 border-radius: 8px;
               "
             >
-              <button
-                class="demo-btn"
-                style="position: absolute; top: 92px; left: 14px"
-              >
+              <button class="demo-btn" style="position: absolute; top: 92px; left: 14px">
                 Visually third (DOM first)
               </button>
-              <button
-                class="demo-btn"
-                style="position: absolute; top: 52px; left: 14px"
-              >
+              <button class="demo-btn" style="position: absolute; top: 52px; left: 14px">
                 Visually second (DOM second)
               </button>
-              <button
-                class="demo-btn"
-                style="position: absolute; top: 12px; left: 14px"
-              >
+              <button class="demo-btn" style="position: absolute; top: 12px; left: 14px">
                 Visually first (DOM last)
               </button>
             </div>
@@ -171,10 +159,9 @@
               <code class="rule-tag">visual-order-mismatch</code>
             </div>
             <p class="note">
-              Flexbox <code>row-reverse</code> paints these right-to-left, but
-              tab order follows the DOM left-to-right, so focus moves opposite
-              to the visual flow. Flags <code>visual-order-mismatch</code>.
-              Fails WCAG
+              Flexbox <code>row-reverse</code> paints these right-to-left, but tab order follows the
+              DOM left-to-right, so focus moves opposite to the visual flow. Flags
+              <code>visual-order-mismatch</code>. Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"
                 target="_blank"
@@ -185,11 +172,7 @@
             <div
               id="rtl-toolbar"
               class="row"
-              style="
-                flex-direction: row-reverse;
-                justify-content: flex-end;
-                gap: 10px;
-              "
+              style="flex-direction: row-reverse; justify-content: flex-end; gap: 10px"
             >
               <button class="demo-btn" type="button">Cut</button>
               <button class="demo-btn" type="button">Copy</button>
@@ -204,9 +187,8 @@
               <code class="rule-tag">aria-hidden-focusable</code>
             </div>
             <p class="note">
-              The wrapper is <code>aria-hidden="true"</code>, but the button
-              stays in the tab order, so a screen-reader user lands on a control
-              their SR refuses to announce. Flags
+              The wrapper is <code>aria-hidden="true"</code>, but the button stays in the tab order,
+              so a screen-reader user lands on a control their SR refuses to announce. Flags
               <code>aria-hidden-focusable</code>. See
               <a
                 href="https://www.w3.org/TR/wai-aria-1.2/#aria-hidden"
@@ -226,13 +208,12 @@
               <code class="rule-tag">hidden-while-focusable</code>
             </div>
             <p class="note">
-              Each button below is reachable by Tab but can't be seen, so a
-              keyboard user lands on a control that paints nothing. There's more
-              than one way to end up here, and the package names the cause for
-              each: <code>opacity: 0</code>, a zero-size box,
+              Each button below is reachable by Tab but can't be seen, so a keyboard user lands on a
+              control that paints nothing. There's more than one way to end up here, and the package
+              names the cause for each: <code>opacity: 0</code>, a zero-size box,
               <code>left: -9999px</code> off-screen, or clipped away by an
-              <code>overflow: hidden</code> ancestor. All flag
-              <code>hidden-while-focusable</code>. Fails WCAG
+              <code>overflow: hidden</code> ancestor. All flag <code>hidden-while-focusable</code>.
+              Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
                 target="_blank"
@@ -285,9 +266,8 @@
             </div>
             <p class="note">
               A focusable button whose only content is a decorative
-              <code>aria-hidden</code> icon, with no text, label, or title.
-              Screen readers announce nothing. Flags
-              <code>missing-accessible-name</code>. Fails WCAG
+              <code>aria-hidden</code> icon, with no text, label, or title. Screen readers announce
+              nothing. Flags <code>missing-accessible-name</code>. Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
                 target="_blank"
@@ -296,12 +276,7 @@
               >.
             </p>
             <button class="demo-btn icon-btn" type="button">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fill="currentColor"
                   d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.7L12 17.3 5.8 20.8l1.6-6.7L2.2 8.9l6.9-.6z"
@@ -316,10 +291,9 @@
               <code class="rule-tag">clickable-not-focusable</code>
             </div>
             <p class="note">
-              A <code>&lt;div role="button"&gt;</code> with no
-              <code>tabindex</code> is clickable with a mouse, but skipped
-              entirely by Tab. It gets an amber <strong>⊘</strong> (off the
-              sequence). Flags <code>clickable-not-focusable</code>. Fails WCAG
+              A <code>&lt;div role="button"&gt;</code> with no <code>tabindex</code> is clickable
+              with a mouse, but skipped entirely by Tab. It gets an amber <strong>⊘</strong> (off
+              the sequence). Flags <code>clickable-not-focusable</code>. Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
                 target="_blank"
@@ -327,13 +301,7 @@
                 >2.1.1 Keyboard</a
               >.
             </p>
-            <div
-              class="demo-btn fake-button"
-              role="button"
-              data-action="report"
-            >
-              Run report
-            </div>
+            <div class="demo-btn fake-button" role="button" data-action="report">Run report</div>
           </section>
 
           <section class="group">
@@ -348,9 +316,8 @@
                 target="_blank"
                 rel="noopener"
                 >ARIA toolbar pattern</a
-              >, a <code>role="toolbar"</code> should be a single tab stop and
-              move between items with the arrow keys (roving tabindex). These
-              four are four separate tab stops. Flags
+              >, a <code>role="toolbar"</code> should be a single tab stop and move between items
+              with the arrow keys (roving tabindex). These four are four separate tab stops. Flags
               <code>composite-roving-tabindex</code>.
             </p>
             <div class="row" role="toolbar" aria-label="Text formatting">
@@ -367,8 +334,7 @@
               <code class="rule-tag">tabindex-on-noninteractive</code>
             </div>
             <p class="note">
-              This box is plain decorative text with no role and no behaviour,
-              but
+              This box is plain decorative text with no role and no behaviour, but
               <code>tabindex="0"</code> adds a dead stop to the tab order. Flags
               <code>tabindex-on-noninteractive</code>. See the ARIA APG's
               <a
@@ -390,13 +356,12 @@
             </div>
             <p class="note">
               Every control below is focusable on its own, so the
-              <code>tabindex="0"</code> on it does nothing but add noise (and
-              invites a stray positive value to creep in later). One per kind of
-              natively-focusable element the rule knows about: a link, a
-              <code>&lt;button&gt;</code>, the form controls, a
-              <code>&lt;summary&gt;</code>, an <code>&lt;iframe&gt;</code>, and
-              a media player. All flag <code>redundant-tabindex</code>, and Fix
-              drops the dead attribute from every one. See the HTML spec's
+              <code>tabindex="0"</code> on it does nothing but add noise (and invites a stray
+              positive value to creep in later). One per kind of natively-focusable element the rule
+              knows about: a link, a <code>&lt;button&gt;</code>, the form controls, a
+              <code>&lt;summary&gt;</code>, an <code>&lt;iframe&gt;</code>, and a media player. All
+              flag <code>redundant-tabindex</code>, and Fix drops the dead attribute from every one.
+              See the HTML spec's
               <a
                 href="https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex"
                 target="_blank"
@@ -407,22 +372,11 @@
             <div class="reimpl-grid">
               <div class="reimpl-cell">
                 <code class="reimpl-role">&lt;a href&gt;</code>
-                <a
-                  href="#redundant"
-                  class="demo-link redundant-tab"
-                  tabindex="0"
-                  >Home</a
-                >
+                <a href="#redundant" class="demo-link redundant-tab" tabindex="0">Home</a>
               </div>
               <div class="reimpl-cell">
                 <code class="reimpl-role">&lt;button&gt;</code>
-                <button
-                  class="demo-btn redundant-tab"
-                  type="button"
-                  tabindex="0"
-                >
-                  Save
-                </button>
+                <button class="demo-btn redundant-tab" type="button" tabindex="0">Save</button>
               </div>
               <div class="reimpl-cell">
                 <code class="reimpl-role">&lt;input&gt;</code>
@@ -456,16 +410,8 @@
               <div class="reimpl-cell">
                 <code class="reimpl-role">&lt;summary&gt;</code>
                 <details>
-                  <summary class="redundant-tab" tabindex="0">
-                    More options
-                  </summary>
-                  <p
-                    style="
-                      margin: 6px 0 0;
-                      font-size: 13px;
-                      color: var(--muted);
-                    "
-                  >
+                  <summary class="redundant-tab" tabindex="0">More options</summary>
+                  <p style="margin: 6px 0 0; font-size: 13px; color: var(--muted)">
                     Extra settings.
                   </p>
                 </details>
@@ -504,19 +450,12 @@
               <code class="rule-tag">prefer-native-element</code>
             </div>
             <p class="note">
-              Each control below is a <code>&lt;div&gt;</code>/<code
-                >&lt;span&gt;</code
-              >
-              carrying an interactive <code>role</code> + <code>tabindex</code>,
-              reinventing the focus, keyboard activation, and screen-reader
-              semantics a native element gives for free. One per native
-              replacement the rule knows about; all flag
-              <code>prefer-native-element</code>, and Fix swaps each for the
-              native element it should be. See the
-              <a
-                href="https://www.w3.org/TR/using-aria/#firstrule"
-                target="_blank"
-                rel="noopener"
+              Each control below is a <code>&lt;div&gt;</code>/<code>&lt;span&gt;</code> carrying an
+              interactive <code>role</code> + <code>tabindex</code>, reinventing the focus, keyboard
+              activation, and screen-reader semantics a native element gives for free. One per
+              native replacement the rule knows about; all flag <code>prefer-native-element</code>,
+              and Fix swaps each for the native element it should be. See the
+              <a href="https://www.w3.org/TR/using-aria/#firstrule" target="_blank" rel="noopener"
                 >first rule of ARIA</a
               >.
             </p>
@@ -529,10 +468,10 @@
               <code class="rule-tag">nested-interactive</code>
             </div>
             <p class="note">
-              This card is a link with a <code>&lt;button&gt;</code> sitting
-              inside it. Both are focusable, so they stack two tab stops on one
-              spot, and a screen reader may merge or drop the inner control's
-              role and name. Flags <code>nested-interactive</code>. Fails WCAG
+              This card is a link with a <code>&lt;button&gt;</code> sitting inside it. Both are
+              focusable, so they stack two tab stops on one spot, and a screen reader may merge or
+              drop the inner control's role and name. Flags <code>nested-interactive</code>. Fails
+              WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
                 target="_blank"
@@ -549,45 +488,35 @@
           <section class="group">
             <h2>An all-caps button label</h2>
             <div class="rule-tags">
-              <code class="rule-tag is-custom" data-severity="warning"
-                >no-shouting</code
-              >
+              <code class="rule-tag is-custom" data-severity="warning">no-shouting</code>
             </div>
             <p class="note">
               Not a built-in. This is a <strong>custom rule</strong> passed to
-              <code>trace({ rules: [...] })</code>, so it runs on the overlay
-              next to the packaged ones. It flags any tab stop whose label is
-              <code>ALL CAPS</code>. Flags <code>no-shouting</code>. Write your
-              own the same way, see the recipe for
+              <code>trace({ rules: [...] })</code>, so it runs on the overlay next to the packaged
+              ones. It flags any tab stop whose label is <code>ALL CAPS</code>. Flags
+              <code>no-shouting</code>. Write your own the same way, see the recipe for
               <a href="./recipes.html#custom-rule">adding a custom rule</a>.
             </p>
-            <button class="demo-btn shouty" type="button">
-              CLICK ME NOW!!!
-            </button>
+            <button class="demo-btn shouty" type="button">CLICK ME NOW!!!</button>
           </section>
 
           <section class="group">
             <h2>A finding you've approved with data-ooo-ignore</h2>
             <div class="rule-tags">
-              <code class="rule-tag" data-severity="approved"
-                >data-ooo-ignore</code
-              >
+              <code class="rule-tag" data-severity="approved">data-ooo-ignore</code>
             </div>
             <p class="note">
               Both boxes are the same custom
-              <code>&lt;div role="button"&gt;</code>, which normally nudges you
-              toward a native <code>&lt;button&gt;</code>
+              <code>&lt;div role="button"&gt;</code>, which normally nudges you toward a native
+              <code>&lt;button&gt;</code>
               (<code>prefer-native-element</code>). The right one carries
-              <code>data-ooo-ignore="prefer-native-element"</code>, your note
-              that you have weighed it and it stays. See
-              <a href="./getting-started.html#approve">approving a finding</a>.
+              <code>data-ooo-ignore="prefer-native-element"</code>, your note that you have weighed
+              it and it stays. See <a href="./getting-started.html#approve">approving a finding</a>.
             </p>
             <div class="reimpl-grid">
               <div class="reimpl-cell">
                 <code class="reimpl-role">flagged</code>
-                <div class="demo-btn reimpl-btn" role="button" tabindex="0">
-                  Save
-                </div>
+                <div class="demo-btn reimpl-btn" role="button" tabindex="0">Save</div>
               </div>
               <div class="reimpl-cell">
                 <code class="reimpl-role">approved</code>
@@ -610,14 +539,12 @@
             <code class="rule-tag">focus-escapes-modal</code>
           </div>
           <p class="note">
-            Open this <code>aria-modal="true"</code> dialog and the page behind
-            it is never made <code>inert</code>, so Tab keeps reaching every
-            control underneath: the overlay lights up the whole page as a focus
-            leak. Flags <code>focus-escapes-modal</code>. The fix swaps it for a
-            native <code>&lt;dialog&gt;</code> opened with
-            <code>showModal()</code>, which traps focus for real, yet the
-            warning stays: a false positive, since <code>tabbable</code> ignores
-            the top layer's implicit inertness. See the ARIA APG's
+            Open this <code>aria-modal="true"</code> dialog and the page behind it is never made
+            <code>inert</code>, so Tab keeps reaching every control underneath: the overlay lights
+            up the whole page as a focus leak. Flags <code>focus-escapes-modal</code>. The fix swaps
+            it for a native <code>&lt;dialog&gt;</code> opened with <code>showModal()</code>, which
+            traps focus for real, yet the warning stays: a false positive, since
+            <code>tabbable</code> ignores the top layer's implicit inertness. See the ARIA APG's
             <a
               href="https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
               target="_blank"
@@ -626,9 +553,7 @@
             >.
           </p>
           <div class="modal-demo">
-            <button class="demo-btn" type="button" id="open-modal">
-              Open dialog
-            </button>
+            <button class="demo-btn" type="button" id="open-modal">Open dialog</button>
           </div>
         </section>
       </div>
@@ -638,12 +563,7 @@
          the page behind it (the planted leak). The fix swaps it for a native
          <dialog> built in modal.ts. Hidden until the card's button opens it. -->
     <div class="modal-overlay" id="modal-demo" hidden>
-      <div
-        class="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Confirm deletion"
-      >
+      <div class="dialog" role="dialog" aria-modal="true" aria-label="Confirm deletion">
         <strong>Delete this item?</strong>
         <div class="row">
           <button class="demo-btn" type="button" data-close>Cancel</button>

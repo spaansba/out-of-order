@@ -17,18 +17,14 @@ describe("selectorFor", () => {
       '<div id="card" class="ignored"><button class="btn alt">B</button></div>';
     // id short-circuits the div (its class is dropped); only the first class of
     // the button survives.
-    expect(selectorFor(document.querySelector("button")!)).toBe(
-      "div#card > button.btn",
-    );
+    expect(selectorFor(document.querySelector("button")!)).toBe("div#card > button.btn");
   });
 
   test("caps the path at four ancestors", () => {
     document.body.innerHTML =
       "<section><article><div><span><button>X</button></span></div></article></section>";
     // section and body are beyond the depth cap, so they're left off.
-    expect(selectorFor(document.querySelector("button")!)).toBe(
-      "article > div > span > button",
-    );
+    expect(selectorFor(document.querySelector("button")!)).toBe("article > div > span > button");
   });
 });
 

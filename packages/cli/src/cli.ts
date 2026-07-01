@@ -13,10 +13,7 @@ type OooGlobal = {
   ) => AuditResult<Formatted<F>>;
 };
 
-const FORMATS = [
-  "by-element",
-  "text",
-] as const satisfies readonly AuditFormat[];
+const FORMATS = ["by-element", "text"] as const satisfies readonly AuditFormat[];
 
 const USAGE = `out-of-order <url> [options]
 
@@ -66,10 +63,7 @@ async function open(page: Page, targetUrl: string) {
 }
 
 if (values.overlay) {
-  const overlaySource = readFileSync(
-    join(here, "inject-overlay.global.js"),
-    "utf8",
-  );
+  const overlaySource = readFileSync(join(here, "inject-overlay.global.js"), "utf8");
   const browser = await chromium.launch({ headless: false });
   // viewport:null uses the real window size; bypassCSP lets the overlay's <style>
   // and script through on strict sites.
@@ -109,9 +103,7 @@ try {
     const result = ooo.audit(document, { format: fmt });
     const violations = result.violations;
     const output =
-      typeof violations === "string"
-        ? violations
-        : JSON.stringify(violations, null, 2);
+      typeof violations === "string" ? violations : JSON.stringify(violations, null, 2);
     return { output, valid: result.valid };
   }, format);
 

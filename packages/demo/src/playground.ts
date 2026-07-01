@@ -27,12 +27,7 @@ const overlay = trace({ rules: [noShouting] });
 
 // Each card gets a "Solve" button; the overlay re-analyzes on DOM mutation, so a
 // fix just touches the DOM and that card's badges flip green on their own.
-const teardown = [
-  () => overlay.destroy(),
-  wireTriage(),
-  wireSolvers(),
-  wireModal(),
-];
+const teardown = [() => overlay.destroy(), wireTriage(), wireSolvers(), wireModal()];
 
 // wireTriage reorders the warning cards with appendChild, and re-inserting an element
 // that already carries `autofocus` re-arms the browser's autofocus pass, so it would grab

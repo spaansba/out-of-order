@@ -3,24 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: rules</title>    <link rel="stylesheet" href="./src/styles.css" />
+    <title>Out of Order: rules</title>
+    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-
     <main class="wrap">
       <div class="intro">
         <span class="kicker">Rules</span>
         <h2>Every rule, and the clause behind it</h2>
         <p>
-          All rules are on by default. The severity shown is the default grade,
-          and you can override any of them per call. Every rule maps to a
-          specific WCAG, WAI-ARIA, or HTML-spec clause, linked at the end of its
-          row.
+          All rules are on by default. The severity shown is the default grade, and you can override
+          any of them per call. Every rule maps to a specific WCAG, WAI-ARIA, or HTML-spec clause,
+          linked at the end of its row.
         </p>
         <div class="cta">
-          <a class="btn" href="./playground.html"
-            >See every rule fail (and get fixed) live</a
-          >
+          <a class="btn" href="./playground.html">See every rule fail (and get fixed) live</a>
         </div>
       </div>
 
@@ -92,8 +89,8 @@
               <td><code>hidden-while-focusable</code></td>
               <td><span class="sev is-error">error</span></td>
               <td>
-                tabbable but invisible (opacity:0, zero size, off-screen,
-                clipped); a <code>:hover</code> reveal doesn't count, only
+                tabbable but invisible (opacity:0, zero size, off-screen, clipped); a
+                <code>:hover</code> reveal doesn't count, only
                 <code>:focus</code>
               </td>
               <td>
@@ -162,10 +159,7 @@
               <td><span class="sev is-warning">warning</span></td>
               <td>generic tag reimplementing a native control via an interactive role</td>
               <td>
-                <a
-                  href="https://www.w3.org/TR/using-aria/#firstrule"
-                  target="_blank"
-                  rel="noopener"
+                <a href="https://www.w3.org/TR/using-aria/#firstrule" target="_blank" rel="noopener"
                   >First rule of ARIA</a
                 >
               </td>
@@ -229,26 +223,26 @@
       <section class="group" id="changing">
         <h2>Changing a rule's grade</h2>
         <p class="note">
-          Pass per-rule overrides through <code>AuditOptions.rules</code>. A
-          rule you do not list keeps its default. For any other rule, re-grade it
-          to <code>"error"</code> or <code>"warning"</code>, or switch it
-          <code>"off"</code>.
+          Pass per-rule overrides through <code>AuditOptions.rules</code>. A rule you do not list
+          keeps its default. For any other rule, re-grade it to <code>"error"</code> or
+          <code>"warning"</code>, or switch it <code>"off"</code>.
         </p>
-        <pre class="code">audit(document.body, {
+        <pre class="code">
+audit(document.body, {
   rules: {
     "visual-order-mismatch": "warning",
     "redundant-tabindex": "error",
     "prefer-native-element": "off",
   },
-});</pre>
+});</pre
+        >
       </section>
 
       <section class="group">
         <h2>Adding your own rule</h2>
         <p class="note">
-          A rule is just a pure function over the computed sequence. Write one
-          and pass it alongside the built-ins, and it shows up in the result and
-          on the overlay like any other. See the
+          A rule is just a pure function over the computed sequence. Write one and pass it alongside
+          the built-ins, and it shows up in the result and on the overlay like any other. See the
           <a href="./recipes.html#custom-rule">custom-rule recipe</a> and the
           <a href="./api.html#rule">Rule type</a>.
         </p>

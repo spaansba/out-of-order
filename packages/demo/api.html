@@ -3,41 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: API reference</title>    <link rel="stylesheet" href="./src/styles.css" />
+    <title>Out of Order: API reference</title>
+    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-
     <main class="wrap">
       <div class="intro">
         <span class="kicker">API reference</span>
         <h2>core and trace, in full</h2>
         <p>
-          Two packages. <code>@out-of-order/core</code> is the analyzer and its
-          types, and <code>@out-of-order/trace</code> is the overlay. Each entry
-          keeps a function together with the types it takes and hands back. The
-          test-runner matcher is in progress and not documented here yet.
+          Two packages. <code>@out-of-order/core</code> is the analyzer and its types, and
+          <code>@out-of-order/trace</code> is the overlay. Each entry keeps a function together with
+          the types it takes and hands back. The test-runner matcher is in progress and not
+          documented here yet.
         </p>
       </div>
 
       <section class="group" id="core">
         <h2>audit()<span class="kind">function</span></h2>
         <p class="sig">
-          <span class="tok">audit</span>(root?, options?, customRules?) &rarr;
-          AuditResult
+          <span class="tok">audit</span>(root?, options?, customRules?) &rarr; AuditResult
         </p>
         <p class="note">
-          Computes the tab sequence for <code>root</code> and grades it against
-          the enabled rules. It runs in the browser only, because
-          <code>tabbable</code> uses real CSS layout for visibility and several
-          rules read bounding rects.
+          Computes the tab sequence for <code>root</code> and grades it against the enabled rules.
+          It runs in the browser only, because <code>tabbable</code> uses real CSS layout for
+          visibility and several rules read bounding rects.
         </p>
         <p class="note">
-          You always get an <code>AuditResult</code>. Pass
-          <code>options.format</code> and only its <code>violations</code> change
-          type: <code>"text"</code> gives a ready-to-print <code>string</code>,
-          while <code>"by-element"</code> gives a typed
-          <code>ByElement[]</code>, free of live <code>Element</code>s so it
-          serializes straight to JSON. See <code>Formatted</code> below.
+          You always get an <code>AuditResult</code>. Pass <code>options.format</code> and only its
+          <code>violations</code> change type: <code>"text"</code> gives a ready-to-print
+          <code>string</code>, while <code>"by-element"</code> gives a typed
+          <code>ByElement[]</code>, free of live <code>Element</code>s so it serializes straight to
+          JSON. See <code>Formatted</code> below.
         </p>
 
         <h3>Parameters</h3>
@@ -54,9 +51,8 @@
               <td><code>root</code></td>
               <td class="type"><code>ParentNode</code></td>
               <td>
-                Optional, defaults to <code>document</code>. The subtree to
-                analyze. A <code>Document</code> analyzes the whole page,
-                exactly like tabbing through it.
+                Optional, defaults to <code>document</code>. The subtree to analyze. A
+                <code>Document</code> analyzes the whole page, exactly like tabbing through it.
               </td>
             </tr>
             <tr>
@@ -64,9 +60,8 @@
               <td class="type"><code>AuditOptions</code></td>
               <td>
                 Optional. Per-rule severity overrides. See
-                <a href="#options">Options &amp; severity</a>. Add
-                <code>format</code> to render <code>violations</code> to a
-                string instead (see above).
+                <a href="#options">Options &amp; severity</a>. Add <code>format</code> to render
+                <code>violations</code> to a string instead (see above).
               </td>
             </tr>
             <tr>
@@ -80,12 +75,9 @@
           </tbody>
         </table>
 
-        <h3 id="auditresult">
-          Returns &rarr; AuditResult<span class="kind">type</span>
-        </h3>
+        <h3 id="auditresult">Returns &rarr; AuditResult<span class="kind">type</span></h3>
         <p class="note">
-          Holds the computed tab sequence, every violation found, and the
-          overall verdict.
+          Holds the computed tab sequence, every violation found, and the overall verdict.
         </p>
         <table class="spec api">
           <thead>
@@ -100,35 +92,29 @@
               <td><code>valid</code></td>
               <td class="type"><code>boolean</code></td>
               <td>
-                True when no enabled rule produced an <code>error</code>.
-                Warnings are advisory and never flip it, so read
-                <code>violations</code> when you want to surface those too.
+                True when no enabled rule produced an <code>error</code>. Warnings are advisory and
+                never flip it, so read <code>violations</code> when you want to surface those too.
               </td>
             </tr>
             <tr>
               <td><code>sequence</code></td>
               <td class="type"><code>SequenceEntry[]</code></td>
-              <td>
-                Every tab stop, in the exact order the <kbd>Tab</kbd> key
-                reaches it.
-              </td>
+              <td>Every tab stop, in the exact order the <kbd>Tab</kbd> key reaches it.</td>
             </tr>
             <tr>
               <td><code>violations</code></td>
               <td class="type"><code>Violation[] | Formatted&lt;F&gt;</code></td>
               <td>
-                One entry per offending element, each carrying the rules it
-                failed, across all enabled rules and both severities. Reshaped to
-                the <code>options.format</code> view when one is set (see above).
+                One entry per offending element, each carrying the rules it failed, across all
+                enabled rules and both severities. Reshaped to the <code>options.format</code> view
+                when one is set (see above).
               </td>
             </tr>
           </tbody>
         </table>
 
         <h3 id="sequenceentry">SequenceEntry<span class="kind">type</span></h3>
-        <p class="note">
-          One entry per tab stop in <code>AuditResult.sequence</code>.
-        </p>
+        <p class="note">One entry per tab stop in <code>AuditResult.sequence</code>.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -146,9 +132,7 @@
             <tr>
               <td><code>selector</code></td>
               <td class="type"><code>string</code></td>
-              <td>
-                A short, CSS-ish path to the element, for messages and logs.
-              </td>
+              <td>A short, CSS-ish path to the element, for messages and logs.</td>
             </tr>
             <tr>
               <td><code>orderIndex</code></td>
@@ -159,16 +143,15 @@
               <td><code>tabIndex</code></td>
               <td class="type"><code>number</code></td>
               <td>
-                The resolved tabindex, <code>0</code> when the element is
-                focusable without one.
+                The resolved tabindex, <code>0</code> when the element is focusable without one.
               </td>
             </tr>
             <tr>
               <td><code>rect</code></td>
               <td class="type"><code>DOMRect</code></td>
               <td>
-                The element's bounding rect at analysis time, from real browser
-                layout. This is why several rules need a real browser.
+                The element's bounding rect at analysis time, from real browser layout. This is why
+                several rules need a real browser.
               </td>
             </tr>
           </tbody>
@@ -176,8 +159,8 @@
 
         <h3 id="violation">Violation<span class="kind">type</span></h3>
         <p class="note">
-          One entry per offending <em>element</em> in
-          <code>AuditResult.violations</code>, carrying every rule it failed.
+          One entry per offending <em>element</em> in <code>AuditResult.violations</code>, carrying
+          every rule it failed.
         </p>
         <table class="spec api">
           <thead>
@@ -201,10 +184,7 @@
             <tr>
               <td><code>orderIndex?</code></td>
               <td class="type"><code>number</code></td>
-              <td>
-                Its position in the tab sequence, present only when it is a
-                stop.
-              </td>
+              <td>Its position in the tab sequence, present only when it is a stop.</td>
             </tr>
             <tr>
               <td><code>issues</code></td>
@@ -229,8 +209,8 @@
               <td><code>rule</code></td>
               <td class="type"><code>string</code></td>
               <td>
-                The id of the rule that fired, a built-in id or a custom rule's
-                own. Stable, so you can key or filter on it.
+                The id of the rule that fired, a built-in id or a custom rule's own. Stable, so you
+                can key or filter on it.
               </td>
             </tr>
             <tr>
@@ -241,9 +221,7 @@
             <tr>
               <td><code>message</code></td>
               <td class="type"><code>string</code></td>
-              <td>
-                A plain-language account of what is wrong and how to fix it.
-              </td>
+              <td>A plain-language account of what is wrong and how to fix it.</td>
             </tr>
             <tr>
               <td><code>docs?</code></td>
@@ -254,10 +232,9 @@
               <td><code>relatedElements?</code></td>
               <td class="type"><code>Element[]</code></td>
               <td>
-                Other elements that share this issue's root cause. Ringed
-                alongside the violation's <code>element</code> but not reported
-                as separate violations, so one missing fix does not become N
-                findings.
+                Other elements that share this issue's root cause. Ringed alongside the violation's
+                <code>element</code> but not reported as separate violations, so one missing fix
+                does not become N findings.
               </td>
             </tr>
           </tbody>
@@ -272,9 +249,7 @@
         </p>
 
         <h3>Severity &amp; RuleSetting<span class="kind">types</span></h3>
-        <p class="note">
-          The grades a rule reports at, and what an override can set it to.
-        </p>
+        <p class="note">The grades a rule reports at, and what an override can set it to.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -318,16 +293,16 @@
               </td>
               <td>
                 Per-rule overrides. Omit a rule to keep its default. Set
-                <code>"error"</code> or <code>"warning"</code> to enable it at
-                that grade, or <code>"off"</code> to disable it.
+                <code>"error"</code> or <code>"warning"</code> to enable it at that grade, or
+                <code>"off"</code> to disable it.
               </td>
             </tr>
             <tr>
               <td><code>format?</code></td>
               <td class="type"><code>AuditFormat</code></td>
               <td>
-                Reshape the result's <code>violations</code> to this view:
-                <code>"text"</code> (a string), or <code>"by-element"</code>
+                Reshape the result's <code>violations</code> to this view: <code>"text"</code> (a
+                string), or <code>"by-element"</code>
                 (a typed array). Omit to keep the structured
                 <code>Violation[]</code>.
               </td>
@@ -335,9 +310,8 @@
           </tbody>
         </table>
         <p class="note">
-          <code>RuleId</code> is the union of the built-in rule ids, so
-          overrides autocomplete. The full list is on the
-          <a href="./rules.html">rules page</a>.
+          <code>RuleId</code> is the union of the built-in rule ids, so overrides autocomplete. The
+          full list is on the <a href="./rules.html">rules page</a>.
         </p>
       </section>
 
@@ -357,17 +331,14 @@
               <td><code>isInteractive</code></td>
               <td class="type"><code>(el: Element) =&gt; boolean</code></td>
               <td>
-                Returns whether an element is interactive, meaning a native
-                control or an element with an interactive ARIA role.
+                Returns whether an element is interactive, meaning a native control or an element
+                with an interactive ARIA role.
               </td>
             </tr>
             <tr>
               <td><code>selectorFor</code></td>
               <td class="type"><code>(el: Element) =&gt; string</code></td>
-              <td>
-                Returns a short, CSS-ish path to an element, useful for messages
-                and logs.
-              </td>
+              <td>Returns a short, CSS-ish path to an element, useful for messages and logs.</td>
             </tr>
           </tbody>
         </table>
@@ -376,9 +347,8 @@
       <section class="group" id="rule">
         <h2>Custom rules</h2>
         <p class="note">
-          A rule is a pure function over the computed sequence. Pass your own
-          alongside the built-ins and they flow into the result and the overlay
-          like any other.
+          A rule is a pure function over the computed sequence. Pass your own alongside the
+          built-ins and they flow into the result and the overlay like any other.
         </p>
 
         <h3>Rule<span class="kind">type</span></h3>
@@ -395,10 +365,7 @@
             <tr>
               <td><code>id</code></td>
               <td class="type"><code>string</code></td>
-              <td>
-                Surfaced as <code>rule</code> on every <code>Issue</code> the
-                rule produces.
-              </td>
+              <td>Surfaced as <code>rule</code> on every <code>Issue</code> the rule produces.</td>
             </tr>
             <tr>
               <td><code>docs</code></td>
@@ -408,17 +375,12 @@
             <tr>
               <td><code>defaultSeverity</code></td>
               <td class="type"><code>Severity</code></td>
-              <td>
-                The grade its findings get unless the caller overrides it.
-              </td>
+              <td>The grade its findings get unless the caller overrides it.</td>
             </tr>
             <tr>
               <td><code>run</code></td>
               <td class="type">
-                <code
-                  >(sequence: SequenceEntry[], ctx: RuleContext) =&gt;
-                  Finding[]</code
-                >
+                <code>(sequence: SequenceEntry[], ctx: RuleContext) =&gt; Finding[]</code>
               </td>
               <td>The rule itself, run over the sequence.</td>
             </tr>
@@ -426,9 +388,7 @@
         </table>
 
         <h3>RuleContext<span class="kind">type</span></h3>
-        <p class="note">
-          Handed to a rule's <code>run</code> as its second argument.
-        </p>
+        <p class="note">Handed to a rule's <code>run</code> as its second argument.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -441,9 +401,7 @@
             <tr>
               <td><code>container</code></td>
               <td class="type"><code>Element</code></td>
-              <td>
-                The analyzed root, so a rule can look beyond the tab sequence.
-              </td>
+              <td>The analyzed root, so a rule can look beyond the tab sequence.</td>
             </tr>
             <tr>
               <td><code>inSequence</code></td>
@@ -454,9 +412,7 @@
         </table>
 
         <h3>Finding<span class="kind">type</span></h3>
-        <p class="note">
-          Returned by a rule's <code>run</code>, one per issue.
-        </p>
+        <p class="note">Returned by a rule's <code>run</code>, one per issue.</p>
         <table class="spec api">
           <thead>
             <tr>
@@ -488,9 +444,8 @@
         </table>
         <p class="note">
           <code>audit()</code> stamps the severity onto each finding, taken from
-          <code>defaultSeverity</code> or the caller's override, then groups the
-          findings by element. That is why a <code>Finding</code> is an
-          <code>Issue</code> without a severity.
+          <code>defaultSeverity</code> or the caller's override, then groups the findings by
+          element. That is why a <code>Finding</code> is an <code>Issue</code> without a severity.
         </p>
         <pre class="code">
 import { audit } from "@out-of-order/core";
@@ -520,23 +475,18 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
 
       <section class="group" id="trace">
         <h2>trace()<span class="kind">function</span></h2>
-        <p class="sig">
-          <span class="tok">trace</span>(options?) &rarr; TraceHandle
+        <p class="sig"><span class="tok">trace</span>(options?) &rarr; TraceHandle</p>
+        <p class="note">
+          Mounts the overlay layer, draws the first analysis, and starts observing. It re-analyzes
+          itself on DOM mutation, so most pages need nothing past the call.
         </p>
         <p class="note">
-          Mounts the overlay layer, draws the first analysis, and starts
-          observing. It re-analyzes itself on DOM mutation, so most pages need
-          nothing past the call.
-        </p>
-        <p class="note">
-          <code>@out-of-order/trace</code> re-exports the whole
-          <a href="#core">core API</a>, so overlay users get the headless path
-          from this one package without installing core separately.
+          <code>@out-of-order/trace</code> re-exports the whole <a href="#core">core API</a>, so
+          overlay users get the headless path from this one package without installing core
+          separately.
         </p>
 
-        <h3 id="traceoptions">
-          Parameters &rarr; TraceOptions<span class="kind">type</span>
-        </h3>
+        <h3 id="traceoptions">Parameters &rarr; TraceOptions<span class="kind">type</span></h3>
         <p class="note">Every field is optional.</p>
         <table class="spec api">
           <thead>
@@ -550,9 +500,7 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
             <tr>
               <td><code>root?</code></td>
               <td class="type"><code>ParentNode</code></td>
-              <td>
-                The subtree to analyze. Defaults to <code>document</code>.
-              </td>
+              <td>The subtree to analyze. Defaults to <code>document</code>.</td>
             </tr>
             <tr>
               <td><code>audit?</code></td>
@@ -562,17 +510,14 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
             <tr>
               <td><code>rules?</code></td>
               <td class="type"><code>Rule[]</code></td>
-              <td>
-                Extra custom rules, run alongside the built-ins on every
-                analysis.
-              </td>
+              <td>Extra custom rules, run alongside the built-ins on every analysis.</td>
             </tr>
             <tr>
               <td><code>motion?</code></td>
               <td class="type"><code>"auto" | "on" | "off"</code></td>
               <td>
-                Animation. Defaults to <code>"auto"</code>, which follows the
-                user's <code>prefers-reduced-motion</code> setting, live.
+                Animation. Defaults to <code>"auto"</code>, which follows the user's
+                <code>prefers-reduced-motion</code> setting, live.
               </td>
             </tr>
             <tr>
@@ -581,17 +526,15 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
                 <code>"Alt" | "Control" | "Shift" | "Meta"</code>
               </td>
               <td>
-                Tap this modifier to peek through the overlay at the page
-                beneath without hiding it. Tap it again to restore. Defaults to
+                Tap this modifier to peek through the overlay at the page beneath without hiding it.
+                Tap it again to restore. Defaults to
                 <code>"Alt"</code>.
               </td>
             </tr>
           </tbody>
         </table>
 
-        <h3 id="tracehandle">
-          Returns &rarr; TraceHandle<span class="kind">type</span>
-        </h3>
+        <h3 id="tracehandle">Returns &rarr; TraceHandle<span class="kind">type</span></h3>
         <p class="note">For driving the overlay after the mount.</p>
         <table class="spec api">
           <thead>
@@ -605,17 +548,12 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
             <tr>
               <td><code>visible</code></td>
               <td class="type"><code>boolean</code></td>
-              <td>
-                Read-only. Reports whether the overlay is currently visible.
-              </td>
+              <td>Read-only. Reports whether the overlay is currently visible.</td>
             </tr>
             <tr>
               <td><code>setVisible</code></td>
               <td class="type"><code>(visible: boolean) =&gt; void</code></td>
-              <td>
-                Shows or hides the whole overlay, including its badges, lines,
-                and rings.
-              </td>
+              <td>Shows or hides the whole overlay, including its badges, lines, and rings.</td>
             </tr>
             <tr>
               <td><code>toggle</code></td>
@@ -630,10 +568,7 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
             <tr>
               <td><code>result</code></td>
               <td class="type"><code>AuditResult | null</code></td>
-              <td>
-                The latest analysis result, or <code>null</code> before the
-                first draw.
-              </td>
+              <td>The latest analysis result, or <code>null</code> before the first draw.</td>
             </tr>
           </tbody>
         </table>

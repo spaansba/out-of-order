@@ -3,18 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: recipes</title>    <link rel="stylesheet" href="./src/styles.css" />
+    <title>Out of Order: recipes</title>
+    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-
     <main class="wrap">
       <div class="intro">
         <span class="kicker">Recipes</span>
         <h2>Putting it to work</h2>
         <p>
-          A handful of short, practical patterns. Gate a build on the verdict,
-          mount the overlay in a framework, add a rule, and hand the findings to
-          an AI agent. All of it runs through the same two entry points,
+          A handful of short, practical patterns. Gate a build on the verdict, mount the overlay in
+          a framework, add a rule, and hand the findings to an AI agent. All of it runs through the
+          same two entry points,
           <code>audit</code> and <code>trace</code>.
         </p>
       </div>
@@ -22,12 +22,12 @@
       <section class="group">
         <h2>Gate a build in CI</h2>
         <p class="note">
-          The analyzer needs a real DOM, so run it in a real-browser test runner
-          like Vitest Browser Mode or Playwright. A dedicated assertion matcher
-          is in progress. Until it lands, assert on the result directly, which
-          works in any real browser today.
+          The analyzer needs a real DOM, so run it in a real-browser test runner like Vitest Browser
+          Mode or Playwright. A dedicated assertion matcher is in progress. Until it lands, assert
+          on the result directly, which works in any real browser today.
         </p>
-        <pre class="code">// A test running in real Chromium (e.g. Vitest Browser Mode).
+        <pre class="code">
+// A test running in real Chromium (e.g. Vitest Browser Mode).
 import { test, expect } from "vitest";
 import { audit } from "@out-of-order/core";
 
@@ -41,11 +41,11 @@ test("modal has a sane tab order", () => {
   const result = audit();
   // A `text`-formatted audit's violations become the failure message.
   expect(result.valid, audit(document.body, { format: "text" }).violations).toBe(true);
-});</pre>
+});</pre
+        >
         <p class="note">
-          Because only <code>error</code>-severity findings flip
-          <code>valid</code>, warnings will not fail the gate. Promote or demote
-          rules per call if your policy differs (see
+          Because only <code>error</code>-severity findings flip <code>valid</code>, warnings will
+          not fail the gate. Promote or demote rules per call if your policy differs (see
           <a href="./rules.html#changing">changing a rule's grade</a>).
         </p>
       </section>
@@ -57,23 +57,26 @@ test("modal has a sane tab order", () => {
           <code>destroy()</code> on unmount. That is the whole lifecycle.
         </p>
         <h3>React</h3>
-        <pre class="code">import { useEffect } from "react";
+        <pre class="code">
+import { useEffect } from "react";
 import { trace } from "@out-of-order/trace";
 
 useEffect(() => {
   const overlay = trace();
   return () => overlay.destroy();
-}, []);</pre>
+}, []);</pre
+        >
         <h3>Vue</h3>
-        <pre class="code">import { onMounted, onBeforeUnmount } from "vue";
+        <pre class="code">
+import { onMounted, onBeforeUnmount } from "vue";
 import { trace } from "@out-of-order/trace";
 
 let overlay;
 onMounted(() => (overlay = trace()));
-onBeforeUnmount(() => overlay?.destroy());</pre>
+onBeforeUnmount(() => overlay?.destroy());</pre
+        >
         <p class="note">
-          Gate it behind a dev-only flag if you don't want the overlay in
-          production builds.
+          Gate it behind a dev-only flag if you don't want the overlay in production builds.
         </p>
       </section>
 
@@ -81,10 +84,11 @@ onBeforeUnmount(() => overlay?.destroy());</pre>
         <h2>Add a custom rule</h2>
         <p class="note">
           A rule is a pure function over the sequence. Pass yours through the
-          <code>rules</code> option and it runs with the built-ins, both in the
-          result and on the overlay.
+          <code>rules</code> option and it runs with the built-ins, both in the result and on the
+          overlay.
         </p>
-        <pre class="code">import { trace } from "@out-of-order/trace";
+        <pre class="code">
+import { trace } from "@out-of-order/trace";
 import type { Rule } from "@out-of-order/core";
 
 const noShouting: Rule = {
@@ -102,22 +106,23 @@ const noShouting: Rule = {
       })),
 };
 
-trace({ rules: [noShouting] });</pre>
+trace({ rules: [noShouting] });</pre
+        >
         <p class="note">
-          The full <a href="./api.html#rule">Rule, RuleRun, and Finding
-          types</a> are on the API page.
+          The full <a href="./api.html#rule">Rule, RuleRun, and Finding types</a> are on the API
+          page.
         </p>
       </section>
 
       <section class="group" id="ai-agent">
         <h2>Hand the findings to an AI agent</h2>
         <p class="note">
-          <code>trace</code> keeps its latest analysis on the handle as
-          <code>result</code>, refreshed as the DOM changes. It's plain,
-          serializable data, so any agent SDK can consume it. Format the
-          findings into a readable brief and let a model draft the fixes.
+          <code>trace</code> keeps its latest analysis on the handle as <code>result</code>,
+          refreshed as the DOM changes. It's plain, serializable data, so any agent SDK can consume
+          it. Format the findings into a readable brief and let a model draft the fixes.
         </p>
-        <pre class="code">import { trace, audit } from "@out-of-order/trace";
+        <pre class="code">
+import { trace, audit } from "@out-of-order/trace";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
@@ -144,13 +149,13 @@ async function reviewA11y() {
 
   const [block] = message.content;
   if (block?.type === "text") console.log(block.text);
-}</pre>
+}</pre
+        >
         <p class="note">
           Each violation carries its element and selector plus the
-          <code>issues</code> it failed (rule, message, spec link), so you can
-          also serialize <code>result</code> as JSON for an MCP tool or any
-          other agent framework. Keep the API key out of client bundles by
-          proxying the call through your own server.
+          <code>issues</code> it failed (rule, message, spec link), so you can also serialize
+          <code>result</code> as JSON for an MCP tool or any other agent framework. Keep the API key
+          out of client bundles by proxying the call through your own server.
         </p>
       </section>
     </main>

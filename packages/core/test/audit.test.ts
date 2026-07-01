@@ -21,10 +21,7 @@ describe("audit", () => {
   test("numbers the sequence in tab order with real geometry", () => {
     document.body.innerHTML = '<button>A</button><a href="#">B</a>';
     const { sequence } = audit(document.body);
-    expect(sequence.map((entry) => entry.element.tagName)).toEqual([
-      "BUTTON",
-      "A",
-    ]);
+    expect(sequence.map((entry) => entry.element.tagName)).toEqual(["BUTTON", "A"]);
     expect(sequence.map((entry) => entry.orderIndex)).toEqual([0, 1]);
     expect(sequence[0]!.selector).toContain("button");
     expect(sequence[0]!.rect.width).toBeGreaterThan(0);
@@ -55,8 +52,7 @@ describe("audit", () => {
   });
 
   test("disabling a rule drops only that rule's issues", () => {
-    document.body.innerHTML =
-      '<button>Fine</button><button tabindex="3">Jumped</button>';
+    document.body.innerHTML = '<button>Fine</button><button tabindex="3">Jumped</button>';
     const fired = (options?: Parameters<typeof audit>[1]) =>
       new Set(allIssues(document.body, options).map((issue) => issue.rule));
     expect(fired()).toContain("no-positive-tabindex");
@@ -73,9 +69,7 @@ describe("audit", () => {
     expect(violation.element).toBe(document.querySelector("button"));
     expect(violation.orderIndex).toBe(0);
     expect(violation.selector).not.toBe("");
-    const issue = violation.issues.find(
-      (i) => i.rule === "missing-accessible-name",
-    )!;
+    const issue = violation.issues.find((i) => i.rule === "missing-accessible-name")!;
     expect(issue.docs).toBe(ALL_RULES["missing-accessible-name"].docs);
   });
 
@@ -83,9 +77,7 @@ describe("audit", () => {
     document.body.innerHTML =
       '<button>Bg1</button><button>Bg2</button><a href="#x">Bg3</a>' +
       '<div role="dialog" aria-modal="true"><button>Inside</button></div>';
-    const leaks = allIssues(document.body).filter(
-      (issue) => issue.rule === "focus-escapes-modal",
-    );
+    const leaks = allIssues(document.body).filter((issue) => issue.rule === "focus-escapes-modal");
     expect(leaks).toHaveLength(1);
     // Three controls leak; the first is the primary, the other two ride along.
     expect(leaks[0]!.relatedElements).toHaveLength(2);
@@ -115,9 +107,7 @@ describe("format", () => {
 
   test("text says so when there is nothing to report", () => {
     document.body.innerHTML = "<p>just text</p>";
-    expect(audit(document.body, { format: "text" }).violations).toBe(
-      "No tab-order issues.",
-    );
+    expect(audit(document.body, { format: "text" }).violations).toBe("No tab-order issues.");
   });
 
   test("by-element mirrors Violation[] with selectors, no live nodes", () => {
@@ -133,15 +123,12 @@ describe("format", () => {
     // Round-trips through JSON, unlike the live-Element default.
     expect(() => JSON.stringify(violations)).not.toThrow();
   });
-
 });
 
 describe("severity", () => {
   test("stamps each rule's default severity onto its issues", () => {
     document.body.innerHTML = '<button tabindex="1">Jump</button>';
-    const issue = allIssues(document.body).find(
-      (i) => i.rule === "no-positive-tabindex",
-    )!;
+    const issue = allIssues(document.body).find((i) => i.rule === "no-positive-tabindex")!;
     expect(issue.severity).toBe("error");
   });
 
@@ -223,9 +210,7 @@ describe("data-ooo-ignore", () => {
       "ignored via data-ooo-ignore",
     );
     const entries = audit(document.body, { format: "by-element" }).violations;
-    expect(entries.some((entry) => entry.issues.some((i) => i.ignored))).toBe(
-      true,
-    );
+    expect(entries.some((entry) => entry.issues.some((i) => i.ignored))).toBe(true);
   });
 });
 

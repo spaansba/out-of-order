@@ -12,12 +12,12 @@ Built on [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequ
 
 ## Packages
 
-| Package                                   | What it is                                                                                                                                                                                              |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`@out-of-order/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result. No framework or test-runner deps, just the DOM.                                                                                  |
-| [`@out-of-order/trace`](./packages/trace) | Framework-agnostic live overlay built on the core analyzer: numbers the tab path, rings every finding in place, shows per-stop details on hover.                                                         |
-| [`@out-of-order/vitest`](./packages/vitest) | `expect(el).toHaveValidTabOrder()` matcher for Vitest Browser Mode, plus TypeScript augmentation.                                                                                                       |
-| [`@out-of-order/demo`](./packages/demo)     | Vite demo — an edge-cases page and a deliberately-broken page, both thin consumers of `@out-of-order/trace`.                                                                                              |
+| Package                                     | What it is                                                                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`@out-of-order/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result. No framework or test-runner deps, just the DOM.                          |
+| [`@out-of-order/trace`](./packages/trace)   | Framework-agnostic live overlay built on the core analyzer: numbers the tab path, rings every finding in place, shows per-stop details on hover. |
+| [`@out-of-order/vitest`](./packages/vitest) | `expect(el).toHaveValidTabOrder()` matcher for Vitest Browser Mode, plus TypeScript augmentation.                                                |
+| [`@out-of-order/demo`](./packages/demo)     | Vite demo — an edge-cases page and a deliberately-broken page, both thin consumers of `@out-of-order/trace`.                                     |
 
 A Playwright matcher shares the same core and can be added later.
 

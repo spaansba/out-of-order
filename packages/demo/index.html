@@ -7,37 +7,31 @@
     <meta
       name="description"
       content="Focus and keyboard-accessibility validation that runs in real browsers only. A tab-order analyzer, a live overlay, and a gallery of the bugs it catches."
-    />    <link rel="stylesheet" href="./src/styles.css" />
+    />
+    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-
     <main class="wrap">
       <div class="intro">
         <span class="kicker">Focus &amp; keyboard accessibility</span>
         <h2>Check the tab order in a real browser, not a guess</h2>
         <p>
-          Out of Order works out the exact path the <kbd>Tab</kbd> key takes
-          through a page, then grades that path. It checks that the order is
-          right and that every stop is reachable, visible, and announced. It
-          runs in real Chromium only, because that is the one place the answer
-          is true. It builds on
-          <a
-            href="https://github.com/focus-trap/tabbable"
-            target="_blank"
-            rel="noopener"
+          Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then
+          grades that path. It checks that the order is right and that every stop is reachable,
+          visible, and announced. It runs in real Chromium only, because that is the one place the
+          answer is true. It builds on
+          <a href="https://github.com/focus-trap/tabbable" target="_blank" rel="noopener"
             >tabbable</a
           >, with a rules layer on top.
         </p>
         <p>
           <strong>See it</strong> on the page with <code>trace()</code>.
           <strong>Check it</strong> in a test or CI with <code>audit()</code>.
-          <strong>Scan</strong> any URL from the terminal, or from an AI agent,
-          with the <code>out-of-order</code> CLI.
+          <strong>Scan</strong> any URL from the terminal, or from an AI agent, with the
+          <code>out-of-order</code> CLI.
         </p>
         <div class="cta">
-          <a class="btn" href="./getting-started.html"
-            >Get started</a
-          >
+          <a class="btn" href="./getting-started.html">Get started</a>
           <a class="btn" href="./playground.html">See the bugs it catches</a>
           <a class="btn" href="./rules.html">Browse the rules</a>
         </div>
@@ -46,18 +40,16 @@
       <section class="group">
         <h2>Why real-browser only</h2>
         <p class="note">
-          Any honest focus check needs CSS layout. It has to know what is really
-          visible, what is clipped, and where each control sits on screen.
-          <code>jsdom</code> has no layout engine, so a green
-          <code>jsdom</code> test cannot promise the order holds up in a real
-          browser. Out of Order reads live visibility and bounding rects, so a
-          passing check reflects what a keyboard user will actually get.
+          Any honest focus check needs CSS layout. It has to know what is really visible, what is
+          clipped, and where each control sits on screen.
+          <code>jsdom</code> has no layout engine, so a green <code>jsdom</code> test cannot promise
+          the order holds up in a real browser. Out of Order reads live visibility and bounding
+          rects, so a passing check reflects what a keyboard user will actually get.
         </p>
         <p class="note">
-          This is a deliberate choice, not a missing feature. The analyzer stays
-          light on dependencies (only <code>tabbable</code>), so it runs
-          anywhere a real DOM does, including inside a Playwright
-          <code>page.evaluate</code>.
+          This is a deliberate choice, not a missing feature. The analyzer stays light on
+          dependencies (only <code>tabbable</code>), so it runs anywhere a real DOM does, including
+          inside a Playwright <code>page.evaluate</code>.
         </p>
         <div class="cta">
           <a class="btn" href="./concepts.html">How it decides what's valid</a>
@@ -67,36 +59,32 @@
       <section class="group">
         <h2>What it checks</h2>
         <p class="note">
-          By default Out of Order runs headless, with no overlay. It analyzes the
-          page and returns a plain result, which is also optimized for AI agents. The
-          overlay is an optional layer on top, for when you want to see the tab
-          path with your own eyes.
+          By default Out of Order runs headless, with no overlay. It analyzes the page and returns a
+          plain result, which is also optimized for AI agents. The overlay is an optional layer on
+          top, for when you want to see the tab path with your own eyes.
         </p>
         <p class="note">
-          A tab order is more than a list. Out of Order asks four questions about
-          it, and each rule it ships answers one of them.
+          A tab order is more than a list. Out of Order asks four questions about it, and each rule
+          it ships answers one of them.
         </p>
         <ul class="doc-list">
           <li>
-            <strong>Order</strong> is about whether focus follows the reading
-            order, or hops around because of a positive
-            <code>tabindex</code> or a mismatch between the DOM and the layout.
+            <strong>Order</strong> is about whether focus follows the reading order, or hops around
+            because of a positive <code>tabindex</code> or a mismatch between the DOM and the
+            layout.
           </li>
           <li>
-            <strong>Reachability</strong> is about whether the keyboard can get
-            to every interactive control, and whether it avoids the dead stops
-            it should not land on.
+            <strong>Reachability</strong> is about whether the keyboard can get to every interactive
+            control, and whether it avoids the dead stops it should not land on.
           </li>
           <li>
-            <strong>Visibility</strong> is about whether every tab stop is
-            actually painted, or is tabbable while invisible because of opacity,
-            an off-screen position, or clipping.
+            <strong>Visibility</strong> is about whether every tab stop is actually painted, or is
+            tabbable while invisible because of opacity, an off-screen position, or clipping.
           </li>
           <li>
-            <strong>Announcement</strong> is about whether every stop has an
-            accessible name, and whether it is free of the
-            <code>aria-hidden</code> and nesting traps that a screen reader
-            chokes on.
+            <strong>Announcement</strong> is about whether every stop has an accessible name, and
+            whether it is free of the <code>aria-hidden</code> and nesting traps that a screen
+            reader chokes on.
           </li>
         </ul>
         <div class="cta">
@@ -107,26 +95,24 @@
       <section class="group">
         <h2>A drop-in overlay</h2>
         <p class="note">
-          The same analysis powers a live overlay you can drop on any page. It
-          numbers the real tab path and draws the hops between stops, turning a
-          hop red when it runs against reading order. It rings every finding in
-          place, and each ring has a tooltip that names the rule, the accessible
-          name, and the role.
+          The same analysis powers a live overlay you can drop on any page. It numbers the real tab
+          path and draws the hops between stops, turning a hop red when it runs against reading
+          order. It rings every finding in place, and each ring has a tooltip that names the rule,
+          the accessible name, and the role.
         </p>
-        <pre class="code">import { trace } from "@out-of-order/trace";
+        <pre class="code">
+import { trace } from "@out-of-order/trace";
 
 // No root, so it analyzes the whole document, exactly like tabbing the page.
-const overlay = trace();</pre>
+const overlay = trace();</pre
+        >
         <p class="note">
-          That is the whole integration. The overlay re-analyzes itself on every
-          DOM mutation, so it keeps up with menus opening, modals mounting, and
-          even a virtual list that rewrites its rows every frame. The two demo
-          pages are nothing but this call.
+          That is the whole integration. The overlay re-analyzes itself on every DOM mutation, so it
+          keeps up with menus opening, modals mounting, and even a virtual list that rewrites its
+          rows every frame. The two demo pages are nothing but this call.
         </p>
         <div class="cta">
-          <a class="btn" href="./playground.html"
-            >Live demo: the playground</a
-          >
+          <a class="btn" href="./playground.html">Live demo: the playground</a>
           <a class="btn" href="./tabbable.html">Live demo: what's tabbable</a>
         </div>
       </section>
@@ -134,8 +120,8 @@ const overlay = trace();</pre>
       <section class="group">
         <h2>The packages</h2>
         <p class="note">
-          A small monorepo. The analyzer is pure and framework-free. Everything
-          visual is a separate layer on top of it.
+          A small monorepo. The analyzer is pure and framework-free. Everything visual is a separate
+          layer on top of it.
         </p>
         <table class="spec">
           <thead>
@@ -149,8 +135,8 @@ const overlay = trace();</pre>
             <tr>
               <td><code>@out-of-order/core</code></td>
               <td>
-                The analyzer. It wraps <code>tabbable</code>, applies the rules,
-                and returns a plain result. No framework or test-runner deps.
+                The analyzer. It wraps <code>tabbable</code>, applies the rules, and returns a plain
+                result. No framework or test-runner deps.
                 <a href="./api.html#core">API &rarr;</a>
               </td>
               <td>
@@ -161,33 +147,33 @@ const overlay = trace();</pre>
             <tr>
               <td><code>@out-of-order/trace</code></td>
               <td>
-                The framework-agnostic live overlay, built on the analyzer. It
-                re-exports core, so one install covers both modes.
+                The framework-agnostic live overlay, built on the analyzer. It re-exports core, so
+                one install covers both modes.
                 <a href="./api.html#trace">API &rarr;</a>
               </td>
               <td>
-                You want to see the tab path and findings on a live page. This
-                is the one most people want.
+                You want to see the tab path and findings on a live page. This is the one most
+                people want.
               </td>
             </tr>
             <tr>
               <td><code>@out-of-order/cli</code></td>
               <td>
-                Audits any URL from the terminal. Launches a headless browser,
-                runs the analyzer, and prints findings to stdout, with an exit
-                code that fails on violations. Add <code>--overlay</code> to
-                open a real browser with the overlay drawn on the live page.
+                Audits any URL from the terminal. Launches a headless browser, runs the analyzer,
+                and prints findings to stdout, with an exit code that fails on violations. Add
+                <code>--overlay</code> to open a real browser with the overlay drawn on the live
+                page.
               </td>
               <td>
-                You want to check a live URL without writing code, gate CI on
-                the exit code, or pipe findings straight into an AI agent.
+                You want to check a live URL without writing code, gate CI on the exit code, or pipe
+                findings straight into an AI agent.
               </td>
             </tr>
           </tbody>
         </table>
         <p class="note">
-          A test-runner matcher (Vitest Browser Mode) and a Playwright adapter
-          share the same core and are in progress.
+          A test-runner matcher (Vitest Browser Mode) and a Playwright adapter share the same core
+          and are in progress.
         </p>
       </section>
     </main>

@@ -35,9 +35,7 @@ export function wireTriage(): () => void {
     return () => {};
   }
 
-  const sections = Array.from(
-    document.querySelectorAll<HTMLElement>("section.group"),
-  );
+  const sections = Array.from(document.querySelectorAll<HTMLElement>("section.group"));
   // Snapshot each card's authored spot so an HMR dispose can put the page back exactly
   // as written before the module re-runs.
   const home = sections.map((section) => ({
@@ -86,9 +84,7 @@ export function wireTriage(): () => void {
       section.querySelector(":scope > h2 > .header-anchor")?.remove();
       section
         .querySelectorAll(".rule-tag")
-        .forEach((tag) =>
-          tag.classList.remove("is-error", "is-warning", "is-approved"),
-        );
+        .forEach((tag) => tag.classList.remove("is-error", "is-warning", "is-approved"));
     }
   };
 }
@@ -134,9 +130,7 @@ function gradeSection(section: Element): Bucket {
 function buildIndex(): HTMLElement {
   // Re-read in the post-sort DOM order so the index numbers line up with the
   // leading-zero ledger numbers the CSS counter paints down the left margin.
-  const ordered = Array.from(
-    document.querySelectorAll<HTMLElement>("section.group"),
-  );
+  const ordered = Array.from(document.querySelectorAll<HTMLElement>("section.group"));
   const lists: Record<Bucket, HTMLOListElement> = {
     error: makeList(),
     warning: makeList(),
@@ -183,11 +177,7 @@ function makeList(): HTMLOListElement {
   return list;
 }
 
-function indexItem(
-  section: Element,
-  num: number,
-  severity: Bucket,
-): HTMLLIElement {
+function indexItem(section: Element, num: number, severity: Bucket): HTMLLIElement {
   const li = document.createElement("li");
   const link = document.createElement("a");
   link.className = `index-link is-${severity}`;
@@ -207,7 +197,5 @@ function indexItem(
 }
 
 function titleOf(section: Element): string {
-  return (
-    section.querySelector(":scope > h2")?.textContent?.trim() ?? "violation"
-  );
+  return section.querySelector(":scope > h2")?.textContent?.trim() ?? "violation";
 }

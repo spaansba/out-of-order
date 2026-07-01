@@ -17,10 +17,7 @@ import { ALL_RULES, type Finding, type Rule } from "./rules.js";
 /** Fold a rule's caller override against its default into a final decision: is it
     on, and at what severity? A missing override keeps the default; `"off"`
     disables it; a severity string re-grades it. */
-function resolveRule(
-  options: AuditOptions,
-  rule: Rule,
-): { enabled: boolean; severity: Severity } {
+function resolveRule(options: AuditOptions, rule: Rule): { enabled: boolean; severity: Severity } {
   // Custom rule ids aren't in the RuleId union. A miss returns undefined.
   const setting = options.rules?.[rule.id as RuleId];
   if (setting === undefined) {
@@ -73,11 +70,7 @@ export function audit<F extends AuditFormat>(
   options: AuditOptions & { format: F },
   customRules?: Rule[],
 ): AuditResult<Formatted<F>>;
-export function audit(
-  root?: ParentNode,
-  options?: AuditOptions,
-  customRules?: Rule[],
-): AuditResult;
+export function audit(root?: ParentNode, options?: AuditOptions, customRules?: Rule[]): AuditResult;
 export function audit(
   root: ParentNode = document,
   options: AuditOptions = {},
@@ -146,9 +139,7 @@ export function audit(
   }
 
   const hasErrors = violations.some((violation) =>
-    violation.issues.some(
-      (issue) => issue.severity === "error" && !issue.ignored,
-    ),
+    violation.issues.some((issue) => issue.severity === "error" && !issue.ignored),
   );
 
   return finalize({ valid: !hasErrors, sequence, violations }, options.format);
@@ -165,10 +156,7 @@ function finalize(
   return { ...result, violations: reshape(result.violations, format) };
 }
 
-function reshape(
-  violations: Violation[],
-  format: AuditFormat,
-): string | ByElement[] {
+function reshape(violations: Violation[], format: AuditFormat): string | ByElement[] {
   switch (format) {
     case "text":
       return renderText(violations);
@@ -177,8 +165,7 @@ function reshape(
   }
 }
 
-const related = (issue: Issue): string[] | undefined =>
-  issue.relatedElements?.map(selectorFor);
+const related = (issue: Issue): string[] | undefined => issue.relatedElements?.map(selectorFor);
 
 function byElement(violations: Violation[]): ByElement[] {
   return violations.map((violation) => ({
@@ -202,8 +189,7 @@ function renderText(violations: Violation[]): string {
   }
   return violations
     .map((violation) => {
-      const pos =
-        violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
+      const pos = violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
       const issues = violation.issues
         .map((issue) => {
           const rel = related(issue);

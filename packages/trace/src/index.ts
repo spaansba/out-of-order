@@ -71,8 +71,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   const motion = options.motion ?? "auto";
   const reduceQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const applyMotion = (): void => {
-    const animate =
-      motion === "on" || (motion === "auto" && !reduceQuery.matches);
+    const animate = motion === "on" || (motion === "auto" && !reduceQuery.matches);
     layer.dataset.oooMotion = animate ? "play" : "still";
   };
   applyMotion();
@@ -141,9 +140,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
         ...options.audit,
         format,
       }).violations;
-      return typeof violations === "string"
-        ? violations
-        : JSON.stringify(violations, null, 2);
+      return typeof violations === "string" ? violations : JSON.stringify(violations, null, 2);
     },
   });
 
@@ -178,11 +175,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
 
   /** Re-analyze, turn the result into a draw model, render it, and (re)observe. */
   function build(): void {
-    const result = audit(
-      options.root ?? document,
-      options.audit,
-      options.rules,
-    );
+    const result = audit(options.root ?? document, options.audit, options.rules);
 
     handle.result = result;
 
@@ -246,9 +239,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
         continue;
       }
       // null number → ⊘ glyph; not a tab stop, so no tabindex/autofocus to show.
-      offStops.push(
-        makeStop(element, null, selectorFor(element), null, issues, false),
-      );
+      offStops.push(makeStop(element, null, selectorFor(element), null, issues, false));
     }
 
     renderer.draw(stops, segs, offStops);
@@ -282,14 +273,11 @@ function elementId(element: Element): number {
 // element's rule ids. Same signature means a rebuild would draw the same thing.
 // Geometry is excluded; the position tracker handles movement without a re-analyze.
 function resultSignature(result: AuditResult): string {
-  const order = result.sequence
-    .map((entry) => elementId(entry.element))
-    .join(">");
+  const order = result.sequence.map((entry) => elementId(entry.element)).join(">");
   const vios = result.violations
     .flatMap((violation) =>
       violation.issues.map(
-        (issue) =>
-          `${elementId(violation.element)}:${issue.rule}${issue.ignored ? "!" : ""}`,
+        (issue) => `${elementId(violation.element)}:${issue.rule}${issue.ignored ? "!" : ""}`,
       ),
     )
     .sort()

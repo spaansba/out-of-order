@@ -1,9 +1,5 @@
 import { expect } from "vitest";
-import {
-  audit,
-  type AuditOptions,
-  type AuditResult,
-} from "@out-of-order/core";
+import { audit, type AuditOptions, type AuditResult } from "@out-of-order/core";
 
 /** Accept an Element or a Document/DocumentFragment as the assertion target. */
 function resolveRoot(received: unknown): ParentNode {
