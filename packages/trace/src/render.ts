@@ -4,7 +4,7 @@ import {
   RING_BAD_CLASS,
   RING_WARN_CLASS,
 } from "./styles.js";
-import type { Severity } from "@focuspocus/core";
+import type { Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
 /** All three ring states, so a rebuild/destroy can strip whichever one is set. */
@@ -111,7 +111,7 @@ export class Renderer {
       any off-sequence stops. Badges paint on top of the lines. */
   draw(stops: StopSpec[], segs: SegSpec[], offStops: StopSpec[]): void {
     this.clear();
-    const svg = svgEl("svg", { class: "fp-svg" }, buildDefs());
+    const svg = svgEl("svg", { class: "ooo-svg" }, buildDefs());
     // Segments live in their own group, appended first so badges paint over them.
     const segLayer = svgEl("g");
     svg.appendChild(segLayer);
@@ -126,11 +126,11 @@ export class Renderer {
       // Forward (green) hops are correct: click-through, no tooltip. Only backward
       // (red) hops carry the fat hit-line and a hover tooltip.
       const hit = svgEl("line", {
-        class: back ? "fp-hit fp-hit--back" : "fp-hit",
+        class: back ? "ooo-hit ooo-hit--back" : "ooo-hit",
       });
       const line = svgEl("polyline", {
-        class: back ? "fp-seg fp-seg--back" : "fp-seg",
-        "marker-mid": back ? "url(#fp-arrow-back)" : "url(#fp-arrow)",
+        class: back ? "ooo-seg ooo-seg--back" : "ooo-seg",
+        "marker-mid": back ? "url(#ooo-arrow-back)" : "url(#ooo-arrow)",
       });
       segLayer.append(hit, line);
       this.segments.push({ from, toMarker, line, hit, back });
@@ -179,9 +179,9 @@ export class Renderer {
     if (this.focused === marker) {
       return;
     }
-    this.focused?.group.classList.remove("fp-badge--on");
+    this.focused?.group.classList.remove("ooo-badge--on");
     this.focused = marker;
-    this.focused?.group.classList.add("fp-badge--on");
+    this.focused?.group.classList.add("ooo-badge--on");
   }
 
   elementsToObserve(): Element[] {
@@ -220,12 +220,12 @@ export class Renderer {
   private addMarker(spec: StopSpec): void {
     this.markRing(spec.element, spec.severity);
 
-    let cls = "fp-badge";
+    let cls = "ooo-badge";
     if (spec.severity) {
-      cls += spec.severity === "error" ? " fp-badge--bad" : " fp-badge--warn";
+      cls += spec.severity === "error" ? " ooo-badge--bad" : " ooo-badge--warn";
     }
     if (!spec.inSeq) {
-      cls += " fp-badge--off";
+      cls += " ooo-badge--off";
     }
 
     // Children sit at the badge's local origin, so applyRect moves the whole group
@@ -240,7 +240,7 @@ export class Renderer {
       group.appendChild(
         svgEl(
           "g",
-          { class: "fp-af", transform: `translate(${RADIUS}, ${-RADIUS})` },
+          { class: "ooo-af", transform: `translate(${RADIUS}, ${-RADIUS})` },
           svgEl("circle", { r: 7 }),
           svgEl("path", { d: "M-3,-2 L3,-2 L0,2.5 Z" }),
         ),
@@ -357,8 +357,8 @@ export class Renderer {
 function buildDefs(): SVGDefsElement {
   const defs = svgEl("defs");
   for (const [markerId, fill] of [
-    ["fp-arrow", "#2f6a47"],
-    ["fp-arrow-back", "#b3261e"],
+    ["ooo-arrow", "#2f6a47"],
+    ["ooo-arrow-back", "#b3261e"],
   ] as const) {
     const path = svgEl("path", { d: "M3,2.5 L14,8 L3,13.5 L6.5,8 Z", fill });
     const marker = svgEl(

@@ -3,7 +3,7 @@
 // cards to the end of the page, and builds a compact index up top linking to each
 // card in that final order.
 
-import { DEFAULT_SEVERITY, type RuleId, type Severity } from "@focuspocus/core";
+import { DEFAULT_SEVERITY, type RuleId, type Severity } from "@out-of-order/core";
 
 // The browser focuses the first `autofocus` element during the page's first render, so a
 // real attribute in the HTML jumps focus (and scroll) into that card on every load. The

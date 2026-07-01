@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: concepts</title>
+    <title>Out of Order: concepts</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html">start</a>
         <a href="./concepts.html" aria-current="page">concepts</a>
@@ -28,7 +28,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -40,7 +40,7 @@
         <span class="kicker">Concepts</span>
         <h2>How a tab order becomes a verdict</h2>
         <p>
-          Focus Pocus does two things in a row. First it works out the path the
+          Out of Order does two things in a row. First it works out the path the
           <kbd>Tab</kbd> key takes through a page. Then it grades that path
           against a set of rules. Once you see that split, and why both halves
           need a real browser, you know most of what there is to know.
@@ -51,7 +51,7 @@
         <h2>The tab sequence</h2>
         <p class="note">
           The first half is the order itself. It is every element the keyboard
-          lands on, in the order it lands on them. Focus Pocus gets this from
+          lands on, in the order it lands on them. Out of Order gets this from
           <a
             href="https://github.com/focus-trap/tabbable"
             target="_blank"
@@ -211,7 +211,7 @@
           visually first but last in the DOM, looks identical to a correct one.
         </p>
         <p class="note">
-          So Focus Pocus runs every check against real layout. The cost is that
+          So Out of Order runs every check against real layout. The cost is that
           it needs a real DOM, a browser or a headless one. The payoff is that a
           passing result actually means a keyboard user is fine. The analyzer
           stays light enough to run inside a headless browser or a Playwright

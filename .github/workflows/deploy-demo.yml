@@ -1,7 +1,7 @@
 name: Deploy demo
 
-# Builds the @focuspocus/demo site (docs + interactive demos) and publishes it to
-# GitHub Pages. The demo's Vite build aliases @focuspocus/core and /reveal to their
+# Builds the @out-of-order/demo site (docs + interactive demos) and publishes it to
+# GitHub Pages. The demo's Vite build aliases @out-of-order/core and /trace to their
 # TypeScript source, so no separate package build step is needed.
 
 on:
@@ -33,7 +33,7 @@ jobs:
           cache: pnpm
       - uses: actions/configure-pages@v5
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @focuspocus/demo build
+      - run: pnpm --filter @out-of-order/demo build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/demo/dist

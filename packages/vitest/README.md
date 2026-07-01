@@ -1,11 +1,11 @@
-# @focuspocus/vitest
+# @out-of-order/vitest
 
-`toHaveValidTabOrder()` matcher for [Vitest Browser Mode](https://vitest.dev/guide/browser/). Runs the [`@focuspocus/core`](../core) analyzer against a real Chromium DOM, so a passing assertion reflects what users actually experience.
+`toHaveValidTabOrder()` matcher for [Vitest Browser Mode](https://vitest.dev/guide/browser/). Runs the [`@out-of-order/core`](../core) analyzer against a real Chromium DOM, so a passing assertion reflects what users actually experience.
 
 ## Install
 
 ```bash
-pnpm add -D @focuspocus/vitest vitest @vitest/browser playwright
+pnpm add -D @out-of-order/vitest vitest @vitest/browser playwright
 ```
 
 ## Configure
@@ -31,7 +31,7 @@ export default defineConfig({
 `test/setup.ts`:
 
 ```ts
-import "@focuspocus/vitest"; // registers the matcher + types
+import "@out-of-order/vitest"; // registers the matcher + types
 ```
 
 ## Use

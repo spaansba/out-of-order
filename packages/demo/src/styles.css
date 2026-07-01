@@ -1,6 +1,6 @@
 /*
  * Demo page styling only. The tab-order overlay is rendered (and styled) by
- * @focuspocus/reveal, so none of that lives here.
+ * @out-of-order/trace, so none of that lives here.
  *
  * Visual language: a technical spec-sheet. No boxed cards — sections are split by
  * hairline rules with a numbered ledger margin down the left. Serif titles, a
@@ -321,7 +321,7 @@ section.group::after {
   color: var(--warn);
   background: var(--warn-soft);
 }
-/* a rule passed through reveal's `rules` option rather than shipped in core: an accent
+/* a rule passed through trace's `rules` option rather than shipped in core: an accent
    "custom" pill after the id, so it reads distinctly from the built-ins */
 .rule-tag.is-custom::after {
   content: "custom";
@@ -883,10 +883,10 @@ dialog.modal-native::backdrop {
 }
 
 /* green flash on an entry when its Fix button clears the violation */
-.group.fp-pulse {
-  animation: fp-fixed-pulse 0.6s ease-out;
+.group.ooo-pulse {
+  animation: ooo-fixed-pulse 0.6s ease-out;
 }
-@keyframes fp-fixed-pulse {
+@keyframes ooo-fixed-pulse {
   0% {
     background: var(--ok-soft);
   }

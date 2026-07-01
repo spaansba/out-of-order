@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: recipes</title>
+    <title>Out of Order: recipes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html">start</a>
         <a href="./concepts.html">concepts</a>
@@ -28,7 +28,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -41,9 +41,9 @@
         <h2>Putting it to work</h2>
         <p>
           A handful of short, practical patterns. Gate a build on the verdict,
-          scope the overlay, mount it in a framework, add a rule, and turn a
-          finding into a fix. All of it runs through the same two entry points,
-          <code>audit</code> and <code>reveal</code>.
+          mount the overlay in a framework, add a rule, and hand the findings to
+          an AI agent. All of it runs through the same two entry points,
+          <code>audit</code> and <code>trace</code>.
         </p>
       </div>
 
@@ -57,7 +57,7 @@
         </p>
         <pre class="code">// A test running in real Chromium (e.g. Vitest Browser Mode).
 import { test, expect } from "vitest";
-import { audit, formatViolations } from "@focuspocus/core";
+import { audit, formatViolations } from "@out-of-order/core";
 
 test("modal has a sane tab order", () => {
   document.body.innerHTML = `
@@ -79,42 +79,25 @@ test("modal has a sane tab order", () => {
       </section>
 
       <section class="group">
-        <h2>Scope the overlay, or run two</h2>
-        <p class="note">
-          Point <code>reveal</code> at a subtree with <code>root</code>, and use
-          <code>exclude</code> when a second overlay owns part of the page, so a
-          region isn't numbered twice.
-        </p>
-        <pre class="code">// Scope the overlay to just the app shell.
-reveal({ root: document.querySelector("#app") });
-
-// Two overlays without double-numbering. One is dedicated to a dialog, and the
-// page overlay is told to exclude that same subtree.
-const dialog = document.querySelector(".dialog");
-reveal({ root: dialog });
-reveal({ exclude: dialog });</pre>
-      </section>
-
-      <section class="group">
         <h2>Mount it in a framework</h2>
         <p class="note">
-          <code>reveal</code> is framework-agnostic. Create it on mount, and call
+          <code>trace</code> is framework-agnostic. Create it on mount, and call
           <code>destroy()</code> on unmount. That is the whole lifecycle.
         </p>
         <h3>React</h3>
         <pre class="code">import { useEffect } from "react";
-import { reveal } from "@focuspocus/reveal";
+import { trace } from "@out-of-order/trace";
 
 useEffect(() => {
-  const overlay = reveal();
+  const overlay = trace();
   return () => overlay.destroy();
 }, []);</pre>
         <h3>Vue</h3>
         <pre class="code">import { onMounted, onBeforeUnmount } from "vue";
-import { reveal } from "@focuspocus/reveal";
+import { trace } from "@out-of-order/trace";
 
 let overlay;
-onMounted(() => (overlay = reveal()));
+onMounted(() => (overlay = trace()));
 onBeforeUnmount(() => overlay?.destroy());</pre>
         <p class="note">
           Gate it behind a dev-only flag if you don't want the overlay in
@@ -129,8 +112,8 @@ onBeforeUnmount(() => overlay?.destroy());</pre>
           <code>rules</code> option and it runs with the built-ins, both in the
           result and on the overlay.
         </p>
-        <pre class="code">import { reveal } from "@focuspocus/reveal";
-import type { Rule } from "@focuspocus/core";
+        <pre class="code">import { trace } from "@out-of-order/trace";
+import type { Rule } from "@out-of-order/core";
 
 const noUnsafeBlank: Rule = {
   id: "no-unsafe-blank",
@@ -149,33 +132,53 @@ const noUnsafeBlank: Rule = {
       })),
 };
 
-reveal({ rules: [noUnsafeBlank] });</pre>
+trace({ rules: [noUnsafeBlank] });</pre>
         <p class="note">
           The full <a href="./api.html#rule">Rule, RuleRun, and Finding
           types</a> are on the API page.
         </p>
       </section>
 
-      <section class="group">
-        <h2>Turn a finding into a fix</h2>
+      <section class="group" id="ai-agent">
+        <h2>Hand the findings to an AI agent</h2>
         <p class="note">
-          Every violation is self-describing. It carries the rule it tripped, a
-          message, a spec link, and the element (plus a selector for logs). Walk
-          them and you have a punch list.
+          <code>trace</code> keeps its latest analysis on the handle as
+          <code>result</code>, refreshed as the DOM changes. It's plain,
+          serializable data, so any agent SDK can consume it. Format the
+          violations into a readable brief and let a model draft the fixes.
         </p>
-        <pre class="code">const { violations } = audit(document.body);
+        <pre class="code">import { trace, formatViolations } from "@out-of-order/trace";
+import Anthropic from "@anthropic-ai/sdk";
 
-for (const v of violations) {
-  console.log(`[${v.severity}] ${v.rule} -> ${v.selector}`);
-  console.log(`  ${v.message}`);
-  if (v.docs) console.log(`  docs: ${v.docs}`);
+const client = new Anthropic();
+const overlay = trace();
+
+async function reviewA11y() {
+  const result = overlay.result;
+  if (!result || result.valid) return;
+
+  const report = formatViolations(result.violations);
+  const message = await client.messages.create({
+    model: "claude-opus-4-8",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `You are an accessibility engineer. These are the tab-order ` +
+          `findings on the current page. For each, propose the smallest ` +
+          `markup change that clears it.\n\n${report}`,
+      },
+    ],
+  });
+
+  const [block] = message.content;
+  if (block?.type === "text") console.log(block.text);
 }</pre>
         <p class="note">
-          When several controls share one root cause (a whole reimplemented
-          widget, say), they arrive as one violation with the others in
-          <code>relatedElements</code>, so your list has one entry to fix, not N.
-          The <a href="./violations.html">violations demo</a> pairs each finding
-          with the exact before/after markup that clears it.
+          Each violation carries its rule, message, spec link, and selector, so
+          you can also serialize <code>result</code> as JSON for an MCP tool or
+          any other agent framework. Keep the API key out of client bundles by
+          proxying the call through your own server.
         </p>
       </section>
     </main>

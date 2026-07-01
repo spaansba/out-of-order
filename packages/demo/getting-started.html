@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: getting started</title>
+    <title>Out of Order: getting started</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html" aria-current="page">start</a>
         <a href="./concepts.html">concepts</a>
@@ -28,7 +28,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -54,13 +54,13 @@
           The fastest way to understand the project is to run the two demo pages
           and tab through them with the overlay on.
         </p>
-        <pre class="code">git clone https://github.com/focuspocusjs/focuspocus
-cd focuspocus
+        <pre class="code">git clone https://github.com/spaansba/out-of-order
+cd out-of-order
 pnpm install
-pnpm --filter @focuspocus/demo dev</pre>
+pnpm --filter @out-of-order/demo dev</pre>
         <p class="note">
           Open the printed URL. You do not need to build
-          <code>@focuspocus/core</code> or <code>@focuspocus/reveal</code>
+          <code>@out-of-order/core</code> or <code>@out-of-order/trace</code>
           first. The demo's <code>vite.config.ts</code> aliases both packages to
           their TypeScript source, so edits to the library hot-reload straight
           into the page.
@@ -76,22 +76,22 @@ pnpm --filter @focuspocus/demo dev</pre>
         <p class="note">
           One analyzer, two ways to run it. <strong>See it</strong> on a live
           page with the overlay, or <strong>check it</strong> headless in a test,
-          in CI, or from an AI agent. Installing <code>@focuspocus/reveal</code>
+          in CI, or from an AI agent. Installing <code>@out-of-order/trace</code>
           covers both: it re-exports the analyzer, so the overlay and the
           headless API come from a single import.
         </p>
         <p class="note"><strong>See it</strong>, the overlay:</p>
-        <pre class="code">npm i @focuspocus/reveal
+        <pre class="code">npm i @out-of-order/trace
 
-import { reveal } from "@focuspocus/reveal";
-reveal();</pre>
+import { trace } from "@out-of-order/trace";
+trace();</pre>
         <p class="note"><strong>Check it</strong>, headless:</p>
-        <pre class="code">npm i @focuspocus/core
+        <pre class="code">npm i @out-of-order/core
 
-import { audit, formatViolations } from "@focuspocus/core";
+import { audit, formatViolations } from "@out-of-order/core";
 const result = audit(document.body);</pre>
         <p class="note">
-          Reach for <code>@focuspocus/core</code> on its own only when you never
+          Reach for <code>@out-of-order/core</code> on its own only when you never
           draw the overlay, for a test-runner matcher or a Playwright
           <code>page.evaluate</code>, where the smaller install matters.
         </p>
@@ -100,15 +100,15 @@ const result = audit(document.body);</pre>
       <section class="group" id="overlay">
         <h2>Add the overlay to your page</h2>
         <p class="note">
-          <code>@focuspocus/reveal</code> is the shipped, framework-agnostic
-          overlay. Import it and call <code>reveal()</code>, and you have
+          <code>@out-of-order/trace</code> is the shipped, framework-agnostic
+          overlay. Import it and call <code>trace()</code>, and you have
           numbered tab stops, the path between them, and every finding ringed in
           place.
         </p>
-        <pre class="code">import { reveal } from "@focuspocus/reveal";
+        <pre class="code">import { trace } from "@out-of-order/trace";
 
 // No options, so it analyzes the whole document.
-const overlay = reveal();
+const overlay = trace();
 
 // Later, tear it down. This removes the layer, observers, and listeners.
 overlay.destroy();</pre>
@@ -116,12 +116,12 @@ overlay.destroy();</pre>
           The overlay re-analyzes itself on every DOM mutation, so most pages
           need nothing beyond the mount. You can scope it to a subtree, hide and
           show it, or feed it rule overrides through
-          <code>reveal(options)</code>. See the
-          <a href="./api.html#reveal">reveal API</a>.
+          <code>trace(options)</code>. See the
+          <a href="./api.html#trace">trace API</a>.
         </p>
         <p class="note">
-          The packages target npm as <code>@focuspocus/core</code> and
-          <code>@focuspocus/reveal</code>. Until they are published, consume them
+          The packages target npm as <code>@out-of-order/core</code> and
+          <code>@out-of-order/trace</code>. Until they are published, consume them
           from the workspace (or a git install) as the demo does.
         </p>
         <p class="note">
@@ -134,16 +134,16 @@ overlay.destroy();</pre>
       <section class="group" id="headless">
         <h2>Analyze without the overlay</h2>
         <p class="note">
-          The overlay is optional. <code>@focuspocus/core</code> gives you the
+          The overlay is optional. <code>@out-of-order/core</code> gives you the
           verdict as plain data, which is what you would assert in a test or feed
           into your own UI.
         </p>
         <p class="note">
           Want to see these findings on the page instead of asserting them? Mount
-          the overlay with <code>reveal()</code>, covered
+          the overlay with <code>trace()</code>, covered
           <a href="#overlay">just above</a>.
         </p>
-        <pre class="code">import { audit, formatViolations } from "@focuspocus/core";
+        <pre class="code">import { audit, formatViolations } from "@out-of-order/core";
 
 const result = audit(document.body);
 
@@ -179,7 +179,7 @@ if (!result.valid) {
 });
 
 // The same overrides reach the overlay through its `audit` option.
-reveal({ audit: { rules: { "prefer-native-element": "off" } } });</pre>
+trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre>
         <p class="note">
           The full list, with what each rule catches, is on the
           <a href="./rules.html">rules page</a>.

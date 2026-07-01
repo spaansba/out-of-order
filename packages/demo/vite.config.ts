@@ -4,18 +4,18 @@ import { defineConfig } from "vite";
 // Alias the workspace packages to their TypeScript source so the demo runs with
 // `vite dev` without building them first.
 export default defineConfig({
-  // Served from a GitHub Pages project subpath (focuspocusjs.github.io/focuspocus/),
-  // so assets must resolve under /focuspocus/, not /. Override with a build-time
+  // Served from a GitHub Pages project subpath (spaansba.github.io/out-of-order/),
+  // so assets must resolve under /out-of-order/, not /. Override with a build-time
   // BASE_PATH (e.g. "/" for a custom domain or local `vite preview`).
-  base: process.env.BASE_PATH ?? "/focuspocus/",
+  base: process.env.BASE_PATH ?? "/out-of-order/",
   resolve: {
     alias: [
       {
-        find: "@focuspocus/reveal",
-        replacement: resolve(__dirname, "../reveal/src/index.ts"),
+        find: "@out-of-order/trace",
+        replacement: resolve(__dirname, "../trace/src/index.ts"),
       },
       {
-        find: "@focuspocus/core",
+        find: "@out-of-order/core",
         replacement: resolve(__dirname, "../core/src/index.ts"),
       },
     ],
@@ -23,7 +23,7 @@ export default defineConfig({
   // Never pre-bundle the workspace package; keep it as live source so edits to
   // ../core/src hot-update instead of being cached in node_modules/.vite.
   optimizeDeps: {
-    exclude: ["@focuspocus/core", "@focuspocus/reveal"],
+    exclude: ["@out-of-order/core", "@out-of-order/trace"],
   },
   server: {
     fs: {

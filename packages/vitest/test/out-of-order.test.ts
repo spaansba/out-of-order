@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 
 // In real usage this import lives in setup.ts; tests here rely on that.
 // (Re-importing is harmless; expect.extend is idempotent.)
-import "@focuspocus/vitest";
+import "@out-of-order/vitest";
 
 afterEach(() => {
   document.body.innerHTML = "";

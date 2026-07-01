@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: API reference</title>
+    <title>Out of Order: API reference</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html">start</a>
         <a href="./concepts.html">concepts</a>
@@ -28,7 +28,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -38,10 +38,10 @@
     <main class="wrap">
       <div class="intro">
         <span class="kicker">API reference</span>
-        <h2>core and reveal, in full</h2>
+        <h2>core and trace, in full</h2>
         <p>
-          Two packages. <code>@focuspocus/core</code> is the analyzer and its
-          types, and <code>@focuspocus/reveal</code> is the overlay. Each entry
+          Two packages. <code>@out-of-order/core</code> is the analyzer and its
+          types, and <code>@out-of-order/trace</code> is the overlay. Each entry
           keeps a function together with the types it takes and hands back. The
           test-runner matcher is in progress and not documented here yet.
         </p>
@@ -265,7 +265,7 @@
         <h2>Options &amp; severity</h2>
         <p class="note">
           The severity values and the overrides object shared by
-          <code>audit()</code> and <code>reveal()</code>.
+          <code>audit()</code> and <code>trace()</code>.
         </p>
 
         <h3>Severity &amp; RuleSetting<span class="kind">types</span></h3>
@@ -490,8 +490,8 @@
           <code>Finding</code> is a <code>Violation</code> without a severity.
         </p>
         <pre class="code">
-import { audit } from "@focuspocus/core";
-import type { Rule } from "@focuspocus/core";
+import { audit } from "@out-of-order/core";
+import type { Rule } from "@out-of-order/core";
 
 // Flag links that open a new tab without rel="noopener".
 const noUnsafeBlank: Rule = {
@@ -515,10 +515,10 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
         >
       </section>
 
-      <section class="group" id="reveal">
-        <h2>reveal()<span class="kind">function</span></h2>
+      <section class="group" id="trace">
+        <h2>trace()<span class="kind">function</span></h2>
         <p class="sig">
-          <span class="tok">reveal</span>(options?) &rarr; RevealHandle
+          <span class="tok">trace</span>(options?) &rarr; TraceHandle
         </p>
         <p class="note">
           Mounts the overlay layer, draws the first analysis, and starts
@@ -526,13 +526,13 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
           nothing past the call.
         </p>
         <p class="note">
-          <code>@focuspocus/reveal</code> re-exports the whole
+          <code>@out-of-order/trace</code> re-exports the whole
           <a href="#core">core API</a>, so overlay users get the headless path
           from this one package without installing core separately.
         </p>
 
-        <h3 id="revealoptions">
-          Parameters &rarr; RevealOptions<span class="kind">type</span>
+        <h3 id="traceoptions">
+          Parameters &rarr; TraceOptions<span class="kind">type</span>
         </h3>
         <p class="note">Every field is optional.</p>
         <table class="spec api">
@@ -586,8 +586,8 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
           </tbody>
         </table>
 
-        <h3 id="revealhandle">
-          Returns &rarr; RevealHandle<span class="kind">type</span>
+        <h3 id="tracehandle">
+          Returns &rarr; TraceHandle<span class="kind">type</span>
         </h3>
         <p class="note">For driving the overlay after the mount.</p>
         <table class="spec api">

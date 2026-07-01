@@ -5,7 +5,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: "@focuspocus/core",
+        find: "@out-of-order/core",
         replacement: resolve(__dirname, "../core/src/index.ts"),
       },
     ],

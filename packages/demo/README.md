@@ -1,6 +1,6 @@
-# @focuspocus/demo
+# @out-of-order/demo
 
-The project site: a set of docs pages plus two interactive demos, all thin consumers of [`@focuspocus/reveal`](../reveal). The overlay comes entirely from the library, so the demos could be rebuilt in React, Vue, or anything else without changing the core.
+The project site: a set of docs pages plus two interactive demos, all thin consumers of [`@out-of-order/trace`](../trace). The overlay comes entirely from the library, so the demos could be rebuilt in React, Vue, or anything else without changing the core.
 
 **Interactive demos** (both run the overlay):
 
@@ -11,26 +11,26 @@ The project site: a set of docs pages plus two interactive demos, all thin consu
 
 ## Deploy
 
-The site is built by Vite and published to GitHub Pages by [`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) on every push to `main`. Because it serves from a project subpath, `vite.config.ts` sets `base` to `/focuspocus/`; override with `BASE_PATH` for a custom domain or local `vite preview` (e.g. `BASE_PATH=/ pnpm --filter @focuspocus/demo build`).
+The site is built by Vite and published to GitHub Pages by [`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) on every push to `main`. Because it serves from a project subpath, `vite.config.ts` sets `base` to `/out-of-order/`; override with `BASE_PATH` for a custom domain or local `vite preview` (e.g. `BASE_PATH=/ pnpm --filter @out-of-order/demo build`).
 
 ## Run
 
 ```bash
 pnpm install
-pnpm --filter @focuspocus/demo dev
+pnpm --filter @out-of-order/demo dev
 ```
 
-Then open the printed URL (the nav switches between the two pages). No build of `@focuspocus/core` or `@focuspocus/reveal` is needed first; `vite.config.ts` aliases the packages to their TypeScript source.
+Then open the printed URL (the nav switches between the two pages). No build of `@out-of-order/core` or `@out-of-order/trace` is needed first; `vite.config.ts` aliases the packages to their TypeScript source.
 
 ## The point
 
 Each page's script is ~15 lines:
 
 ```ts
-import { reveal } from "@focuspocus/reveal";
+import { trace } from "@out-of-order/trace";
 
 // No `root` → analyzes the whole document, exactly like tabbing through the page.
-const overlay = reveal();
+const overlay = trace();
 ```
 
 Everything visual is the library's job: the numbered SVG path, the per-stop rings, the arrows, and the hover tooltips.

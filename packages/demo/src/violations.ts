@@ -1,31 +1,29 @@
-import { reveal } from "@focuspocus/reveal";
-import type { Rule } from "@focuspocus/core";
+import { trace } from "@out-of-order/trace";
+import type { Rule } from "@out-of-order/core";
 import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { restoreAutofocus, wireTriage } from "./triage.js";
 
-// A custom rule (not built into core), passed through reveal's `rules` option so it
-// runs on the overlay alongside the built-ins - see the "unsafe target=_blank" card.
-// Flags a link that opens a new tab without rel="noopener", which hands the new page a
-// live window.opener back to this one. Mirrors the snippet on the recipes page.
-const noUnsafeBlank: Rule = {
-  id: "no-unsafe-blank",
-  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
+// A custom rule (not part of core), passed through trace's `rules` option so it runs
+// on the overlay next to the built-ins - see the all-caps card. It flags any tab stop
+// whose label is ALL CAPS.
+const noShouting: Rule = {
+  id: "no-shouting",
+  docs: "https://www.rfc-editor.org/rfc/rfc1855",
   defaultSeverity: "warning",
   run: (sequence) =>
     sequence
-      .filter(
-        (entry) =>
-          entry.element.matches('a[target="_blank"]') &&
-          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
-      )
+      .filter((entry) => {
+        const letters = (entry.element.textContent ?? "").replace(/[^a-z]/gi, "");
+        return letters.length >= 3 && letters === letters.toUpperCase();
+      })
       .map((entry) => ({
-        message: 'Link opens a new tab without rel="noopener".',
+        message: "This label is ALL CAPS, which reads as shouting. Use sentence case.",
         target: entry,
       })),
 };
 
-const overlay = reveal({ rules: [noUnsafeBlank] });
+const overlay = trace({ rules: [noShouting] });
 
 // Collect a teardown for every side effect this module plants on the persistent
 // page DOM, so the HMR dispose can undo all of them - not just the overlay.
@@ -45,7 +43,7 @@ const teardown = [
 // the overlay re-analyzes on the resulting mutation so the autofocus rules still fire.
 requestAnimationFrame(() => requestAnimationFrame(restoreAutofocus));
 
-// HMR boundary. A reveal/core edit (e.g. ../reveal/src/*.ts) bubbles up to this
+// HMR boundary. A trace/core edit (e.g. ../trace/src/*.ts) bubbles up to this
 // self-accepting module, which re-runs top to bottom. Undo every side effect on
 // dispose first, or each re-run stacks another Fix button / snippet on every card.
 if (import.meta.hot) {

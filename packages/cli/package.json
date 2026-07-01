@@ -1,0 +1,35 @@
+{
+  "name": "@out-of-order/cli",
+  "version": "0.1.0",
+  "description": "Audit any URL's tab order from the command line: prints findings to stdout, pipe them into an AI agent or a CI gate.",
+  "keywords": [
+    "a11y",
+    "accessibility",
+    "cli",
+    "focus",
+    "tab-order",
+    "playwright"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "out-of-order": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@out-of-order/core": "workspace:*",
+    "playwright": "^1.47.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0"
+  }
+}

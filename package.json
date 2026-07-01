@@ -1,18 +1,16 @@
 {
-  "name": "focuspocus-monorepo",
+  "name": "out-of-order-monorepo",
   "version": "0.0.0",
   "private": true,
   "description": "Focus & keyboard-accessibility validation for real browsers",
   "type": "module",
   "scripts": {
     "build": "pnpm -r --filter \"./packages/**\" run build",
-    "dev": "pnpm --parallel --filter @focuspocus/core --filter @focuspocus/reveal run dev",
+    "dev": "pnpm --filter @out-of-order/demo run dev",
     "typecheck": "pnpm -r --filter \"./packages/**\" run typecheck",
     "test": "pnpm -r --filter \"./packages/**\" run test",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format": "oxfmt"
   },
   "devDependencies": {
     "oxfmt": "^0.56.0",

@@ -1,5 +1,5 @@
 {
-  "name": "@focuspocus/vitest",
+  "name": "@out-of-order/vitest",
   "version": "0.1.0",
   "description": "toHaveValidTabOrder() matcher for Vitest Browser Mode.",
   "keywords": [
@@ -31,7 +31,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@focuspocus/core": "workspace:*"
+    "@out-of-order/core": "workspace:*"
   },
   "devDependencies": {
     "@vitest/browser": "^2.1.0",

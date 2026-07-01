@@ -1,11 +1,11 @@
-# @focuspocus/core
+# @out-of-order/core
 
 Pure focus & keyboard-accessibility analyzer. Wraps [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequence and applies a rules layer to decide whether that sequence is _valid_: correct order, every stop reachable, visible, and announced. No test-runner or framework deps, just the DOM.
 
 > Runs in a real browser only. It reads CSS layout (visibility + bounding rects), which jsdom does not provide.
 
 ```ts
-import { audit, formatViolations } from "@focuspocus/core";
+import { audit, formatViolations } from "@out-of-order/core";
 
 const result = audit(document.body);
 // result.valid      -> boolean (true when there are no `error`-severity violations)
@@ -67,4 +67,4 @@ Adding a rule is just a pure function `(sequence, ctx) => Finding[]` (a `Finding
 
 ## Live overlay
 
-The visual overlay (a numbered path through the tab sequence, every finding ringed in place, details on hover) lives in its own package, [`@focuspocus/reveal`](../reveal), built on this analyzer. Keeping it separate is deliberate: `audit` stays dependency-light apart from `tabbable`, so the core export remains easy to run inside `page.evaluate` (e.g. for a Playwright adapter).
+The visual overlay (a numbered path through the tab sequence, every finding ringed in place, details on hover) lives in its own package, [`@out-of-order/trace`](../trace), built on this analyzer. Keeping it separate is deliberate: `audit` stays dependency-light apart from `tabbable`, so the core export remains easy to run inside `page.evaluate` (e.g. for a Playwright adapter).

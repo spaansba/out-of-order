@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: rule violations</title>
+    <title>Out of Order: rule violations</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html">start</a>
         <a href="./concepts.html">concepts</a>
@@ -28,7 +28,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -43,7 +43,7 @@
           Focus can fail a keyboard or screen-reader user in plenty of ways: an
           order that jumps around, a control that can't be reached, one that's
           invisible or never announced. Each entry below trips one of the rules
-          <code>@focuspocus/core</code> checks today, with the overlay tracing
+          <code>@out-of-order/core</code> checks today, with the overlay tracing
           the real tab path. For the same overlay on a page that behaves, see
           <a href="./tabbable.html">What's tabbable</a>.
         </p>
@@ -575,34 +575,21 @@
           </section>
 
           <section class="group">
-            <h2>A link that opens a new tab unsafely</h2>
+            <h2>An all-caps button label</h2>
             <div class="rule-tags">
               <code class="rule-tag is-custom" data-severity="warning"
-                >no-unsafe-blank</code
+                >no-shouting</code
               >
             </div>
             <p class="note">
-              This one isn't built in. It's a
-              <strong>custom rule</strong> handed to
-              <code>reveal({ rules: [...] })</code>, running on the overlay
-              right alongside the built-ins. It flags a link with
-              <code>target="_blank"</code> but no <code>rel="noopener"</code>,
-              which leaks a live <code>window.opener</code> reference back to
-              this page. Flags <code>no-unsafe-blank</code>. See
-              <a
-                href="https://html.spec.whatwg.org/multipage/links.html#link-type-noopener"
-                target="_blank"
-                rel="noopener"
-                >link type noopener</a
-              >, or the recipe for
+              Not a built-in. This is a <strong>custom rule</strong> passed to
+              <code>trace({ rules: [...] })</code>, so it runs on the overlay
+              next to the packaged ones. It flags any tab stop whose label is
+              <code>ALL CAPS</code>. Flags <code>no-shouting</code>. Write your
+              own the same way, see the recipe for
               <a href="./recipes.html#custom-rule">adding a custom rule</a>.
             </p>
-            <a
-              class="demo-link unsafe-blank"
-              href="https://example.com"
-              target="_blank"
-              >Open report in new tab</a
-            >
+            <button class="demo-btn shouty" type="button">CLICK ME NOW!!!</button>
           </section>
         </div>
 

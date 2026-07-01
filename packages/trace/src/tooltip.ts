@@ -17,11 +17,11 @@ export class Tooltip {
 
   constructor(parent: HTMLElement) {
     this.cursor = document.createElement("div");
-    this.cursor.className = "fp-tip-cursor";
+    this.cursor.className = "ooo-tip-cursor";
     parent.appendChild(this.cursor);
 
     this.element = document.createElement("div");
-    this.element.className = "fp-tip";
+    this.element.className = "ooo-tip";
     this.element.setAttribute("popover", "manual");
     parent.appendChild(this.element);
 

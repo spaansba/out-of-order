@@ -1,8 +1,8 @@
 {
-  "name": "@focuspocus/demo",
+  "name": "@out-of-order/demo",
   "version": "0.0.0",
   "private": true,
-  "description": "Interactive demo for focuspocus: edge cases + a deliberately broken page.",
+  "description": "Interactive demo for Out of Order: edge cases + a deliberately broken page.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@focuspocus/core": "workspace:*",
-    "@focuspocus/reveal": "workspace:*"
+    "@out-of-order/core": "workspace:*",
+    "@out-of-order/trace": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

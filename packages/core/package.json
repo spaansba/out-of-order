@@ -1,5 +1,5 @@
 {
-  "name": "@focuspocus/core",
+  "name": "@out-of-order/core",
   "version": "0.1.0",
   "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
   "keywords": [

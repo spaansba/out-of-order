@@ -4,7 +4,7 @@ import {
   formatViolations,
   type AuditOptions,
   type AuditResult,
-} from "@focuspocus/core";
+} from "@out-of-order/core";
 
 /** Accept an Element or a Document/DocumentFragment as the assertion target. */
 function resolveRoot(received: unknown): ParentNode {
@@ -56,4 +56,4 @@ declare module "vitest" {
 }
 
 export { audit };
-export type { AuditOptions, AuditResult } from "@focuspocus/core";
+export type { AuditOptions, AuditResult } from "@out-of-order/core";

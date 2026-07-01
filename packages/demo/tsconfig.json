@@ -3,8 +3,8 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@focuspocus/core": ["../core/src/index.ts"],
-      "@focuspocus/reveal": ["../reveal/src/index.ts"]
+      "@out-of-order/core": ["../core/src/index.ts"],
+      "@out-of-order/trace": ["../trace/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

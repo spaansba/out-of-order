@@ -1,11 +1,12 @@
 import {
   audit,
+  formatViolations,
   type AuditOptions,
   type Rule,
   type Severity,
   type AuditResult,
   type Violation,
-} from "@focuspocus/core";
+} from "@out-of-order/core";
 import {
   computeAccessibleName,
   computeAccessibleDescription,
@@ -20,15 +21,15 @@ import { badgeTip, segTip } from "./tip-content.js";
 import { setupControls, loadPanelState, patchPanelState } from "./controls.js";
 
 // Overlay users get the analyzer from this one package: re-export core's public
-// API so reveal() and audit()/formatViolations() come from a single
-// import, without also depending on @focuspocus/core directly.
-export * from "@focuspocus/core";
+// API so trace() and audit()/formatViolations() come from a single
+// import, without also depending on @out-of-order/core directly.
+export * from "@out-of-order/core";
 
 export type MotionMode = "auto" | "on" | "off";
 
 export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
 
-export interface RevealOptions {
+export interface TraceOptions {
   /** Subtree to analyze. Defaults to document. */
   root?: ParentNode;
   /** Forwarded to audit (rule toggles). */
@@ -42,7 +43,7 @@ export interface RevealOptions {
   peekKey?: ModifierKey;
 }
 
-export interface RevealHandle {
+export interface TraceHandle {
   /** Whether the overlay is currently shown. */
   readonly visible: boolean;
   /** Show or hide the whole overlay: badges, arrows, and the element rings. */
@@ -55,15 +56,15 @@ export interface RevealHandle {
   result: AuditResult | null;
 }
 
-export function reveal(options: RevealOptions = {}): RevealHandle {
+export function trace(options: TraceOptions = {}): TraceHandle {
   ensureStyles();
 
   const layer = document.createElement("div");
-  layer.className = "fp-layer";
-  layer.dataset.fpPeek = "off";
+  layer.className = "ooo-layer";
+  layer.dataset.oooPeek = "off";
   // Marks every node in this overlay so the analyzer's "is it covered?" check can
   // ignore our own badges/lines instead of mistaking them for an obscuring layer.
-  layer.setAttribute("data-focuspocus-overlay", "");
+  layer.setAttribute("data-ooo-overlay", "");
   document.body.appendChild(layer);
 
   const motion = options.motion ?? "auto";
@@ -71,7 +72,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   const applyMotion = (): void => {
     const animate =
       motion === "on" || (motion === "auto" && !reduceQuery.matches);
-    layer.dataset.fpMotion = animate ? "play" : "still";
+    layer.dataset.oooMotion = animate ? "play" : "still";
   };
   applyMotion();
   if (motion === "auto") {
@@ -95,7 +96,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   // tracked separately, so only sequence/violation changes need a redraw).
   let lastSig: string | null = null;
 
-  // reveal() owns both pieces of overlay state and all their side effects; the
+  // trace() owns both pieces of overlay state and all their side effects; the
   // panel is pure UI that flips them through callbacks and mirrors them through the
   // sync* methods. That keeps the two controls symmetric and the tooltip-hiding in
   // one place (any change that removes hoverable badges closes an open tooltip).
@@ -108,7 +109,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     visible = next;
     // Hide only the drawing (badges + arrows) and the rings; the control panel
     // shares this layer and must survive so the overlay can be shown again.
-    layer.classList.toggle("fp-hidden", !next);
+    layer.classList.toggle("ooo-hidden", !next);
     renderer.setRingsVisible(next);
     if (!next) {
       tooltip.hide();
@@ -118,7 +119,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
   };
   const setPeek = (next: boolean): void => {
     peeking = next;
-    layer.dataset.fpPeek = next ? "on" : "off";
+    layer.dataset.oooPeek = next ? "on" : "off";
     if (next) {
       tooltip.hide();
     }
@@ -133,6 +134,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     // Peek does nothing with the overlay hidden, so ignore the toggle then.
     onTogglePeek: () => visible && setPeek(!peeking),
     onToggleOpen: (open) => patchPanelState({ open }),
+    getReport: () => formatViolations(handle.result?.violations ?? []),
   });
 
   // Replay the persisted state now the panel exists to mirror it. Peek is moot (and
@@ -144,7 +146,7 @@ export function reveal(options: RevealOptions = {}): RevealHandle {
     setPeek(true);
   }
 
-  const handle: RevealHandle = {
+  const handle: TraceHandle = {
     result: null,
     get visible() {
       return visible;

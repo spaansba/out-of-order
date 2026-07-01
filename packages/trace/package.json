@@ -1,5 +1,5 @@
 {
-  "name": "@focuspocus/reveal",
+  "name": "@out-of-order/trace",
   "version": "0.1.0",
   "description": "Drop a visual overlay on any page: numbered tab stops, the path between them, and a11y findings ringed in place.",
   "keywords": [
@@ -43,7 +43,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@focuspocus/core": "workspace:*",
+    "@out-of-order/core": "workspace:*",
     "dom-accessibility-api": "^0.7.1",
     "position-observer": "^1.0.3"
   },

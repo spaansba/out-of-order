@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Focus Pocus: focus & keyboard accessibility, checked in a real browser</title>
+    <title>Out of Order: focus & keyboard accessibility, checked in a real browser</title>
     <meta
       name="description"
       content="Focus and keyboard-accessibility validation that runs in real browsers only. A tab-order analyzer, a live overlay, and a gallery of the bugs it catches."
@@ -18,7 +18,7 @@
   </head>
   <body>
     <header class="topbar">
-      <h1><a href="./index.html">Focus Pocus</a></h1>
+      <h1><a href="./index.html">Out of Order</a></h1>
       <nav aria-label="Site">
         <a href="./getting-started.html">start</a>
         <a href="./concepts.html">concepts</a>
@@ -32,7 +32,7 @@
       <span class="spacer"></span>
       <a
         class="btn"
-        href="https://github.com/focuspocusjs/focuspocus"
+        href="https://github.com/spaansba/out-of-order"
         target="_blank"
         rel="noopener"
         >GitHub</a
@@ -44,7 +44,7 @@
         <span class="kicker">Focus &amp; keyboard accessibility</span>
         <h2>Check the tab order in a real browser, not a guess</h2>
         <p>
-          Focus Pocus works out the exact path the <kbd>Tab</kbd> key takes
+          Out of Order works out the exact path the <kbd>Tab</kbd> key takes
           through a page, then grades that path. It checks that the order is
           right and that every stop is reachable, visible, and announced. It
           runs in real Chromium only, because that is the one place the answer
@@ -57,7 +57,7 @@
           >, with a rules layer on top.
         </p>
         <p>
-          <strong>See it</strong> on the page with <code>reveal()</code>.
+          <strong>See it</strong> on the page with <code>trace()</code>.
           <strong>Check it</strong> in a test, in CI, or from an AI agent with
           <code>audit()</code>.
         </p>
@@ -77,7 +77,7 @@
           visible, what is clipped, and where each control sits on screen.
           <code>jsdom</code> has no layout engine, so a green
           <code>jsdom</code> test cannot promise the order holds up in a real
-          browser. Focus Pocus reads live visibility and bounding rects, so a
+          browser. Out of Order reads live visibility and bounding rects, so a
           passing check reflects what a keyboard user will actually get.
         </p>
         <p class="note">
@@ -94,13 +94,13 @@
       <section class="group">
         <h2>What it checks</h2>
         <p class="note">
-          By default Focus Pocus runs headless, with no overlay. It analyzes the
+          By default Out of Order runs headless, with no overlay. It analyzes the
           page and returns a plain result, which is also optimized for AI agents. The
           overlay is an optional layer on top, for when you want to see the tab
           path with your own eyes.
         </p>
         <p class="note">
-          A tab order is more than a list. Focus Pocus asks four questions about
+          A tab order is more than a list. Out of Order asks four questions about
           it, and each rule it ships answers one of them.
         </p>
         <ul class="doc-list">
@@ -140,10 +140,10 @@
           place, and each ring has a tooltip that names the rule, the accessible
           name, and the role.
         </p>
-        <pre class="code">import { reveal } from "@focuspocus/reveal";
+        <pre class="code">import { trace } from "@out-of-order/trace";
 
 // No root, so it analyzes the whole document, exactly like tabbing the page.
-const overlay = reveal();</pre>
+const overlay = trace();</pre>
         <p class="note">
           That is the whole integration. The overlay re-analyzes itself on every
           DOM mutation, so it keeps up with menus opening, modals mounting, and
@@ -174,7 +174,7 @@ const overlay = reveal();</pre>
           </thead>
           <tbody>
             <tr>
-              <td><code>@focuspocus/core</code></td>
+              <td><code>@out-of-order/core</code></td>
               <td>
                 The analyzer. It wraps <code>tabbable</code>, applies the rules,
                 and returns a plain result. No framework or test-runner deps.
@@ -186,11 +186,11 @@ const overlay = reveal();</pre>
               </td>
             </tr>
             <tr>
-              <td><code>@focuspocus/reveal</code></td>
+              <td><code>@out-of-order/trace</code></td>
               <td>
                 The framework-agnostic live overlay, built on the analyzer. It
                 re-exports core, so one install covers both modes.
-                <a href="./api.html#reveal">API &rarr;</a>
+                <a href="./api.html#trace">API &rarr;</a>
               </td>
               <td>
                 You want to see the tab path and findings on a live page. This
@@ -198,7 +198,7 @@ const overlay = reveal();</pre>
               </td>
             </tr>
             <tr>
-              <td><code>@focuspocus/demo</code></td>
+              <td><code>@out-of-order/demo</code></td>
               <td>This site. The docs plus the two interactive demo pages.</td>
               <td>You are reading it.</td>
             </tr>

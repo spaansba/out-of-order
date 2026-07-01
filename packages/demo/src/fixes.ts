@@ -142,9 +142,9 @@ function appendTag(
 }
 
 function pulse(section: Element): void {
-  section.classList.remove("fp-pulse");
+  section.classList.remove("ooo-pulse");
   void (section as HTMLElement).offsetWidth; // reflow so re-adding restarts it
-  section.classList.add("fp-pulse");
+  section.classList.add("ooo-pulse");
 }
 
 function collectSolvers(
@@ -164,7 +164,7 @@ function collectSolvers(
   const autofocus = qsa("#autofocus-demo input");
   const nestedLink = queryOne<HTMLElement>(".nested-link");
   const nestedBtn = queryOne<HTMLElement>(".nested-link button");
-  const unsafeBlank = queryOne<HTMLElement>(".unsafe-blank");
+  const shouty = queryOne<HTMLElement>(".shouty");
 
   return [
     // A · drop every positive tabindex; the DOM order is already correct.
@@ -259,13 +259,9 @@ function collectSolvers(
     // N · a <button> nested inside an <a href> stacks two tab stops on one spot.
     // Lift the button out so the link and the button become siblings.
     { anchor: nestedLink, fix: unnest(nestedLink, nestedBtn) },
-    // P · the custom rule's card (no-unsafe-blank, run via reveal's `rules` option):
-    // a target="_blank" link with no rel="noopener" leaks window.opener to the new
-    // tab. Add rel="noopener".
-    {
-      anchor: unsafeBlank,
-      fix: setAttrs(unsafeBlank, [["rel", "noopener"]]),
-    },
+    // P · the custom rule's card (no-shouting, run via trace's `rules` option): the
+    // button label is ALL CAPS. Drop it to sentence case.
+    { anchor: shouty, fix: setText(shouty, "Click me now") },
   ];
 }
 
@@ -553,6 +549,26 @@ function nativeDialogFix(): Fix {
 
 const NOOP: Fix = { apply: () => {}, revert: () => {}, before: [], after: [] };
 
+// A fix that rewrites an element's text (card P). Not an attribute edit, so nothing is
+// flagged; the snippet reads as the body text calming from the flagged to the fixed side.
+function setText(element: Element | null, text: string): Fix {
+  if (!element) {
+    return NOOP;
+  }
+  const original = element.textContent ?? "";
+  const none = new Set<string>();
+  return {
+    apply: () => {
+      element.textContent = text;
+    },
+    revert: () => {
+      element.textContent = original;
+    },
+    before: [tagOf(element, none)],
+    after: [{ ...tagOf(element, none), body: text }],
+  };
+}
+
 // A fix that rewrites one or more attributes on a single element. The flagged tag
 // is read from the live element; the fixed tag from a deep clone (deep so its body
 // survives in the snippet), so the DOM isn't touched until `apply`. An attribute is
@@ -704,7 +720,7 @@ function within(container: Element | null, fix: Fix): Fix {
 
 // Snapshot an element's opening tag as tokens. The class attribute is dropped
 // entirely: it never affects the tab order, and it also carries the overlay's own
-// injected classes (fp-ring …) as noise, so it only distracts from the fix.
+// injected classes (ooo-ring …) as noise, so it only distracts from the fix.
 function tagOf(element: Element, changed: Set<string>): Tag {
   const attrs: Attr[] = [];
   for (const attr of Array.from(element.attributes)) {
