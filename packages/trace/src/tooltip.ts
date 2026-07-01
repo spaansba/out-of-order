@@ -2,7 +2,6 @@
     pointer never opens. */
 export type Tip = () => string;
 
-/** Resolve a Tip once and memoize. */
 function resolver(tip: Tip): () => string {
   let html: string | null = null;
   return () => (html ??= tip());

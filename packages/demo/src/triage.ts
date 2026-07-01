@@ -1,8 +1,3 @@
-// Triage chrome for the violations page. Grades every card by the severity of the
-// rules it trips, marks each rule tag with its severity, drops the warning-only
-// cards to the end of the page, and builds a compact index up top linking to each
-// card in that final order.
-
 import { DEFAULT_SEVERITY, type RuleId, type Severity } from "@out-of-order/core";
 
 // The browser focuses the first `autofocus` element during the page's first render, so a

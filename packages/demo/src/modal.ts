@@ -56,10 +56,8 @@ function setOpen(open: boolean): void {
   render();
 }
 
-// Solve/Revert for the modal card: swap the custom aria-modal overlay for a native
-// <dialog> opened with showModal(). The browser then traps focus for real, yet the
-// analyzer keeps flagging focus-escapes-modal (tabbable ignores the top layer's
-// implicit inertness): the false positive this card exists to show.
+// A native <dialog>.showModal() traps focus for real, yet the analyzer still flags
+// focus-escapes-modal: the false positive this card exists to show.
 export function setModalUsesNativeDialog(enabled: boolean): void {
   useNative = enabled;
   render();

@@ -1,5 +1,3 @@
-/** Small DOM helpers. Page-evaluatable: everything here runs against a live DOM. */
-
 // Skip the overlay's own ring/badge classes so they never leak into a selector.
 import { OVERLAY_CLASS_PREFIX } from "./overlay-classes.js";
 
@@ -80,7 +78,6 @@ const INTERACTIVE_ROLES = [
   ...COMPOSITE_ROLES_NO_NATIVE,
 ];
 
-/** Elements that need an accessible name to be usable. */
 export function isInteractive(element: Element): boolean {
   const tag = element.tagName.toLowerCase();
   // An <a> is a link (role=link, focusable) only with an href; without one it has
@@ -115,7 +112,6 @@ export function isInert(element: Element): boolean {
   return element.closest("[inert]") !== null;
 }
 
-/** The opt-out attribute an author puts on an element to approve (silence) findings */
 export const IGNORE_ATTRIBUTE = "data-ooo-ignore";
 
 /** Whether `element` opts out of `ruleId` via {@link IGNORE_ATTRIBUTE}. Element-scoped:
@@ -274,7 +270,6 @@ function revealSelectors(rules: CSSRuleList): string[] {
         .trim();
       return resting ? [resting] : [];
     }
-    // Descend into @media / @supports / @layer groups.
     return "cssRules" in rule
       ? revealSelectors((rule as CSSGroupingRule).cssRules)
       : [];

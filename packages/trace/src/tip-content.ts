@@ -1,9 +1,7 @@
-// Builds the HTML for the overlay's hover tooltips. Pure templating, split out of
-// the orchestrator so index.ts stays about analysis-to-draw-model translation.
 import type { Issue } from "@out-of-order/core";
 
 /** The screen-reader facts a badge tooltip renders for one element. */
-export interface BadgeTipData {
+interface BadgeTipData {
   /** Stop number, or null for an off-sequence (⊘) marker. */
   num: number | null;
   selector: string;
@@ -16,8 +14,6 @@ export interface BadgeTipData {
   srOnly: boolean;
 }
 
-/** A badge's tooltip: header (index + selector), the a11y ledger, then either the
-    element's findings or a clean "no issues" note. */
 export function badgeTip(data: BadgeTipData): string {
   const {
     num,
@@ -76,7 +72,6 @@ function issueItem(issue: Issue): string {
   );
 }
 
-/** Tooltip for a hop between stops #from and #to. */
 export function segTip(back: boolean, from: number, toStop: number): string {
   const flag = back
     ? `<span class="ooo-tip-flag ooo-tip-flag--back">↩ reverse</span>`
@@ -96,7 +91,6 @@ function field(key: string, value: string | null): string {
   return `<dt>${key}</dt><dd>${value ?? `<span class="ooo-tip-dim">—</span>`}</dd>`;
 }
 
-// Inline monospace value (role, tabindex, the autofocus flag).
 function mono(html: string): string {
   return `<span class="ooo-tip-mono">${html}</span>`;
 }

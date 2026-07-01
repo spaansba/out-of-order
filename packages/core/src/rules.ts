@@ -24,7 +24,6 @@ import {
 export interface RuleContext {
   /** The analyzed root element (lets rules look beyond the tab sequence). */
   container: Element;
-  /** Fast membership test: is this element one of the tab stops? */
   inSequence: Set<Element>;
 }
 
@@ -133,7 +132,6 @@ const visualOrderMismatch: RuleRun = (sequence) => {
   return out;
 };
 
-/** Focusable interactive elements must expose an accessible name. */
 const missingAccessibleName: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -159,8 +157,6 @@ const missingAccessibleName: RuleRun = (sequence) => {
   return out;
 };
 
-/** aria-hidden hides from the a11y tree but NOT from the tab order: a keyboard +
-    screen-reader user focuses a control their SR refuses to announce. */
 const ariaHiddenFocusable: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -177,8 +173,6 @@ const ariaHiddenFocusable: RuleRun = (sequence) => {
   return out;
 };
 
-/** In the tab order but invisible: opacity:0, zero size, off-screen, or clipped.
-    The user can tab to something they can't see. */
 const hiddenWhileFocusable: RuleRun = (sequence, { container }) => {
   // Scan the page's focus-reveal rules once, not per element.
   const revealOnFocus = focusRevealSelectors(container.ownerDocument);
@@ -198,8 +192,6 @@ const hiddenWhileFocusable: RuleRun = (sequence, { container }) => {
   return out;
 };
 
-/** Something interactive to the mouse (role/onclick) that the
-    keyboard can never reach because it isn't focusable. */
 const clickableNotFocusable: RuleRun = (
   _sequence,
   { container, inSequence },
@@ -259,8 +251,6 @@ const clickableNotFocusable: RuleRun = (
   return out;
 };
 
-/** A composite widget (toolbar, tablist, menu, …) should be a single tab stop and
-    move between items with the arrow keys (roving tabindex), not N tab stops. */
 const compositeRovingTabindex: RuleRun = (sequence) => {
   const groups = new Map<Element, SequenceEntry[]>();
   for (const entry of sequence) {
@@ -291,8 +281,6 @@ const compositeRovingTabindex: RuleRun = (sequence) => {
   return out;
 };
 
-/** While a modal dialog is open, content behind it must be inert. If background
-    controls stay tabbable, focus leaks out of the dialog. */
 const focusEscapesModal: RuleRun = (sequence, { container }) => {
   const modal = openModal(container);
   if (!modal) {
@@ -324,8 +312,6 @@ const focusEscapesModal: RuleRun = (sequence, { container }) => {
   ];
 };
 
-/** tabindex="0" on a plain, role-less, non-interactive element turns decorative
-    content into a dead tab stop. Scrollable containers are intentionally exempt. */
 const tabindexOnNoninteractive: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -363,9 +349,6 @@ const tabindexOnNoninteractive: RuleRun = (sequence) => {
   return out;
 };
 
-/** A generic element (<div>, <span>, …) reimplementing a native control via an
-    interactive role rather than using the native element. The native one brings
-    focus, keyboard activation, and SR semantics for free; the "first rule of ARIA". */
 const preferNativeElement: RuleRun = (sequence) => {
   const out: Finding[] = [];
   for (const entry of sequence) {
@@ -406,9 +389,6 @@ const duplicateAutofocus: RuleRun = (_sequence, { container }) => {
   });
 };
 
-/** `autofocus` on an element that isn't focusable (a bare <div>, no tabindex, not a
-    form control) does nothing on load — dead markup. Flag it so it's removed or the
-    element is made focusable. */
 const autofocusNotFocusable: RuleRun = (_sequence, { container }) => {
   const out: Finding[] = [];
   for (const element of container.querySelectorAll("[autofocus]")) {
@@ -426,10 +406,6 @@ const autofocusNotFocusable: RuleRun = (_sequence, { container }) => {
   return out;
 };
 
-/** A focusable control nested inside another focusable element (a <button> in an
-    <a href>, or a control inside a tabindex'd wrapper). Two stacked tab stops land
-    on the same spot, and screen readers may merge or drop the inner control's role
-    and name. */
 const nestedInteractive: RuleRun = (sequence, { container, inSequence }) => {
   const stop = container.parentElement;
   const out: Finding[] = [];
@@ -556,7 +532,6 @@ export const ALL_RULES = {
   },
 } satisfies Record<string, Omit<Rule, "id">>;
 
-/** Per-rule default severities, keyed by rule id. */
 export const DEFAULT_SEVERITY = Object.fromEntries(
   Object.entries(ALL_RULES).map(([id, rule]) => [id, rule.defaultSeverity]),
 ) as Record<RuleId, Severity>;

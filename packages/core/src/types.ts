@@ -40,7 +40,7 @@ export interface Violation {
     survives serialization (e.g. `JSON.stringify`) unlike {@link Issue}, which holds
     live `Element`s. The issue shape shared by the formatted views. */
 export interface SerializedIssue {
-  rule: RuleId | (string & {});
+  rule: AnyRuleId;
   severity: Severity;
   message: string;
   docs?: string;
@@ -62,7 +62,7 @@ export interface ByElement {
 
 /** `"by-rule"` format: one entry per failed rule, listing every element that hit it. */
 export interface ByRule {
-  rule: RuleId | (string & {});
+  rule: AnyRuleId;
   severity: Severity;
   docs?: string;
   /** How many elements failed this rule (`elements.length`). */
@@ -78,7 +78,7 @@ export interface ByRule {
 
 /** `"flat"` format: one row per (element, rule) pair, nothing nested. */
 export interface Flat {
-  rule: RuleId | (string & {});
+  rule: AnyRuleId;
   severity: Severity;
   selector: string;
   orderIndex?: number;
@@ -102,7 +102,8 @@ export type Formatted<F extends AuditFormat> = F extends "text"
 
 export type RuleId = keyof typeof ALL_RULES;
 
-/** One element in the computed tab sequence, with the data rules need. */
+type AnyRuleId = RuleId | (string & {});
+
 export interface SequenceEntry {
   element: Element;
   selector: string;

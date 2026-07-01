@@ -1,12 +1,3 @@
-// Per-section "Solve" buttons for the violations page. Each card plants one bug.
-// Its button applies a reversible fix, and because the overlay re-analyzes on DOM
-// mutation, that card's badges flip green on their own. Clicking again reverts.
-//
-// Each fix also captures the element's markup as tokens (the tag plus its
-// attributes, with the changed ones flagged). A code snippet under the card shows
-// the flagged markup up front, then morphs to the fixed markup on Solve and
-// highlights the exact attribute that changed.
-
 import { setModalUsesNativeDialog } from "./modal.js";
 
 type Attr = { name: string; value: string; changed: boolean };
@@ -183,7 +174,6 @@ function collectSolvers(
       anchor: queryOne("#rtl-toolbar"),
       fix: paintInDomOrder(queryOne("#rtl-toolbar")),
     },
-    // D · unhide the aria-hidden wrapper.
     { anchor: hidden, fix: setAttrs(hidden, [["aria-hidden", null]]) },
     // E · four ways to be invisible-but-tabbable (opacity:0, zero size, off-screen,
     // clipped). Each is hidden on purpose, so the fix takes it out of the tab order
@@ -194,12 +184,10 @@ function collectSolvers(
         ...invisible.map((input) => setAttrs(input, [["tabindex", "-1"]])),
       ),
     },
-    // F · give the icon button an accessible name.
     {
       anchor: queryOne(".icon-btn"),
       fix: setAttrs(queryOne(".icon-btn"), [["aria-label", "Favourite"]]),
     },
-    // G · add the clickable div to the tab order.
     {
       anchor: queryOne(".fake-button"),
       fix: setAttrs(queryOne(".fake-button"), [["tabindex", "0"]]),
@@ -217,7 +205,6 @@ function collectSolvers(
         ),
       ),
     },
-    // I · remove the dead tabindex from the non-interactive box.
     {
       anchor: queryOne(".dead-stop"),
       fix: setAttrs(queryOne(".dead-stop"), [["tabindex", null]]),
@@ -330,6 +317,13 @@ function make(
   return element;
 }
 
+const reimplFake = (
+  role: string,
+  label: string,
+  extra: Record<string, string> = {},
+): HTMLElement =>
+  make("div", { class: "reimpl-fake", role, tabindex: "0", ...extra }, label);
+
 // Mirrors NATIVE_FOR_ROLE in core/dom.ts: one source of truth per role drives both
 // the rendered demo and its fix, so they can't drift.
 const REIMPL_DEMOS: {
@@ -355,17 +349,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "checkbox",
-    fake: () =>
-      make(
-        "div",
-        {
-          class: "reimpl-fake",
-          role: "checkbox",
-          tabindex: "0",
-          "aria-checked": "true",
-        },
-        "Subscribe",
-      ),
+    fake: () => reimplFake("checkbox", "Subscribe", { "aria-checked": "true" }),
     native: () =>
       make("input", {
         type: "checkbox",
@@ -375,33 +359,13 @@ const REIMPL_DEMOS: {
   },
   {
     role: "radio",
-    fake: () =>
-      make(
-        "div",
-        {
-          class: "reimpl-fake",
-          role: "radio",
-          tabindex: "0",
-          "aria-checked": "true",
-        },
-        "Email me",
-      ),
+    fake: () => reimplFake("radio", "Email me", { "aria-checked": "true" }),
     native: () =>
       make("input", { type: "radio", checked: "", "aria-label": "Email me" }),
   },
   {
     role: "switch",
-    fake: () =>
-      make(
-        "div",
-        {
-          class: "reimpl-fake",
-          role: "switch",
-          tabindex: "0",
-          "aria-checked": "true",
-        },
-        "Dark mode",
-      ),
+    fake: () => reimplFake("switch", "Dark mode", { "aria-checked": "true" }),
     native: () =>
       make("input", {
         type: "checkbox",
@@ -413,45 +377,23 @@ const REIMPL_DEMOS: {
   {
     role: "slider",
     fake: () =>
-      make(
-        "div",
-        {
-          class: "reimpl-fake",
-          role: "slider",
-          tabindex: "0",
-          "aria-valuenow": "50",
-          "aria-valuemin": "0",
-          "aria-valuemax": "100",
-        },
-        "Volume",
-      ),
+      reimplFake("slider", "Volume", {
+        "aria-valuenow": "50",
+        "aria-valuemin": "0",
+        "aria-valuemax": "100",
+      }),
     native: () =>
       make("input", { type: "range", value: "50", "aria-label": "Volume" }),
   },
   {
     role: "spinbutton",
-    fake: () =>
-      make(
-        "div",
-        {
-          class: "reimpl-fake",
-          role: "spinbutton",
-          tabindex: "0",
-          "aria-valuenow": "1",
-        },
-        "Quantity",
-      ),
+    fake: () => reimplFake("spinbutton", "Quantity", { "aria-valuenow": "1" }),
     native: () =>
       make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
   },
   {
     role: "searchbox",
-    fake: () =>
-      make(
-        "div",
-        { class: "reimpl-fake", role: "searchbox", tabindex: "0" },
-        "Search",
-      ),
+    fake: () => reimplFake("searchbox", "Search"),
     native: () =>
       make("input", {
         type: "search",
@@ -461,12 +403,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "textbox",
-    fake: () =>
-      make(
-        "div",
-        { class: "reimpl-fake", role: "textbox", tabindex: "0" },
-        "Name",
-      ),
+    fake: () => reimplFake("textbox", "Name"),
     native: () =>
       make("input", {
         type: "text",
@@ -476,12 +413,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "combobox",
-    fake: () =>
-      make(
-        "div",
-        { class: "reimpl-fake", role: "combobox", tabindex: "0" },
-        "Country",
-      ),
+    fake: () => reimplFake("combobox", "Country"),
     native: () => {
       const select = make("select", { "aria-label": "Country" });
       for (const name of ["United States", "Netherlands", "Japan"]) {
@@ -492,12 +424,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "option",
-    fake: () =>
-      make(
-        "div",
-        { class: "reimpl-fake", role: "option", tabindex: "0" },
-        "Option A",
-      ),
+    fake: () => reimplFake("option", "Option A"),
     native: () => make("option", {}, "Option A"),
   },
 ];

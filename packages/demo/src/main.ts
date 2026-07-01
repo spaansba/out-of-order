@@ -14,13 +14,8 @@ if (host && !host.shadowRoot) {
 }
 
 const overlay = trace();
-// Collect a teardown for every side effect this module plants on the persistent
-// page DOM, so the HMR dispose can undo all of them - not just the overlay.
 const teardown = [() => overlay.destroy(), wireVirtualList()];
 
-// HMR boundary. A trace/core edit (e.g. ../trace/src/*.ts) bubbles up to this
-// self-accepting module, which re-runs top to bottom. Undo every side effect on
-// dispose first, or each re-run stacks another overlay/listener on the page.
 if (import.meta.hot) {
   import.meta.hot.accept();
   import.meta.hot.dispose(() => teardown.forEach((fn) => fn()));

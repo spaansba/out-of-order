@@ -15,7 +15,6 @@ function fired(html: string): Set<string> {
 }
 
 describe("no-positive-tabindex", () => {
-  // cited source is arguably mismatched (audit suggests: https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/)
   test("01 passes: plain controls with no tabindex", () => {
     expect(fired('<button>A</button><a href="#x">B</a>')).not.toContain(
       "no-positive-tabindex",
@@ -71,7 +70,6 @@ describe("no-positive-tabindex", () => {
 });
 
 describe("visual-order-mismatch", () => {
-  // cited source is the right authority (audit suggests: https://www.w3.org/WAI/WCAG22/Techniques/css/C27 (and SC 1.3.2 Meaningful Sequence: https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html))
   test.fails(
     "01 RTL toolbar row is valid (currently FAILS - CI-1 false positive)",
     () => {
@@ -212,7 +210,6 @@ describe("visual-order-mismatch", () => {
 });
 
 describe("missing-accessible-name", () => {
-  // cited source is the right authority
   test("01 button with visible text is named (control)", () => {
     expect(fired("<button>Save</button>")).not.toContain(
       "missing-accessible-name",
@@ -284,7 +281,6 @@ describe("missing-accessible-name", () => {
 });
 
 describe("aria-hidden-focusable", () => {
-  // cited source is arguably mismatched (audit suggests: https://www.w3.org/TR/using-aria/#fourth)
   test("01 visible button with no aria-hidden passes", () => {
     expect(fired("<button>Save</button>")).not.toContain(
       "aria-hidden-focusable",
@@ -357,7 +353,6 @@ describe("aria-hidden-focusable", () => {
 });
 
 describe("hidden-while-focusable", () => {
-  // cited source is the right authority
   test("01 sr-only clip skip link passes (exemption works)", () => {
     expect(
       fired(
@@ -437,7 +432,6 @@ describe("hidden-while-focusable", () => {
 });
 
 describe("clickable-not-focusable", () => {
-  // cited source is the right authority
   test("01 card wrapper around a focusable link passes", () => {
     expect(
       fired(
@@ -524,7 +518,6 @@ describe("clickable-not-focusable", () => {
 });
 
 describe("composite-roving-tabindex", () => {
-  // cited source is arguably mismatched (audit suggests: https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/)
   test("01 valid: radiogroup with roving tabindex (one 0, rest -1) passes", () => {
     expect(
       fired(
@@ -625,7 +618,6 @@ describe("composite-roving-tabindex", () => {
 });
 
 describe("focus-escapes-modal", () => {
-  // cited source is the right authority (audit suggests: https://www.w3.org/TR/wai-aria-1.2/#aria-modal)
   test("01 valid: modal with only its own controls", () => {
     expect(
       fired(
@@ -707,7 +699,6 @@ describe("focus-escapes-modal", () => {
 });
 
 describe("tabindex-on-noninteractive", () => {
-  // cited source is the right authority (audit suggests: https://www.w3.org/TR/wai-aria-1.2/#presentation_role_conflict_resolution (precise normative hook for the role=presentation/none false negative); plus the same APG page's 'Keyboard Navigation Between Components (The Tab Sequence)' section for the general principle)
   test("01 plain div with tabindex=0 is flagged", () => {
     expect(
       fired('<div tabindex="0">Just some decorative text</div>'),

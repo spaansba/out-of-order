@@ -2,7 +2,7 @@ import { PositionObserver } from "position-observer";
 
 /** What the orchestrator wants to know about; the tracker translates raw browser
     events into these high-level signals. */
-export interface TrackerCallbacks {
+interface TrackerCallbacks {
   /** Observed elements moved (CSS transform, ancestor/layout shift); their fresh
       rects are supplied so only what moved needs re-placing. */
   onMoved(moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>): void;

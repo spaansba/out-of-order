@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
 import type { AuditFormat, AuditResult, Formatted } from "@out-of-order/core";
 
 type OooGlobal = {
@@ -56,6 +56,17 @@ if (!FORMATS.includes(format)) {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+async function open(page: Page, targetUrl: string) {
+  const response = await page.goto(targetUrl, { waitUntil: "networkidle" });
+  if (response && !response.ok()) {
+    return response;
+  }
+  if (values.wait) {
+    await page.waitForSelector(values.wait);
+  }
+  return response;
+}
+
 if (values.overlay) {
   const overlaySource = readFileSync(
     join(here, "inject-overlay.global.js"),
@@ -70,14 +81,11 @@ if (values.overlay) {
   });
   const page = await context.newPage();
   await page.addInitScript({ content: overlaySource });
-  const response = await page.goto(url, { waitUntil: "networkidle" });
+  const response = await open(page, url);
   if (response && !response.ok()) {
     process.stderr.write(`${url} returned HTTP ${response.status()}\n`);
     await browser.close();
     process.exit(2);
-  }
-  if (values.wait) {
-    await page.waitForSelector(values.wait);
   }
   process.stderr.write("Overlay mounted. Ctrl-C to quit.\n");
   await new Promise<void>((resolve) => {
@@ -94,12 +102,9 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
   await page.addInitScript({ content: injectSource });
-  const response = await page.goto(url, { waitUntil: "networkidle" });
+  const response = await open(page, url);
   if (response && !response.ok()) {
     throw new Error(`${url} returned HTTP ${response.status()}`);
-  }
-  if (values.wait) {
-    await page.waitForSelector(values.wait);
   }
   const out = await page.evaluate((fmt) => {
     const ooo = (window as unknown as { __ooo: OooGlobal }).__ooo;

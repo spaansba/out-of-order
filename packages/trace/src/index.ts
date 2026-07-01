@@ -218,7 +218,6 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     const stops: StopSpec[] = sequence.map((entry, idx) =>
       makeStop(
         entry.element,
-        String(idx + 1),
         idx + 1,
         entry.selector,
         entry.tabIndex,
@@ -248,7 +247,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
       }
       // null number → ⊘ glyph; not a tab stop, so no tabindex/autofocus to show.
       offStops.push(
-        makeStop(element, "⊘", null, selectorFor(element), null, issues, false),
+        makeStop(element, null, selectorFor(element), null, issues, false),
       );
     }
 
@@ -303,13 +302,13 @@ function resultSignature(result: AuditResult): string {
     badges are never hovered, so they run inside the tip thunk, not eagerly here. */
 function makeStop(
   element: Element,
-  label: string,
   num: number | null,
   selector: string,
   tabIndex: number | null,
   issues: Issue[],
   inSeq: boolean,
 ): StopSpec {
+  const label = num !== null ? String(num) : "⊘";
   // autofocus marks where load-focus lands; moot for off-sequence (unfocusable) marks.
   const autofocus = inSeq && element.hasAttribute("autofocus");
   return {

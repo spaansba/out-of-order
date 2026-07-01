@@ -17,7 +17,7 @@ const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
 
 const PANEL_STATE_KEY = "ooo:trace";
 
-export interface PanelState {
+interface PanelState {
   visible: boolean;
   peek: boolean;
   open: boolean;
@@ -40,7 +40,7 @@ export function patchPanelState(patch: Partial<PanelState>): void {
   } catch {}
 }
 
-export interface ControlsOptions {
+interface ControlsOptions {
   peekKey: ModifierKey;
   open: boolean;
   copyFormat: AuditFormat;
@@ -50,7 +50,7 @@ export interface ControlsOptions {
   getReport: (format: AuditFormat) => string;
 }
 
-export interface Controls {
+interface Controls {
   syncVisible(shown: boolean): void;
   syncPeek(on: boolean): void;
   teardown(): void;

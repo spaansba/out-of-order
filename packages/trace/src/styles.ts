@@ -1,7 +1,6 @@
 // The `.ooo-*` selectors in the CSS below are written out literally for
 // readability; the class names the JS applies live in classes.ts and share its
 // prefix, so they can't drift from this namespace.
-export { RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./classes.js";
 
 const RING_CSS = `
 .ooo-ring { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
@@ -129,7 +128,7 @@ ${RING_CSS}
 .ooo-tip { position: fixed; position-anchor: --ooo-tip-anchor;
   inset: auto; top: anchor(center); left: anchor(center); margin: 19px 0 0 -11px;
   position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-  pointer-events: auto; width: max-content; max-width: 360px;
+  pointer-events: auto; 
   background-color: #fffefb;
   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
   color: #18191c; border: 1px solid #c6c2b4; border-radius: 2px;

@@ -1,9 +1,5 @@
-import {
-  ensureRingStyles,
-  RING_CLASS,
-  RING_BAD_CLASS,
-  RING_WARN_CLASS,
-} from "./styles.js";
+import { ensureRingStyles } from "./styles.js";
+import { RING_CLASS, RING_BAD_CLASS, RING_WARN_CLASS } from "./classes.js";
 import type { Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
@@ -19,8 +15,6 @@ const SEG_PAD = RADIUS + 5;
     badge, so it gets pinned off the top-right corner instead. */
 const SMALL_SIZE = 30;
 
-/** Create an SVG element with attributes and children in one call, dropping the
-    repetitive createElementNS + setAttribute boilerplate. */
 function svgEl<Tag extends keyof SVGElementTagNameMap>(
   tag: Tag,
   attrs: Record<string, string | number> = {},
@@ -51,7 +45,6 @@ export interface StopSpec {
   tip: Tip;
 }
 
-/** One hop between consecutive numbered stops. */
 export interface SegSpec {
   /** Runs against the reading order (fixed at analyze time, see Segment.back). */
   back: boolean;
@@ -107,8 +100,6 @@ export class Renderer {
     private readonly tooltip: Tooltip,
   ) {}
 
-  /** Replace the drawing: numbered stops (in order), the hops between them, then
-      any off-sequence stops. Badges paint on top of the lines. */
   draw(stops: StopSpec[], segs: SegSpec[], offStops: StopSpec[]): void {
     this.clear();
     const svg = svgEl("svg", { class: "ooo-svg" }, buildDefs());
@@ -157,8 +148,6 @@ export class Renderer {
     this.updateSegments();
   }
 
-  /** Apply fresh rects for the elements the position observer saw move, then
-      refresh the connecting segments. */
   applyMoved(
     moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>,
   ): void {
@@ -173,7 +162,6 @@ export class Renderer {
     this.updateSegments();
   }
 
-  /** Fill the badge of `el` (or none) as a live "you are here" cursor. */
   setFocused(element: Element | null): void {
     const marker = element ? (this.byEl.get(element) ?? null) : null;
     if (this.focused === marker) {
@@ -201,7 +189,6 @@ export class Renderer {
     }
   }
 
-  /** Tear down the current drawing (SVG + rings); leaves the renderer reusable. */
   clear(): void {
     this.svg?.remove();
     this.svg = null;
@@ -261,8 +248,6 @@ export class Renderer {
     this.tooltip.wire(group, spec.tip);
   }
 
-  /** Tag a real element so CSS rings it (until it's keyboard-focused): green when
-      clean, amber on a warning, red on an error. */
   private markRing(element: Element, severity: Severity | null): void {
     const ringClass =
       severity === "error"

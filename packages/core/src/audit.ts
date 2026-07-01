@@ -254,14 +254,14 @@ function renderText(violations: Violation[]): string {
       const pos =
         violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
       const issues = violation.issues
-        .map(
-          (issue) =>
+        .map((issue) => {
+          const rel = related(issue);
+          return (
             `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
-            (issue.relatedElements?.length
-              ? ` (related: ${issue.relatedElements.map(selectorFor).join(", ")})`
-              : "") +
-            (issue.ignored ? " (ignored via data-ooo-ignore)" : ""),
-        )
+            (rel?.length ? ` (related: ${rel.join(", ")})` : "") +
+            (issue.ignored ? " (ignored via data-ooo-ignore)" : "")
+          );
+        })
         .join("\n");
       return `${pos}${violation.selector}\n${issues}`;
     })
