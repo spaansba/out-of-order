@@ -1,7 +1,6 @@
 {
   "name": "@out-of-order/core",
   "version": "0.1.0",
-  "private": false,
   "description": "Pure focus & keyboard-accessibility analyzer. Wraps tabbable, returns a plain result.",
   "keywords": [
     "a11y",
@@ -43,7 +42,8 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
