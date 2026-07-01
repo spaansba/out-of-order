@@ -1,6 +1,17 @@
 import { expect } from "vitest";
 import { audit, type AuditOptions, type AuditResult } from "@out-of-order/core";
 
+function assertRealBrowser(): void {
+  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  if (typeof window === "undefined" || userAgent.includes("jsdom")) {
+    throw new Error(
+      "toHaveValidTabOrder() needs a real browser and found jsdom. Enable Vitest " +
+        "Browser Mode (test.browser.enabled) for these tests. jsdom has no layout " +
+        "engine, so tab order and visibility cannot be measured.",
+    );
+  }
+}
+
 /** Accept an Element or a Document/DocumentFragment as the assertion target. */
 function resolveRoot(received: unknown): ParentNode {
   if (
@@ -19,6 +30,7 @@ function resolveRoot(received: unknown): ParentNode {
 
 expect.extend({
   toHaveValidTabOrder(received: unknown, options?: AuditOptions) {
+    assertRealBrowser();
     const root = resolveRoot(received);
     const result: AuditResult = audit(root, options);
     const { isNot } = this;
