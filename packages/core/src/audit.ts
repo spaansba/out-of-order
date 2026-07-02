@@ -30,6 +30,25 @@ function resolveRule(options: AuditOptions, rule: Rule): { enabled: boolean; sev
   return { enabled: true, severity: setting };
 }
 
+const warnedUnknownRules = new Set<string>();
+
+function warnUnknownRules(overrides: AuditOptions["rules"], known: Rule[]): void {
+  if (!overrides) {
+    return;
+  }
+  const ids = new Set(known.map((rule) => rule.id));
+  for (const key of Object.keys(overrides)) {
+    if (ids.has(key) || warnedUnknownRules.has(key)) {
+      continue;
+    }
+    warnedUnknownRules.add(key);
+    console.warn(
+      `[out-of-order] Unknown rule "${key}" in audit options; it has no effect. ` +
+        `Known rules: ${[...ids].join(", ")}.`,
+    );
+  }
+}
+
 function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
   return {
     rule: rule.id,
@@ -106,9 +125,11 @@ export function audit(
     id,
     ...def,
   }));
+  const rules = [...builtins, ...customRules];
+  warnUnknownRules(options.rules, rules);
 
   const byElement = new Map<Element, Violation>();
-  for (const rule of [...builtins, ...customRules]) {
+  for (const rule of rules) {
     const { enabled, severity } = resolveRule(options, rule);
     if (!enabled) {
       continue;
@@ -196,7 +217,8 @@ function renderText(violations: Violation[]): string {
           return (
             `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
             (rel?.length ? ` (related: ${rel.join(", ")})` : "") +
-            (issue.ignored ? " (ignored via data-ooo-ignore)" : "")
+            (issue.ignored ? " (ignored via data-ooo-ignore)" : "") +
+            (issue.docs ? `\n    ${issue.docs}` : "")
           );
         })
         .join("\n");

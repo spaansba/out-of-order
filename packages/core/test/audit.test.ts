@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { audit } from "../src/index.js";
 import { ALL_RULES } from "../src/rules.js";
 
@@ -82,6 +82,33 @@ describe("audit", () => {
     // Three controls leak; the first is the primary, the other two ride along.
     expect(leaks[0]!.relatedElements).toHaveLength(2);
   });
+
+  test("composite-roving-tabindex collapses a widget's items into one issue", () => {
+    document.body.innerHTML =
+      '<div role="toolbar" aria-label="Format">' +
+      '<button tabindex="0">A</button><button tabindex="0">B</button><button tabindex="0">C</button>' +
+      "</div>";
+    const roving = allIssues(document.body).filter(
+      (issue) => issue.rule === "composite-roving-tabindex",
+    );
+    expect(roving).toHaveLength(1);
+    // Three separate stops; the first is primary, the other two ride along.
+    expect(roving[0]!.relatedElements).toHaveLength(2);
+  });
+
+  test("warns once for a rules key that names no known rule", () => {
+    document.body.innerHTML = "<button>Ok</button>";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const options = { rules: { "totally-made-up-rule": "off" } } as Parameters<typeof audit>[1];
+    try {
+      audit(document.body, options);
+      audit(document.body, options);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain("totally-made-up-rule");
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 describe("format", () => {
@@ -103,6 +130,12 @@ describe("format", () => {
     expect(result.sequence.length).toBeGreaterThan(0);
     expect(typeof result.violations).toBe("string");
     expect(result.violations).toContain("no-positive-tabindex");
+  });
+
+  test("text includes each issue's docs link, the spec people paste into a PR", () => {
+    document.body.innerHTML = markup;
+    const text = audit(document.body, { format: "text" }).violations;
+    expect(text).toContain(ALL_RULES["no-positive-tabindex"].docs);
   });
 
   test("text says so when there is nothing to report", () => {
