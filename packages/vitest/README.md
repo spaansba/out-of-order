@@ -7,24 +7,25 @@
 ## Install
 
 ```bash
-pnpm add -D @out-of-order/vitest vitest @vitest/browser playwright
+pnpm add -D @out-of-order/vitest
 ```
 
 ## Configure
 
-`vitest.config.ts`:
+`vitest.config.ts` (Vitest 4):
 
 ```ts
 import { defineConfig } from "vitest/config";
+import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
   test: {
     setupFiles: ["./test/setup.ts"],
     browser: {
       enabled: true,
-      provider: "playwright",
+      provider: playwright(),
       headless: true,
-      name: "chromium",
+      instances: [{ browser: "chromium" }],
     },
   },
 });
@@ -54,7 +55,19 @@ Pass options to scope the rules:
 
 ```ts
 expect(form).toHaveValidTabOrder({
-  rules: { "missing-accessible-name": false },
+  rules: { "missing-accessible-name": "off" },
+});
+```
+
+Testing a real component? Mount it and assert on the returned container, not `document.body`:
+
+```ts
+import { render } from "vitest-browser-vue";
+import SignupForm from "./SignupForm.vue";
+
+test("signup form tab order", () => {
+  const { container } = render(SignupForm);
+  expect(container).toHaveValidTabOrder();
 });
 ```
 

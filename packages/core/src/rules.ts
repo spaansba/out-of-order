@@ -234,12 +234,12 @@ const compositeRovingTabindex: RuleRun = (sequence) => {
     }
 
     const role = container.getAttribute("role");
-    for (const member of members) {
-      out.push({
-        message: `${members.length} items inside role="${role}" are separate tab stops. A ${role} should expose one tab stop and move between items with the arrow keys (roving tabindex).`,
-        target: member,
-      });
-    }
+    const [first, ...rest] = members;
+    out.push({
+      message: `${members.length} items inside role="${role}" are separate tab stops. A ${role} should expose one tab stop and move between items with the arrow keys (roving tabindex).`,
+      target: first!,
+      relatedElements: rest.map((entry) => entry.element),
+    });
   }
 
   return out;

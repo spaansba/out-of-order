@@ -218,6 +218,15 @@
             </tr>
           </tbody>
         </table>
+        <p class="note">
+          <strong>Limitations.</strong> These rules read the rendered DOM and CSS layout, never your
+          JavaScript. Handlers bound with <code>addEventListener</code> (what Vue
+          <code>@click</code>, React <code>onClick</code>, and most frameworks compile to) leave no
+          DOM trace, so <code>clickable-not-focusable</code> cannot see a bare
+          <code>&lt;div @click&gt;</code> that has no role. Give custom controls a real role or a
+          native element. Focus that JavaScript moves or traps at runtime is judged only in the
+          state you audit, not across interactions.
+        </p>
       </section>
 
       <section class="group" id="changing">
