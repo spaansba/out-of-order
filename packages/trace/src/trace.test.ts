@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { trace, type TraceHandle } from "../src/index.js";
+import { trace, type TraceHandle } from "./index.js";
 
 let handle: TraceHandle | null = null;
 let root: HTMLElement;
@@ -26,9 +26,9 @@ afterEach(() => {
 });
 
 describe("trace", () => {
-  test("appends a tagged overlay layer", () => {
+  test("appends an overlay layer", () => {
     mount("<button>A</button>");
-    expect(layer().getAttribute("data-ooo-overlay")).toBe("");
+    expect(layer()).not.toBeNull();
   });
 
   test("draws one numbered badge per tab stop", () => {
@@ -40,7 +40,7 @@ describe("trace", () => {
   test("rings and badges a violating stop in red", () => {
     mount('<button>Fine</button><button tabindex="2">Jumped</button>');
     expect(layer().querySelector(".ooo-badge--bad")).not.toBeNull();
-    expect(root.querySelector('[tabindex="2"]')!.classList.contains("ooo-ring--bad")).toBe(true);
+    expect(root.querySelector('[tabindex="2"]')!.getAttribute("data-ooo-ring")).toBe("bad");
   });
 
   test("marks an interactive-but-unreachable control with an off-sequence glyph", () => {
@@ -91,12 +91,10 @@ describe("trace", () => {
     expect(layer().dataset.oooPeek).toBe("off");
   });
 
-  test("the peek switch is non-tabbable and toggles click-through on click", () => {
+  test("the peek switch toggles click-through on click", () => {
     mount("<button>A</button>");
     const peek = layer().querySelector(".ooo-switch--peek") as HTMLButtonElement;
     expect(peek).not.toBeNull();
-    // Kept out of the page's own tab order, so the analyzer never numbers it.
-    expect(peek.tabIndex).toBe(-1);
     expect(peek.getAttribute("aria-checked")).toBe("false");
     peek.click();
     expect(layer().dataset.oooPeek).toBe("on");
@@ -126,7 +124,6 @@ describe("trace", () => {
     const title = panel.querySelector(".ooo-panel-title") as HTMLButtonElement;
     // Starts open with the switches visible.
     expect(panel.dataset.open).toBe("1");
-    expect(title.tabIndex).toBe(-1);
     title.click();
     expect(panel.dataset.open).toBe("0");
     title.click();
@@ -167,14 +164,87 @@ describe("trace", () => {
     ).toBe("true");
   });
 
+  test("hiding the overlay while peeking ends the peek for good", () => {
+    mount("<button>A</button>");
+    (layer().querySelector(".ooo-switch--peek") as HTMLButtonElement).click();
+    expect(layer().dataset.oooPeek).toBe("on");
+    handle!.setVisible(false);
+    expect(layer().dataset.oooPeek).toBe("off");
+    // The ghost path: hide while peeking, navigate, show, navigate again. The
+    // stored peek must not silently come back on the second remount.
+    handle!.destroy();
+    handle = trace({ root });
+    handle!.setVisible(true);
+    handle!.destroy();
+    handle = trace({ root });
+    expect(layer().dataset.oooPeek).toBe("off");
+    expect(
+      (layer().querySelector(".ooo-switch--peek") as HTMLButtonElement).getAttribute(
+        "aria-checked",
+      ),
+    ).toBe("false");
+  });
+
+  test("the panel is keyboard accessible and audits clean", () => {
+    root = document.createElement("div");
+    root.innerHTML = "<button>A</button>";
+    document.body.appendChild(root);
+    // Default root (document): the overlay's own panel is page content like any
+    // other, so it is graded too and must pass its own audit.
+    handle = trace();
+    const title = layer().querySelector(".ooo-panel-title") as HTMLButtonElement;
+    expect(title.tabIndex).toBe(0);
+    // The page's button + title + two switches + copy button + caret, all clean.
+    expect(handle.result!.sequence).toHaveLength(6);
+    expect(handle.result!.violations).toHaveLength(0);
+    expect(handle.result!.valid).toBe(true);
+    // Graded but not drawn: no badges, rings, or hops on the overlay's own chrome.
+    expect(numbered()).toHaveLength(1);
+    expect(title.hasAttribute("data-ooo-ring")).toBe(false);
+  });
+
+  test("the copy menu is a roving-focus keyboard menu", () => {
+    mount("<button>A</button>");
+    const caret = layer().querySelector(".ooo-copy-caret") as HTMLButtonElement;
+    const menu = layer().querySelector(".ooo-copy-menu") as HTMLElement;
+    const items = Array.from(menu.querySelectorAll("button"));
+    // One composite widget, no extra tab stops: the arrow keys rove between items.
+    expect(items.every((item) => item.tabIndex === -1)).toBe(true);
+    caret.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(menu.hidden).toBe(false);
+    // Opens on the checked item (the default "by-element" format is second).
+    expect(document.activeElement).toBe(items[1]);
+    items[1]!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    expect(document.activeElement).toBe(items[2]);
+    items[2]!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(menu.hidden).toBe(true);
+    expect(document.activeElement).toBe(caret);
+  });
+
   test("destroy removes the layer and un-rings elements", () => {
     mount("<button>A</button>");
     const button = root.querySelector("button")!;
-    expect(button.classList.contains("ooo-ring")).toBe(true);
+    expect(button.getAttribute("data-ooo-ring")).toBe("ok");
     handle!.destroy();
     handle = null;
     expect(document.querySelector(".ooo-layer")).toBeNull();
-    expect(button.classList.contains("ooo-ring")).toBe(false);
+    expect(button.hasAttribute("data-ooo-ring")).toBe(false);
+  });
+
+  test("onResult fires synchronously on mount and again on rebuild", async () => {
+    root = document.createElement("div");
+    root.innerHTML = "<button>A</button>";
+    document.body.appendChild(root);
+    const onResult = vi.fn();
+    handle = trace({ root, onResult });
+    expect(onResult).toHaveBeenCalledTimes(1);
+    expect(onResult).toHaveBeenLastCalledWith(handle.result);
+    expect(handle.result!.sequence).toHaveLength(1);
+    root.insertAdjacentHTML("beforeend", "<button>B</button>");
+    await vi.waitFor(() => expect(onResult.mock.calls.length).toBeGreaterThan(1), {
+      timeout: 2000,
+    });
+    expect(onResult.mock.lastCall![0].sequence).toHaveLength(2);
   });
 
   test("rebuilds when the page DOM changes", async () => {
@@ -184,5 +254,19 @@ describe("trace", () => {
     await vi.waitFor(() => expect(numbered()).toHaveLength(2), {
       timeout: 2000,
     });
+  });
+
+  test("rebuilds when content inside a shadow root changes", async () => {
+    mount("");
+    // The host arrives after trace() mounted, so its shadow root must be picked up
+    // by the rebuild that its (light DOM) insertion triggers.
+    const host = document.createElement("div");
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = "<button>A</button>";
+    root.appendChild(host);
+    await vi.waitFor(() => expect(numbered()).toHaveLength(1), { timeout: 2000 });
+    // This mutation happens inside the shadow root only; no light-DOM node changes.
+    shadow.innerHTML = "<button>A</button><button>B</button>";
+    await vi.waitFor(() => expect(numbered()).toHaveLength(2), { timeout: 2000 });
   });
 });

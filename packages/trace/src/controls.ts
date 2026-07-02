@@ -1,9 +1,12 @@
 import type { AuditFormat } from "@out-of-order/core";
-import type { ModifierKey } from "./index.js";
+
+export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
 
 const COPY_FORMATS: { value: AuditFormat; label: string }[] = [
-  { value: "by-element", label: "By element" },
   { value: "text", label: "Text" },
+  { value: "by-element", label: "By element" },
+  { value: "by-violation", label: "By violation" },
+  { value: "flat", label: "Flat" },
 ];
 
 const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
@@ -13,28 +16,6 @@ const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
   Meta: "Meta",
 };
 
-const PANEL_STATE_KEY = "ooo:trace";
-
-interface PanelState {
-  visible: boolean;
-  peek: boolean;
-  open: boolean;
-  copyFormat: AuditFormat;
-}
-
-export function loadPanelState(): Partial<PanelState> {
-  try {
-    return JSON.parse(sessionStorage.getItem(PANEL_STATE_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-export function patchPanelState(patch: Partial<PanelState>): void {
-  try {
-    sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify({ ...loadPanelState(), ...patch }));
-  } catch {}
-}
-
 interface ControlsOptions {
   peekKey: ModifierKey;
   open: boolean;
@@ -42,6 +23,7 @@ interface ControlsOptions {
   onToggleVisible: () => void;
   onTogglePeek: () => void;
   onToggleOpen: (open: boolean) => void;
+  onCopyFormat: (format: AuditFormat) => void;
   getReport: (format: AuditFormat) => string;
 }
 
@@ -52,28 +34,19 @@ interface Controls {
 }
 
 export function setupControls(layer: HTMLElement, opts: ControlsOptions): Controls {
-  const { peekKey, open, copyFormat, onToggleVisible, onTogglePeek, onToggleOpen, getReport } =
-    opts;
   const abort = new AbortController();
   const signal = abort.signal;
 
   const panel = document.createElement("div");
   panel.className = "ooo-panel";
-  panel.dataset.open = open ? "1" : "0";
+  panel.dataset.open = opts.open ? "1" : "0";
 
-  const title = buildTitle(panel, signal, onToggleOpen);
-  const { body, visSwitch, peekSwitch } = buildBody(
-    peekKey,
-    signal,
-    onToggleVisible,
-    onTogglePeek,
-    getReport,
-    copyFormat,
-  );
+  const title = buildTitle(panel, signal, opts.onToggleOpen);
+  const { body, visSwitch, peekSwitch } = buildBody(opts, signal);
   panel.append(title, body);
   layer.appendChild(panel);
 
-  listenForPeekKey(peekKey, signal, onTogglePeek);
+  listenForPeekKey(opts.peekKey, signal, opts.onTogglePeek);
 
   return {
     syncVisible: (shown) => {
@@ -96,7 +69,6 @@ function buildTitle(
 ): HTMLButtonElement {
   const title = document.createElement("button");
   title.type = "button";
-  title.tabIndex = -1;
   title.className = "ooo-panel-title";
   title.textContent = "Out of Order";
 
@@ -117,12 +89,8 @@ function buildTitle(
 }
 
 function buildBody(
-  peekKey: ModifierKey,
+  opts: ControlsOptions,
   signal: AbortSignal,
-  onToggleVisible: () => void,
-  onTogglePeek: () => void,
-  getReport: (format: AuditFormat) => string,
-  copyFormat: AuditFormat,
 ): {
   body: HTMLElement;
   visSwitch: HTMLButtonElement;
@@ -131,17 +99,17 @@ function buildBody(
   const body = document.createElement("div");
   body.className = "ooo-panel-body";
 
-  const visSwitch = addSwitch(body, "vis", "Overlay", onToggleVisible, signal);
-  const peekSwitch = addSwitch(body, "peek", "Peek", onTogglePeek, signal);
+  const visSwitch = addSwitch(body, "vis", "Overlay", opts.onToggleVisible, signal);
+  const peekSwitch = addSwitch(body, "peek", "Peek", opts.onTogglePeek, signal);
   setSwitch(visSwitch, true); // overlay starts shown, peek starts off
   setSwitch(peekSwitch, false);
 
   const hint = document.createElement("p");
   hint.className = "ooo-panel-hint";
-  hint.textContent = `tap ${PEEK_KEY_LABEL[peekKey]} to peek`;
+  hint.textContent = `tap ${PEEK_KEY_LABEL[opts.peekKey]} to peek`;
   body.appendChild(hint);
 
-  addCopyButton(body, getReport, copyFormat, signal);
+  addCopyButton(body, opts, signal);
 
   return { body, visSwitch, peekSwitch };
 }
@@ -150,25 +118,18 @@ function buildBody(
 // the caret opens a menu to switch it. Picking a format only sets it (persisted so
 // it survives a same-tab navigation) and relabels the main face - the next main
 // click copies in that format.
-function addCopyButton(
-  parent: HTMLElement,
-  getReport: (format: AuditFormat) => string,
-  copyFormat: AuditFormat,
-  signal: AbortSignal,
-): void {
-  let current = copyFormat;
+function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: AbortSignal): void {
+  let current = opts.copyFormat;
 
   const wrap = document.createElement("div");
   wrap.className = "ooo-copy-split";
 
   const main = document.createElement("button");
   main.type = "button";
-  main.tabIndex = -1;
   main.className = "ooo-copy";
 
   const caret = document.createElement("button");
   caret.type = "button";
-  caret.tabIndex = -1;
   caret.className = "ooo-copy-caret";
   caret.textContent = "▾";
   caret.setAttribute("aria-haspopup", "menu");
@@ -178,11 +139,15 @@ function addCopyButton(
   const menu = document.createElement("div");
   menu.className = "ooo-copy-menu";
   menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", "Copy format");
   menu.hidden = true;
 
   const labelFor = (value: AuditFormat): string =>
     COPY_FORMATS.find((format) => format.value === value)?.label ?? value;
-  const mainLabel = (): string => `Copy ${labelFor(current).toLowerCase()}`;
+  const mainLabel = (): string => {
+    const label = labelFor(current).toLowerCase();
+    return label.startsWith("by ") ? `Copy ${label}` : `Copy as ${label}`;
+  };
 
   let revert: ReturnType<typeof setTimeout> | undefined;
   const flash = (text: string): void => {
@@ -193,15 +158,28 @@ function addCopyButton(
   signal.addEventListener("abort", () => clearTimeout(revert));
 
   const copy = (): void => {
-    void navigator.clipboard.writeText(getReport(current)).then(
+    void navigator.clipboard.writeText(opts.getReport(current)).then(
       () => flash("Copied"),
       () => flash("Copy failed"),
     );
   };
 
-  const closeMenu = (): void => {
+  const closeMenu = (refocus = false): void => {
     menu.hidden = true;
     caret.setAttribute("aria-expanded", "false");
+    if (refocus) {
+      caret.focus();
+    }
+  };
+
+  const itemButtons: HTMLButtonElement[] = [];
+  const selectedIndex = (): number => COPY_FORMATS.findIndex((f) => f.value === current);
+  const openMenu = (focusIdx?: number): void => {
+    menu.hidden = false;
+    caret.setAttribute("aria-expanded", "true");
+    if (focusIdx !== undefined) {
+      itemButtons[focusIdx]?.focus();
+    }
   };
 
   const items = new Map<AuditFormat, HTMLButtonElement>();
@@ -216,6 +194,8 @@ function addCopyButton(
   for (const format of COPY_FORMATS) {
     const item = document.createElement("button");
     item.type = "button";
+    // Roving focus, per the ARIA menu pattern (and our own composite-roving-tabindex
+    // rule): the menu adds no tab stops of its own; the arrow keys move between items.
     item.tabIndex = -1;
     item.className = "ooo-copy-item";
     item.setAttribute("role", "menuitemradio");
@@ -225,18 +205,49 @@ function addCopyButton(
     });
     item.addEventListener(
       "click",
-      () => {
+      (event) => {
         current = format.value;
         syncSelection();
-        patchPanelState({ copyFormat: current });
-        closeMenu();
+        opts.onCopyFormat(current);
+        // detail 0 → keyboard activation: hand focus back to the caret. A mouse
+        // click never took it (mousedown is prevented), so leave it alone.
+        closeMenu(event.detail === 0);
       },
       { signal },
     );
     items.set(format.value, item);
+    itemButtons.push(item);
     menu.appendChild(item);
   }
   syncSelection();
+
+  menu.addEventListener(
+    "keydown",
+    (event) => {
+      const idx = itemButtons.indexOf(document.activeElement as HTMLButtonElement);
+      const last = itemButtons.length - 1;
+      if (event.key === "Escape") {
+        closeMenu(true);
+      } else if (event.key === "Tab") {
+        // Close and put focus back on the caret so the un-prevented Tab leaves
+        // from there, not from a now-hidden item.
+        closeMenu(true);
+        return;
+      } else if (event.key === "ArrowDown") {
+        itemButtons[idx >= last ? 0 : idx + 1]?.focus();
+      } else if (event.key === "ArrowUp") {
+        itemButtons[idx <= 0 ? last : idx - 1]?.focus();
+      } else if (event.key === "Home") {
+        itemButtons[0]?.focus();
+      } else if (event.key === "End") {
+        itemButtons[last]?.focus();
+      } else {
+        return;
+      }
+      event.preventDefault();
+    },
+    { signal },
+  );
 
   for (const btn of [main, caret]) {
     btn.addEventListener("mousedown", (event) => event.preventDefault(), {
@@ -246,10 +257,26 @@ function addCopyButton(
   main.addEventListener("click", copy, { signal });
   caret.addEventListener(
     "click",
-    () => {
-      const open = menu.hidden;
-      menu.hidden = !open;
-      caret.setAttribute("aria-expanded", String(open));
+    (event) => {
+      if (!menu.hidden) {
+        closeMenu();
+        return;
+      }
+      // detail 0 → keyboard (Enter/Space): move focus onto the checked item, the
+      // menu-button pattern's cue that the arrows now navigate. Mouse users keep
+      // their focus where it was.
+      openMenu(event.detail === 0 ? selectedIndex() : undefined);
+    },
+    { signal },
+  );
+  caret.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+        return;
+      }
+      event.preventDefault();
+      openMenu(selectedIndex());
     },
     { signal },
   );
@@ -283,9 +310,10 @@ function addSwitch(
 
   const sw = document.createElement("button");
   sw.type = "button";
-  sw.tabIndex = -1;
   sw.className = `ooo-switch ooo-switch--${name}`;
   sw.setAttribute("role", "switch");
+  // The visible label is a sibling span, invisible to the accessibility tree.
+  sw.setAttribute("aria-label", text);
   sw.innerHTML = `<span class="ooo-switch-knob"></span>`;
   sw.addEventListener("mousedown", (event) => event.preventDefault(), {
     signal,

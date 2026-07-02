@@ -1,3 +1,5 @@
+import { composedDescendants } from "@out-of-order/core";
+
 // The DOM attributes any rule actually reads, unioned across rules.ts. A mutation
 // to anything else can't change a verdict, so it's filtered out.
 const WATCHED_ATTRS = [
@@ -13,12 +15,23 @@ const WATCHED_ATTRS = [
   "aria-disabled",
   "aria-label",
   "aria-labelledby",
+  "aria-modal",
+  "aria-activedescendant",
+  "autofocus",
   "title",
   "alt",
   "href",
   "type",
   "open", // <details> toggling shows/hides its (focusable) contents
 ];
+
+const OBSERVE_OPTIONS: MutationObserverInit = {
+  subtree: true,
+  childList: true,
+  attributes: true,
+  attributeFilter: WATCHED_ATTRS,
+  characterData: true, // text changes affect accessible name
+};
 
 export class Mutations {
   private readonly observer: MutationObserver;
@@ -41,13 +54,20 @@ export class Mutations {
   observe(root: ParentNode): void {
     // MutationObserver needs a Node; a Document must be reduced to its root.
     const target = root.nodeType === 9 ? (root as Document).documentElement : (root as Node);
-    this.observer.observe(target, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: WATCHED_ATTRS,
-      characterData: true, // text changes affect accessible name
-    });
+    this.observer.observe(target, OBSERVE_OPTIONS);
+    this.observeShadows(root);
+  }
+
+  /** (Re)attach to every open shadow root under `root`. The analysis pierces
+      shadow roots, but an observer only sees the tree it's attached to, so without
+      this a verdict-changing mutation inside a shadow root goes unnoticed. Safe to
+      call on every re-analysis: re-observing a node just replaces its registration. */
+  observeShadows(root: ParentNode): void {
+    for (const element of composedDescendants(root)) {
+      if (element.shadowRoot) {
+        this.observer.observe(element.shadowRoot, OBSERVE_OPTIONS);
+      }
+    }
   }
 
   destroy(): void {

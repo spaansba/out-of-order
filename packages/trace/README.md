@@ -19,6 +19,37 @@ const overlay = trace();
 overlay.destroy();
 ```
 
-`trace(options?)` returns a `TraceHandle` with `refresh()`, `reposition()`,
-`setVisible(visible)`, `destroy()`, and the latest `result`. The overlay
-re-analyzes itself on DOM mutation, so most pages need nothing beyond the mount.
+## API
+
+```ts
+function trace(options?: TraceOptions): TraceHandle;
+
+interface TraceOptions {
+  /** Subtree to analyze. Defaults to document. */
+  root?: Document | Element;
+  /** Forwarded to audit (rule toggles and custom rules). */
+  audit?: AuditOptions;
+  /** Motion behaviour: "auto" | "on" | "off". Defaults to "auto". */
+  motion?: MotionMode;
+  /** Modifier that toggles overlay click-through ("peek"). Defaults to "Alt". */
+  peekKey?: ModifierKey;
+  /** Called after every re-analysis with the fresh result. */
+  onResult?: (result: AuditResult) => void;
+}
+
+interface TraceHandle {
+  /** Whether the overlay is currently shown. */
+  readonly visible: boolean;
+  /** Show or hide the whole overlay: badges, arrows, and the element rings. */
+  setVisible(visible: boolean): void;
+  /** Flip between shown and hidden. */
+  toggle(): void;
+  /** Remove the overlay layer, observers, and listeners. */
+  destroy(): void;
+  /** Latest analysis result, or null before the first draw. */
+  result: AuditResult | null;
+}
+```
+
+The overlay re-analyzes itself on DOM mutation, so most pages need nothing
+beyond the mount.

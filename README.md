@@ -4,13 +4,13 @@
 
 Focus & keyboard-accessibility validation for real browsers.
 
-Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then grades it: is the order right, and is every stop reachable, visible, and announced? It runs in real Chromium only, because that is the one place the answer is true. It builds on [tabbable](https://github.com/focus-trap/tabbable), with a rules layer on top.
+Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then checks it: is the order right, and is every stop reachable, visible, and announced? It runs in real Chromium only, because that is the one place the answer is true. It builds on [tabbable](https://github.com/focus-trap/tabbable), with a rules layer on top.
 
 **[Live site & docs](https://spaansba.github.io/out-of-order/)** · **[Playground](https://spaansba.github.io/out-of-order/playground.html)** (the bugs it catches) · **[What's tabbable](https://spaansba.github.io/out-of-order/tabbable.html)**
 
 ## Why real-browser only
 
-An honest focus check needs CSS layout: what is really visible, what is clipped, where each control sits. `jsdom` has no layout engine, so a green `jsdom` test cannot promise the order holds up in a real browser. Out of Order reads live visibility and bounding rects, so a passing check reflects what a keyboard user actually gets. It stays light on dependencies, so it also runs inside a Playwright `page.evaluate`. See [concepts](https://spaansba.github.io/out-of-order/concepts.html).
+An honest focus check needs CSS layout: what is really visible, what is clipped, where each control sits. `jsdom` has no layout engine, so a green `jsdom` test cannot promise the order holds up in a real browser. Out of Order reads live visibility and bounding rects, so a passing check reflects what a keyboard user actually gets. It stays light on dependencies, so it also runs inside a Playwright `page.evaluate`.
 
 ## Quick start
 
@@ -29,7 +29,7 @@ const result = audit();
 result.valid; // false when there is an error-severity violation
 ```
 
-**Scan it** from the terminal, or an AI agent:
+**Scan it** from the terminal, and pipe the findings into an AI agent:
 
 ```bash
 npx @out-of-order/cli https://example.com           # prints findings, fails on violations
@@ -50,10 +50,8 @@ More in [getting started](https://spaansba.github.io/out-of-order/getting-starte
 ## Docs
 
 - [Getting started](https://spaansba.github.io/out-of-order/getting-started.html) — install, the three modes, rule overrides, approving findings
-- [Concepts](https://spaansba.github.io/out-of-order/concepts.html) — how a tab order becomes a verdict, error vs warning, limitations
 - [Rules](https://spaansba.github.io/out-of-order/rules.html) — every rule, its severity, and the spec clause behind it
 - [API reference](https://spaansba.github.io/out-of-order/api.html) — `audit()`, `trace()`, types, and custom rules
-- [Recipes](https://spaansba.github.io/out-of-order/recipes.html) — patterns for tests, CI, and Playwright
 
 ## Develop
 

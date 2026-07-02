@@ -443,34 +443,9 @@
           </tbody>
         </table>
         <p class="note">
-          <code>audit()</code> stamps the severity onto each finding, taken from
-          <code>defaultSeverity</code> or the caller's override, then groups the findings by
-          element. That is why a <code>Finding</code> is an <code>Issue</code> without a severity.
+          For a worked example, see
+          <a href="./rules.html#custom-rule">adding your own rule</a>.
         </p>
-        <pre class="code">
-import { audit } from "@out-of-order/core";
-import type { Rule } from "@out-of-order/core";
-
-// Flag links that open a new tab without rel="noopener".
-const noUnsafeBlank: Rule = {
-  id: "no-unsafe-blank",
-  docs: "https://html.spec.whatwg.org/multipage/links.html#link-type-noopener",
-  defaultSeverity: "warning",
-  run: (sequence) =>
-    sequence
-      .filter(
-        (entry) =>
-          entry.element.matches('a[target="_blank"]') &amp;&amp;
-          !(entry.element.getAttribute("rel") ?? "").includes("noopener"),
-      )
-      .map((entry) => ({
-        message: 'Link opens a new tab without rel="noopener".',
-        target: entry,
-      })),
-};
-
-audit(document.body, {}, [noUnsafeBlank]);</pre
-        >
       </section>
 
       <section class="group" id="trace">
@@ -572,9 +547,6 @@ audit(document.body, {}, [noUnsafeBlank]);</pre
             </tr>
           </tbody>
         </table>
-        <div class="cta">
-          <a class="btn" href="./recipes.html">Recipes &rarr;</a>
-        </div>
       </section>
     </main>
     <script type="module" src="./src/docs.ts"></script>

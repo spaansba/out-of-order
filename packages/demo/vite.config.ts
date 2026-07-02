@@ -8,10 +8,8 @@ const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
 // null renders a visual separator, splitting the docs links from the tool links.
 const NAV = [
   ["getting-started.html", "start"],
-  ["concepts.html", "concepts"],
   ["rules.html", "rules"],
   ["api.html", "api"],
-  ["recipes.html", "recipes"],
   null,
   ["playground.html", "playground"],
   ["tabbable.html", "tabbable"],
@@ -86,10 +84,8 @@ export default defineConfig({
         playground: resolve(__dirname, "playground.html"),
         tabbable: resolve(__dirname, "tabbable.html"),
         start: resolve(__dirname, "getting-started.html"),
-        concepts: resolve(__dirname, "concepts.html"),
         rules: resolve(__dirname, "rules.html"),
         api: resolve(__dirname, "api.html"),
-        recipes: resolve(__dirname, "recipes.html"),
       },
     },
   },

@@ -171,7 +171,7 @@ code {
     color: var(--muted);
     font-size: 14.5px;
   }
-  a {
+  a:not(.btn) {
     color: var(--accent-2);
     text-underline-offset: 2px;
   }
@@ -687,24 +687,23 @@ fieldset.radio-group label {
   position: absolute;
   left: -9999px;
 }
-/* a fixed-width frame that clips its overflow; the field is shoved past its right
-   edge, so it keeps its place in the tab order but is painted entirely outside */
-.clip-box {
-  display: block;
-  width: 150px;
-  overflow: hidden;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-}
-.invisible-clipped {
-  position: relative;
-  left: 240px;
-}
-
 /* a non-interactive div meant to be clicked, but unreachable by keyboard */
 .fake-button {
   cursor: pointer;
   user-select: none;
+}
+
+/* case Q: shadow-DOM showcase. Hosts are light DOM, so page CSS reaches them;
+   everything inside a shadow root styles itself via its template's <style>.
+   inline-block shrink-wraps each host to its shadow content, keeping the focusable
+   host and its inner button co-centred (no false visual-order hop between them). */
+.shadow-host {
+  display: inline-block;
+}
+#shadow-nested {
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 3px;
 }
 
 /* case K: the <div role="button"> and the native <button> it's swapped for share

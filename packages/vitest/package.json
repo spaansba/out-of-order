@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/vitest",
-  "version": "0.1.2",
+  "version": "0.2.2",
   "description": "toHaveValidTabOrder() matcher for Vitest Browser Mode.",
   "keywords": [
     "a11y",
@@ -21,7 +21,9 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts",
+    "!src/setup.ts"
   ],
   "type": "module",
   "main": "./src/index.ts",
@@ -55,6 +57,7 @@
   },
   "devDependencies": {
     "@vitest/browser": "^2.1.0",
+    "happy-dom": "^20.10.6",
     "jsdom": "^25.0.0",
     "playwright": "^1.47.0",
     "tsup": "^8.2.0",

@@ -1,18 +1,65 @@
 import { tabbable, getTabIndex } from "tabbable";
-import type {
-  AuditOptions,
-  AuditFormat,
-  Formatted,
-  SequenceEntry,
-  Severity,
-  AuditResult,
-  Issue,
-  Violation,
-  ByElement,
-  RuleId,
-} from "./types.js";
-import { selectorFor, isRuleIgnored } from "./dom.js";
-import { ALL_RULES, type Finding, type Rule } from "./rules.js";
+import { selectorFor, isRuleIgnored } from "./dom/index.js";
+import {
+  ALL_RULES,
+  type Finding,
+  type Rule,
+  type RuleId,
+  type SequenceEntry,
+  type Severity,
+} from "./rules/index.js";
+
+export type RuleOverride = Severity | "off";
+
+type AnyRuleId = RuleId | (string & {});
+
+/** A single rule failure on one element. */
+export interface Issue {
+  /** Stable rule identifier. */
+  rule: AnyRuleId;
+  /** How serious this finding is. */
+  severity: Severity;
+  /** Human-readable description of what's wrong. */
+  message: string;
+  /** Spec link for the rule (WCAG, WAI-ARIA, or ARIA APG). */
+  docs?: string;
+  /** Other elements sharing this issue's root cause. */
+  relatedElements?: Element[];
+  /** Approved (silenced) by a `data-ooo-ignore` on the element */
+  ignored?: boolean;
+}
+
+/** One offending element and every rule it failed. */
+export interface Violation {
+  /** The offending element. */
+  element: Element;
+  /** A CSS-ish path to the element, for messages and logs. */
+  selector: string;
+  /** Position in the tab sequence, when the element is a tab stop. */
+  orderIndex?: number;
+  /** The rules this element failed. */
+  issues: Issue[];
+}
+
+export interface AuditResult {
+  /** True when no enabled rule produced an `error` severity finding. */
+  valid: boolean;
+  /** Elements in the exact order tabbing will reach them. */
+  sequence: SequenceEntry[];
+  /** One entry per offending element, each carrying its failed rules. Pass the
+      result to `formatViolations` for a serializable or human-readable view. */
+  violations: Violation[];
+}
+
+export interface AuditOptions {
+  /** Per-rule overrides. Every rule runs at its default severity unless listed
+      here: set `"off"` to disable it, or `"error"`/`"warning"` to
+      re-grade it. See {@link RuleOverride}. */
+  rules?: Partial<Record<RuleId, RuleOverride>>;
+  /** Extra rules, run alongside the built-ins. Overridable via `rules` like any
+      built-in. */
+  customRules?: Rule[];
+}
 
 /** Fold a rule's caller override against its default into a final decision: is it
     on, and at what severity? A missing override keeps the default; `"off"`
@@ -21,13 +68,32 @@ function resolveRule(options: AuditOptions, rule: Rule): { enabled: boolean; sev
   // Custom rule ids aren't in the RuleId union. A miss returns undefined.
   const setting = options.rules?.[rule.id as RuleId];
   if (setting === undefined) {
-    return { enabled: true, severity: rule.defaultSeverity };
+    return { enabled: true, severity: rule.severity };
   }
   if (setting === "off") {
-    return { enabled: false, severity: rule.defaultSeverity };
+    return { enabled: false, severity: rule.severity };
   }
 
   return { enabled: true, severity: setting };
+}
+
+const warnedDuplicateRuleIds = new Set<string>();
+
+function warnDuplicateRuleIds(builtins: Rule[], customRules: Rule[]): void {
+  if (customRules.length === 0) {
+    return;
+  }
+  const builtinIds = new Set(builtins.map((rule) => rule.id));
+  for (const rule of customRules) {
+    if (!builtinIds.has(rule.id) || warnedDuplicateRuleIds.has(rule.id)) {
+      continue;
+    }
+    warnedDuplicateRuleIds.add(rule.id);
+    console.warn(
+      `[out-of-order] Custom rule "${rule.id}" reuses a built-in rule id; ` +
+        `both run and report the same element twice. Rename the custom rule.`,
+    );
+  }
 }
 
 const warnedUnknownRules = new Set<string>();
@@ -59,19 +125,25 @@ function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
   };
 }
 
-function locate(finding: Finding): {
+function locate(
+  finding: Finding,
+  entryFor: Map<Element, SequenceEntry>,
+): {
   element: Element;
   selector: string;
   orderIndex?: number;
 } {
   const { target } = finding;
-  return "orderIndex" in target
+  // Rules targeting bare Elements may still hit a tab stop; recover its
+  // sequence entry so the violation keeps its orderIndex and sorts in place.
+  const entry = "orderIndex" in target ? target : entryFor.get(target);
+  return entry
     ? {
-        element: target.element,
-        selector: target.selector,
-        orderIndex: target.orderIndex,
+        element: entry.element,
+        selector: entry.selector,
+        orderIndex: entry.orderIndex,
       }
-    : { element: target, selector: selectorFor(target) };
+    : { element: target as Element, selector: selectorFor(target as Element) };
 }
 
 /**
@@ -79,29 +151,17 @@ function locate(finding: Finding): {
  *
  * Browser-only by design: `tabbable` uses real CSS layout to decide visibility and
  * the visual-order rule reads bounding rects, neither meaningful under jsdom.
- *
- * Always returns an `AuditResult`; `options.format` only changes the type of its
- * `violations`, from the structured `Violation[]` to the matching {@link Formatted}
- * view (a string for `"text"`, an array of the named shape otherwise).
  */
-export function audit<F extends AuditFormat>(
-  root: ParentNode | undefined,
-  options: AuditOptions & { format: F },
-  customRules?: Rule[],
-): AuditResult<Formatted<F>>;
-export function audit(root?: ParentNode, options?: AuditOptions, customRules?: Rule[]): AuditResult;
 export function audit(
-  root: ParentNode = document,
+  root: Document | Element = document,
   options: AuditOptions = {},
-  customRules: Rule[] = [],
-): AuditResult<Violation[] | string | ByElement[]> {
-  const container =
-    root.nodeType === 9 /* Node.DOCUMENT_NODE */
-      ? (root as Document).documentElement
-      : (root as Element);
+): AuditResult {
+  const customRules = options.customRules ?? [];
+  // Duck-typed instead of instanceof so documents from other realms (iframes) work.
+  const container = "documentElement" in root ? root.documentElement : root;
 
   if (!container) {
-    return finalize({ valid: true, sequence: [], violations: [] }, options.format);
+    return { valid: true, sequence: [], violations: [] };
   }
 
   const elements = tabbable(container, {
@@ -116,9 +176,10 @@ export function audit(
     rect: element.getBoundingClientRect(),
   }));
 
+  const entryFor = new Map(sequence.map((entry) => [entry.element, entry]));
   const ctx = {
     container,
-    inSequence: new Set(sequence.map((entry) => entry.element)),
+    inSequence: new Set(entryFor.keys()),
   };
 
   const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
@@ -126,6 +187,7 @@ export function audit(
     ...def,
   }));
   const rules = [...builtins, ...customRules];
+  warnDuplicateRuleIds(builtins, customRules);
   warnUnknownRules(options.rules, rules);
 
   const byElement = new Map<Element, Violation>();
@@ -136,7 +198,7 @@ export function audit(
     }
 
     for (const finding of rule.run(sequence, ctx)) {
-      const { element, selector, orderIndex } = locate(finding);
+      const { element, selector, orderIndex } = locate(finding, entryFor);
       let violation = byElement.get(element);
       if (!violation) {
         violation = { element, selector, orderIndex, issues: [] };
@@ -163,66 +225,5 @@ export function audit(
     violation.issues.some((issue) => issue.severity === "error" && !issue.ignored),
   );
 
-  return finalize({ valid: !hasErrors, sequence, violations }, options.format);
-}
-
-// Leaves `valid` and `sequence` untouched; only reshapes `violations`.
-function finalize(
-  result: AuditResult,
-  format?: AuditFormat,
-): AuditResult<Violation[] | string | ByElement[]> {
-  if (!format) {
-    return result;
-  }
-  return { ...result, violations: reshape(result.violations, format) };
-}
-
-function reshape(violations: Violation[], format: AuditFormat): string | ByElement[] {
-  switch (format) {
-    case "text":
-      return renderText(violations);
-    case "by-element":
-      return byElement(violations);
-  }
-}
-
-const related = (issue: Issue): string[] | undefined => issue.relatedElements?.map(selectorFor);
-
-function byElement(violations: Violation[]): ByElement[] {
-  return violations.map((violation) => ({
-    selector: violation.selector,
-    orderIndex: violation.orderIndex,
-    issueCount: violation.issues.length,
-    issues: violation.issues.map((issue) => ({
-      rule: issue.rule,
-      severity: issue.severity,
-      message: issue.message,
-      docs: issue.docs,
-      related: related(issue),
-      ignored: issue.ignored,
-    })),
-  }));
-}
-
-function renderText(violations: Violation[]): string {
-  if (!violations.length) {
-    return "No tab-order issues.";
-  }
-  return violations
-    .map((violation) => {
-      const pos = violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
-      const issues = violation.issues
-        .map((issue) => {
-          const rel = related(issue);
-          return (
-            `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
-            (rel?.length ? ` (related: ${rel.join(", ")})` : "") +
-            (issue.ignored ? " (ignored via data-ooo-ignore)" : "") +
-            (issue.docs ? `\n    ${issue.docs}` : "")
-          );
-        })
-        .join("\n");
-      return `${pos}${violation.selector}\n${issues}`;
-    })
-    .join("\n\n");
+  return { valid: !hasErrors, sequence, violations };
 }

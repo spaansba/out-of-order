@@ -210,9 +210,8 @@
             <p class="note">
               Each button below is reachable by Tab but can't be seen, so a keyboard user lands on a
               control that paints nothing. There's more than one way to end up here, and the package
-              names the cause for each: <code>opacity: 0</code>, a zero-size box,
-              <code>left: -9999px</code> off-screen, or clipped away by an
-              <code>overflow: hidden</code> ancestor. All flag <code>hidden-while-focusable</code>.
+              names the cause for each: <code>opacity: 0</code>, a zero-size box, or
+              <code>left: -9999px</code> off-screen. All flag <code>hidden-while-focusable</code>.
               Fails WCAG
               <a
                 href="https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
@@ -245,16 +244,6 @@
                   class="invisible-offscreen"
                   aria-label="Invisible off-screen button"
                 ></button>
-              </label>
-              <label class="field"
-                ><span>Clipped</span>
-                <span class="clip-box">
-                  <button
-                    type="button"
-                    class="invisible-clipped"
-                    aria-label="Invisible clipped button"
-                  ></button>
-                </span>
               </label>
             </div>
           </section>
@@ -486,6 +475,109 @@
           </section>
 
           <section class="group">
+            <h2>The same bugs, hidden inside shadow DOM</h2>
+            <div class="rule-tags">
+              <code class="rule-tag">aria-hidden-focusable</code>
+              <code class="rule-tag">clickable-not-focusable</code>
+              <code class="rule-tag">autofocus-not-focusable</code>
+              <code class="rule-tag">nested-interactive</code>
+            </div>
+            <p class="note">
+              Every box below is a web component with an open shadow root. The analyzer walks the
+              same composed tree the <kbd>Tab</kbd> key does, so rules cross the boundary in both
+              directions: scans descend <em>into</em> shadow roots (the mouse-only control, the
+              stranded <code>autofocus</code>), and ancestor checks climb <em>out</em> of them
+              (<code>aria-hidden</code> on a host, a focusable host around its shadow button). The
+              modal and <code>duplicate-autofocus</code> checks pierce the boundary too.
+            </p>
+            <div class="reimpl-grid">
+              <div class="reimpl-cell">
+                <code class="reimpl-role">aria-hidden host</code>
+                <div class="shadow-host" id="shadow-hidden" aria-hidden="true">
+                  <template shadowrootmode="open">
+                    <style>
+                      button {
+                        font: 500 13px/1 var(--font-mono);
+                        padding: 0.52rem 0.8rem;
+                        border: 1px solid var(--line-2);
+                        background: var(--surface);
+                        border-radius: 3px;
+                        color: var(--ink);
+                        cursor: pointer;
+                      }
+                    </style>
+                    <button type="button">Saved to drafts</button>
+                  </template>
+                </div>
+              </div>
+              <div class="reimpl-cell">
+                <code class="reimpl-role">mouse-only control</code>
+                <div class="shadow-host" id="shadow-clickable">
+                  <template shadowrootmode="open">
+                    <style>
+                      div {
+                        font: 500 13px/1 var(--font-mono);
+                        padding: 0.52rem 0.8rem;
+                        border: 1px solid var(--line-2);
+                        background: var(--surface);
+                        border-radius: 3px;
+                        color: var(--ink);
+                        cursor: pointer;
+                        user-select: none;
+                        display: inline-block;
+                      }
+                    </style>
+                    <div role="button">Run report</div>
+                  </template>
+                </div>
+              </div>
+              <div class="reimpl-cell">
+                <code class="reimpl-role">stranded autofocus</code>
+                <div class="shadow-host" id="shadow-autofocus">
+                  <template shadowrootmode="open">
+                    <style>
+                      div {
+                        font: 500 13px/1.3 var(--font-mono);
+                        padding: 0.5rem 0.7rem;
+                        border: 1px solid var(--line-2);
+                        border-radius: 3px;
+                        background: var(--accent-soft);
+                        color: var(--accent);
+                      }
+                    </style>
+                    <div autofocus>Settings saved</div>
+                  </template>
+                </div>
+              </div>
+              <div class="reimpl-cell">
+                <code class="reimpl-role">focusable host</code>
+                <div
+                  class="shadow-host"
+                  id="shadow-nested"
+                  role="group"
+                  tabindex="0"
+                  aria-label="Pricing card"
+                >
+                  <template shadowrootmode="open">
+                    <style>
+                      button {
+                        font: 500 13px/1 var(--font-mono);
+                        padding: 0.52rem 0.8rem;
+                        border: 1px solid var(--line-2);
+                        background: var(--surface);
+                        border-radius: 3px;
+                        color: var(--ink);
+                        cursor: pointer;
+                      }
+                    </style>
+                    <button type="button">Compare plans</button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="group">
             <h2>An all-caps button label</h2>
             <div class="rule-tags">
               <code class="rule-tag is-custom" data-severity="warning">no-shouting</code>
@@ -494,8 +586,8 @@
               Not a built-in. This is a <strong>custom rule</strong> passed to
               <code>trace({ rules: [...] })</code>, so it runs on the overlay next to the packaged
               ones. It flags any tab stop whose label is <code>ALL CAPS</code>. Flags
-              <code>no-shouting</code>. Write your own the same way, see the recipe for
-              <a href="./recipes.html#custom-rule">adding a custom rule</a>.
+              <code>no-shouting</code>. Write your own the same way, see
+              <a href="./rules.html#custom-rule">adding a custom rule</a>.
             </p>
             <button class="demo-btn shouty" type="button">CLICK ME NOW!!!</button>
           </section>

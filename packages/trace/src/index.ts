@@ -1,47 +1,35 @@
 import {
   audit,
-  selectorFor,
-  isScreenReaderOnly,
+  formatViolations,
+  type AuditFormat,
   type AuditOptions,
-  type Rule,
-  type Severity,
   type AuditResult,
-  type Issue,
 } from "@out-of-order/core";
-import {
-  computeAccessibleName,
-  computeAccessibleDescription,
-  getRole,
-} from "dom-accessibility-api";
 import { ensureStyles } from "./styles.js";
 import { Tooltip } from "./tooltip.js";
-import { Renderer, type StopSpec, type SegSpec } from "./render.js";
+import { Renderer } from "./render.js";
 import { Tracker } from "./track.js";
 import { Mutations } from "./mutations.js";
-import { badgeTip, segTip } from "./tip-content.js";
-import { setupControls, loadPanelState, patchPanelState } from "./controls.js";
-
-// Overlay users get the analyzer from this one package: re-export core's public
-// API so trace() and audit() come from a single import, without also depending
-// on @out-of-order/core directly.
-export * from "@out-of-order/core";
+import { buildDrawModel, resultSignature } from "./model.js";
+import { setupControls, type ModifierKey } from "./controls.js";
 
 export type MotionMode = "auto" | "on" | "off";
 
-export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
+export type { ModifierKey };
 
 export interface TraceOptions {
   /** Subtree to analyze. Defaults to document. */
-  root?: ParentNode;
-  /** Forwarded to audit (rule toggles). */
+  root?: Document | Element;
+  /** Forwarded to audit (rule toggles and custom rules). */
   audit?: AuditOptions;
-  /** Extra custom rules, run alongside the built-ins on every analysis. */
-  rules?: Rule[];
   /** Motion behaviour. Defaults to "auto". */
   motion?: MotionMode;
   /** Tap this modifier to toggle the overlay click-through ("peek" at the page
       beneath) without hiding it; tap again to restore. Defaults to "Alt". */
   peekKey?: ModifierKey;
+  /** Called after every re-analysis with the fresh result. The first call is
+      synchronous, before trace() returns. */
+  onResult?: (result: AuditResult) => void;
 }
 
 export interface TraceHandle {
@@ -63,9 +51,6 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   const layer = document.createElement("div");
   layer.className = "ooo-layer";
   layer.dataset.oooPeek = "off";
-  // Marks every node in this overlay so the analyzer's "is it covered?" check can
-  // ignore our own badges/lines instead of mistaking them for an obscuring layer.
-  layer.setAttribute("data-ooo-overlay", "");
   document.body.appendChild(layer);
 
   const motion = options.motion ?? "auto";
@@ -113,6 +98,9 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     renderer.setRingsVisible(next);
     if (!next) {
       tooltip.hide();
+      if (peeking) {
+        setPeek(false);
+      }
     }
     controls.syncVisible(next);
     patchPanelState({ visible: next });
@@ -130,17 +118,18 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   const controls = setupControls(layer, {
     peekKey: options.peekKey ?? "Alt",
     open: saved.open ?? true,
-    copyFormat: saved.copyFormat ?? "text",
+    copyFormat: saved.copyFormat ?? "by-element",
     onToggleVisible: () => setVisible(!visible),
     // Peek does nothing with the overlay hidden, so ignore the toggle then.
     onTogglePeek: () => visible && setPeek(!peeking),
     onToggleOpen: (open) => patchPanelState({ open }),
+    onCopyFormat: (copyFormat) => patchPanelState({ copyFormat }),
+    // handle.result is always set by the time the copy button can be clicked:
+    // build() runs synchronously before trace() returns.
     getReport: (format) => {
-      const violations = audit(options.root ?? document, {
-        ...options.audit,
-        format,
-      }).violations;
-      return typeof violations === "string" ? violations : JSON.stringify(violations, null, 2);
+      const result = handle.result ?? audit(options.root ?? document, options.audit);
+      const report = formatViolations(result, format);
+      return typeof report === "string" ? report : JSON.stringify(report, null, 2);
     },
   });
 
@@ -175,9 +164,14 @@ export function trace(options: TraceOptions = {}): TraceHandle {
 
   /** Re-analyze, turn the result into a draw model, render it, and (re)observe. */
   function build(): void {
-    const result = audit(options.root ?? document, options.audit, options.rules);
+    const result = audit(options.root ?? document, options.audit);
+
+    // Shadow roots attached since the last pass must be watched too, or a later
+    // mutation inside one would never trigger a re-analysis.
+    mutations.observeShadows(options.root ?? document);
 
     handle.result = result;
+    options.onResult?.(result);
 
     // Nothing the overlay draws has changed, so skip the redraw and re-observe.
     const sig = resultSignature(result);
@@ -186,62 +180,9 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     }
     lastSig = sig;
 
-    const sequence = result.sequence;
-    const inSeq = new Set(sequence.map((entry) => entry.element));
-
-    // Index issues by element so a marker's tooltip can list every one. An issue
-    // also rings each of its relatedElements (controls sharing its root cause) red,
-    // without counting as a separate finding - see Issue.relatedElements.
-    const issuesByElement = new Map<Element, Issue[]>();
-    const indexBy = (element: Element, issue: Issue): void => {
-      const list = issuesByElement.get(element) ?? [];
-      list.push(issue);
-      issuesByElement.set(element, list);
-    };
-    for (const violation of result.violations) {
-      for (const issue of violation.issues) {
-        indexBy(violation.element, issue);
-        for (const related of issue.relatedElements ?? []) {
-          indexBy(related, issue);
-        }
-      }
-    }
-
-    // Numbered tab stops.
-    const stops: StopSpec[] = sequence.map((entry, idx) =>
-      makeStop(
-        entry.element,
-        idx + 1,
-        entry.selector,
-        entry.tabIndex,
-        issuesByElement.get(entry.element) ?? [],
-        true,
-      ),
-    );
-
-    // A hop between each pair of consecutive stops. It's "backward" exactly when
-    // its destination stop is flagged visual-order-mismatch, read once here, not
-    // from live geometry, so the line's colour stays locked to the element's ring
-    // (otherwise a sticky stop scrolling past would flip the line green↔red).
-    const segs: SegSpec[] = [];
-    for (let idx = 0; idx < sequence.length - 1; idx++) {
-      const back = (issuesByElement.get(sequence[idx + 1]!.element) ?? []).some(
-        (issue) => issue.rule === "visual-order-mismatch" && !issue.ignored,
-      );
-      segs.push({ back, tip: () => segTip(back, idx + 1, idx + 2) });
-    }
-
-    // Off-sequence markers: elements that violate a rule but aren't tab stops at
-    // all (interactive-but-not-focusable). They get a ⊘ glyph, not a number.
-    const offStops: StopSpec[] = [];
-    for (const [element, issues] of issuesByElement) {
-      if (inSeq.has(element)) {
-        continue;
-      }
-      // null number → ⊘ glyph; not a tab stop, so no tabindex/autofocus to show.
-      offStops.push(makeStop(element, null, selectorFor(element), null, issues, false));
-    }
-
+    // The overlay's own controls are graded like page content (they stay in the
+    // result), but drawing their markers would scribble on the panel itself.
+    const { stops, segs, offStops } = buildDrawModel(result, (element) => layer.contains(element));
     renderer.draw(stops, segs, offStops);
     renderer.seed();
     tracker.observe(renderer.elementsToObserve());
@@ -255,79 +196,26 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   return handle;
 }
 
-// A stable per-element id. Keys the signature on element identity, not selector:
-// repeated structures (a virtual list's recycled rows) share one selector, so a
-// selector-keyed signature misses an element swap when the count is unchanged.
-const elementIds = new WeakMap<Element, number>();
-let nextElementId = 1;
-function elementId(element: Element): number {
-  let id = elementIds.get(element);
-  if (id === undefined) {
-    id = nextElementId++;
-    elementIds.set(element, id);
+const PANEL_STATE_KEY = "ooo:trace";
+
+interface PanelState {
+  visible: boolean;
+  peek: boolean;
+  open: boolean;
+  copyFormat: AuditFormat;
+}
+
+function loadPanelState(): Partial<PanelState> {
+  try {
+    const saved: unknown = JSON.parse(sessionStorage.getItem(PANEL_STATE_KEY) ?? "{}");
+    return saved !== null && typeof saved === "object" ? (saved as Partial<PanelState>) : {};
+  } catch {
+    return {};
   }
-  return id;
 }
 
-// A stable string of everything the overlay renders: the ordered stops plus each
-// element's rule ids. Same signature means a rebuild would draw the same thing.
-// Geometry is excluded; the position tracker handles movement without a re-analyze.
-function resultSignature(result: AuditResult): string {
-  const order = result.sequence.map((entry) => elementId(entry.element)).join(">");
-  const vios = result.violations
-    .flatMap((violation) =>
-      violation.issues.map(
-        (issue) => `${elementId(violation.element)}:${issue.rule}${issue.ignored ? "!" : ""}`,
-      ),
-    )
-    .sort()
-    .join("|");
-  return `${order}#${vios}`;
-}
-
-/** Build a badge spec for one element: its colour-driving severity and a tooltip.
-    The dom-accessibility-api reads are the costliest part of a redraw and most
-    badges are never hovered, so they run inside the tip thunk, not eagerly here. */
-function makeStop(
-  element: Element,
-  num: number | null,
-  selector: string,
-  tabIndex: number | null,
-  issues: Issue[],
-  inSeq: boolean,
-): StopSpec {
-  const label = num !== null ? String(num) : "⊘";
-  // autofocus marks where load-focus lands; moot for off-sequence (unfocusable) marks.
-  const autofocus = inSeq && element.hasAttribute("autofocus");
-  return {
-    element,
-    label,
-    severity: worstSeverity(issues),
-    inSeq,
-    autofocus,
-    tip: () =>
-      badgeTip({
-        num,
-        selector,
-        tabIndex,
-        issues,
-        name: computeAccessibleName(element).trim(),
-        role: getRole(element) ?? "",
-        description: computeAccessibleDescription(element).trim(),
-        autofocus,
-        srOnly: isScreenReaderOnly(element),
-      }),
-  };
-}
-
-/** The worst severity among an element's issues (error outranks warning), or
-    null when it has none. Drives the badge/ring colour: one element, one colour,
-    set by its most serious problem. Ignored (data-ooo-ignore) findings don't
-    count, so an element whose only findings are approved reads as clean. */
-function worstSeverity(issues: Issue[]): Severity | null {
-  const live = issues.filter((issue) => !issue.ignored);
-  if (live.some((issue) => issue.severity === "error")) {
-    return "error";
-  }
-  return live.length ? "warning" : null;
+function patchPanelState(patch: Partial<PanelState>): void {
+  try {
+    sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify({ ...loadPanelState(), ...patch }));
+  } catch {}
 }

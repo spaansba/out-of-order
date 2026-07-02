@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/cli",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "description": "Audit any URL's tab order from the command line: prints findings to stdout, pipe them into an AI agent or a CI gate.",
   "keywords": [
     "a11y",
@@ -32,16 +32,18 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "pnpm run build && vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@out-of-order/core": "workspace:*",
-    "@out-of-order/trace": "workspace:*",
     "playwright": "^1.47.0"
   },
   "devDependencies": {
+    "@out-of-order/core": "workspace:*",
+    "@out-of-order/trace": "workspace:*",
     "@types/node": "^20.14.0",
     "tsup": "^8.2.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
   }
 }

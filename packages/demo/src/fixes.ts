@@ -138,6 +138,9 @@ function collectSolvers(reimplPairs: ReimplPair[]): { anchor: Element | null; fi
     document.querySelector(selector) as ElementType | null;
   const qsa = (selector: string) =>
     Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+  // An element inside a host's (declarative, open) shadow root, for case Q's fixes.
+  const shadowIn = (hostId: string, selector: string): HTMLElement | null =>
+    document.getElementById(hostId)?.shadowRoot?.querySelector(selector) ?? null;
 
   const scramble = qsa(".scramble input");
   const redundant = qsa(".redundant-tab");
@@ -158,17 +161,21 @@ function collectSolvers(reimplPairs: ReimplPair[]): { anchor: Element | null; fi
     },
     // B · reorder the stacked buttons to match their visual top-to-bottom position.
     { anchor: stacked, fix: reorderByTop(stacked) },
-    // C · the toolbar already reads Delete→Cut on screen; only the DOM disagrees.
-    // Reorder the buttons into their on-screen (left-to-right) order and drop the
-    // row-reverse, so the toolbar looks pixel-identical but tab order now follows it.
+    // C · both reversed toolbars already read correctly on screen; only the DOM
+    // disagrees. Reorder the buttons into their on-screen reading order (left-to-
+    // right, or right-to-left under dir="rtl") and drop the row-reverse, so each
+    // toolbar looks pixel-identical but tab order now follows it.
     {
-      anchor: queryOne("#rtl-toolbar"),
-      fix: paintInDomOrder(queryOne("#rtl-toolbar")),
+      anchor: queryOne("#reversed-toolbar"),
+      fix: combine(
+        paintInDomOrder(queryOne("#reversed-toolbar")),
+        paintInDomOrder(queryOne("#rtl-reversed-toolbar")),
+      ),
     },
     { anchor: hidden, fix: setAttrs(hidden, [["aria-hidden", null]]) },
-    // E · four ways to be invisible-but-tabbable (opacity:0, zero size, off-screen,
-    // clipped). Each is hidden on purpose, so the fix takes it out of the tab order
-    // rather than revealing something the author meant to keep hidden.
+    // E · three ways to be invisible-but-tabbable (opacity:0, zero size, off-screen).
+    // Each is hidden on purpose, so the fix takes it out of the tab order rather
+    // than revealing something the author meant to keep hidden.
     {
       anchor: invisible[0] ?? null,
       fix: combine(...invisible.map((input) => setAttrs(input, [["tabindex", "-1"]]))),
@@ -227,6 +234,19 @@ function collectSolvers(reimplPairs: ReimplPair[]): { anchor: Element | null; fi
     // N · a <button> nested inside an <a href> stacks two tab stops on one spot.
     // Lift the button out so the link and the button become siblings.
     { anchor: nestedLink, fix: unnest(nestedLink, nestedBtn) },
+    // Q · the shadow-DOM showcase, one combined fix across its four hosts: unhide
+    // the aria-hidden host, make the shadow control tabbable, drop the stranded
+    // autofocus, and stop the host from being a tab stop around its shadow button.
+    // The middle two edits land *inside* a shadow root, which the overlay watches too.
+    {
+      anchor: queryOne("#shadow-hidden"),
+      fix: combine(
+        setAttrs(queryOne("#shadow-hidden"), [["aria-hidden", null]]),
+        setAttrs(shadowIn("shadow-clickable", "[role='button']"), [["tabindex", "0"]]),
+        setAttrs(shadowIn("shadow-autofocus", "[autofocus]"), [["autofocus", null]]),
+        setAttrs(queryOne("#shadow-nested"), [["tabindex", null]]),
+      ),
+    },
     // P · the custom rule's card (no-shouting, run via trace's `rules` option): the
     // button label is ALL CAPS. Drop it to sentence case.
     { anchor: shouty, fix: setText(shouty, "Click me now") },
@@ -508,19 +528,21 @@ function reorderChildren(
 }
 
 // Card C's reorder. Like reorderByTop but for a flex row: the buttons are sorted
-// into their visual left-to-right order and the container is switched from
-// row-reverse to a plain left-aligned row, so the new DOM order paints exactly what
-// was already on screen — the toolbar is pixel-identical, but tab order now matches
-// it. The snippet shows the container with its children so both halves read: the
-// style normalising (row-reverse → row) and the buttons resequencing beneath it.
+// into their visual reading order (left-to-right, or right-to-left when the toolbar
+// is dir="rtl") and the container is switched from row-reverse to a plain row, so
+// the new DOM order paints exactly what was already on screen — the toolbar is
+// pixel-identical, but tab order now matches it. The snippet shows the container
+// with its children so both halves read: the style normalising (row-reverse → row)
+// and the buttons resequencing beneath it.
 function paintInDomOrder(toolbar: HTMLElement | null): Fix {
   if (!toolbar) {
     return NOOP;
   }
-  const { original, sorted, apply, revert } = reorderChildren(
-    toolbar,
-    (element) => element.getBoundingClientRect().left,
-  );
+  const rtl = getComputedStyle(toolbar).direction === "rtl";
+  const { original, sorted, apply, revert } = reorderChildren(toolbar, (element) => {
+    const left = element.getBoundingClientRect().left;
+    return rtl ? -left : left;
+  });
   const styleEdits: [string, string][] = [
     ["flex-direction", "row"],
     ["justify-content", "flex-start"],
@@ -592,13 +614,10 @@ function within(container: Element | null, fix: Fix): Fix {
   return { ...fix, before: nest(fix.before), after: nest(fix.after) };
 }
 
-// Snapshot an element's opening tag as tokens. The class attribute is dropped
-// entirely: it never affects the tab order, and it also carries the overlay's own
-// injected classes (ooo-ring …) as noise, so it only distracts from the fix.
 function tagOf(element: Element, changed: Set<string>): Tag {
   const attrs: Attr[] = [];
   for (const attr of Array.from(element.attributes)) {
-    if (attr.name === "class") {
+    if (attr.name === "class" || attr.name === "data-ooo-ring") {
       continue;
     }
     attrs.push({

@@ -247,13 +247,37 @@ audit(document.body, {
         >
       </section>
 
-      <section class="group">
+      <section class="group" id="custom-rule">
         <h2>Adding your own rule</h2>
         <p class="note">
-          A rule is just a pure function over the computed sequence. Write one and pass it alongside
-          the built-ins, and it shows up in the result and on the overlay like any other. See the
-          <a href="./recipes.html#custom-rule">custom-rule recipe</a> and the
-          <a href="./api.html#rule">Rule type</a>.
+          A rule is a pure function over the computed sequence. Pass yours through the
+          <code>rules</code> option and it runs with the built-ins, both in the result and on the
+          overlay.
+        </p>
+        <pre class="code">
+import { trace } from "@out-of-order/trace";
+import type { Rule } from "@out-of-order/core";
+
+const noShouting: Rule = {
+  id: "no-shouting",
+  defaultSeverity: "warning",
+  run: (sequence) =>
+    sequence
+      .filter((entry) => {
+        const text = entry.element.textContent?.trim() ?? "";
+        return text !== "" &amp;&amp; text === text.toUpperCase();
+      })
+      .map((entry) => ({
+        message: "This label is ALL CAPS, which reads as shouting. Use sentence case.",
+        target: entry,
+      })),
+};
+
+trace({ rules: [noShouting] });</pre
+        >
+        <p class="note">
+          The full <a href="./api.html#rule">Rule, RuleRun, and Finding types</a> are on the API
+          page.
         </p>
       </section>
     </main>

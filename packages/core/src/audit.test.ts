@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { audit } from "../src/index.js";
-import { ALL_RULES } from "../src/rules.js";
+import { audit } from "./index.js";
+import { ALL_RULES } from "./rules/index.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-const allIssues = (root: ParentNode, options?: Parameters<typeof audit>[1]) =>
+const allIssues = (root: Document | Element, options?: Parameters<typeof audit>[1]) =>
   audit(root, options).violations.flatMap((violation) => violation.issues);
 
 describe("audit", () => {
@@ -73,6 +73,15 @@ describe("audit", () => {
     expect(issue.docs).toBe(ALL_RULES["missing-accessible-name"].docs);
   });
 
+  test("keeps orderIndex when a bare-element finding hits a tab stop", () => {
+    // duplicate-autofocus targets bare Elements; the loser is still a tab stop.
+    document.body.innerHTML = "<button autofocus>A</button><button autofocus>B</button>";
+    const second = document.querySelectorAll("button")[1]!;
+    const violation = audit(document.body).violations.find((v) => v.element === second)!;
+    expect(violation.issues.map((i) => i.rule)).toContain("duplicate-autofocus");
+    expect(violation.orderIndex).toBe(1);
+  });
+
   test("focus-escapes-modal collapses leaked background controls into one issue", () => {
     document.body.innerHTML =
       '<button>Bg1</button><button>Bg2</button><a href="#x">Bg3</a>' +
@@ -109,52 +118,20 @@ describe("audit", () => {
       warn.mockRestore();
     }
   });
-});
 
-describe("format", () => {
-  // A positive tabindex (no-positive-tabindex) and an unnamed button
-  // (missing-accessible-name): two rules across two elements.
-  const markup = '<button tabindex="1">Jump</button><button></button>';
-
-  test("default keeps the structured Violation[] with live elements", () => {
-    document.body.innerHTML = markup;
-    const { violations } = audit(document.body);
-    expect(Array.isArray(violations)).toBe(true);
-    expect(violations[0]!.element).toBeInstanceOf(Element);
-  });
-
-  test("text renders a human-readable string, always AuditResult", () => {
-    document.body.innerHTML = markup;
-    const result = audit(document.body, { format: "text" });
-    expect(result.valid).toBe(false);
-    expect(result.sequence.length).toBeGreaterThan(0);
-    expect(typeof result.violations).toBe("string");
-    expect(result.violations).toContain("no-positive-tabindex");
-  });
-
-  test("text includes each issue's docs link, the spec people paste into a PR", () => {
-    document.body.innerHTML = markup;
-    const text = audit(document.body, { format: "text" }).violations;
-    expect(text).toContain(ALL_RULES["no-positive-tabindex"].docs);
-  });
-
-  test("text says so when there is nothing to report", () => {
-    document.body.innerHTML = "<p>just text</p>";
-    expect(audit(document.body, { format: "text" }).violations).toBe("No tab-order issues.");
-  });
-
-  test("by-element mirrors Violation[] with selectors, no live nodes", () => {
-    document.body.innerHTML = markup;
-    const violations = audit(document.body, { format: "by-element" }).violations;
-    expect(violations).toHaveLength(2);
-    expect(violations[0]).toMatchObject({
-      selector: expect.any(String),
-      issues: expect.any(Array),
-    });
-    expect(violations[0]!.issueCount).toBe(violations[0]!.issues.length);
-    expect("element" in violations[0]!).toBe(false);
-    // Round-trips through JSON, unlike the live-Element default.
-    expect(() => JSON.stringify(violations)).not.toThrow();
+  test("warns once when a custom rule reuses a built-in rule id", () => {
+    document.body.innerHTML = "<button>Ok</button>";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const shadowing = { id: "no-positive-tabindex", severity: "error", run: () => [] };
+    const options = { customRules: [shadowing] } as unknown as Parameters<typeof audit>[1];
+    try {
+      audit(document.body, options);
+      audit(document.body, options);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain("no-positive-tabindex");
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
@@ -235,15 +212,6 @@ describe("data-ooo-ignore", () => {
       .find((i) => i.rule === "missing-accessible-name")!;
     expect(unnamed.ignored).toBeFalsy();
     expect(result.valid).toBe(false);
-  });
-
-  test("text and by-element views surface the approval", () => {
-    document.body.innerHTML = "<button data-ooo-ignore></button>";
-    expect(audit(document.body, { format: "text" }).violations).toContain(
-      "ignored via data-ooo-ignore",
-    );
-    const entries = audit(document.body, { format: "by-element" }).violations;
-    expect(entries.some((entry) => entry.issues.some((i) => i.ignored))).toBe(true);
   });
 });
 

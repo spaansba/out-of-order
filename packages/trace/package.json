@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/trace",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "description": "Drop a visual overlay on any page: numbered tab stops, the path between them, and a11y findings ringed in place.",
   "keywords": [
     "a11y",
@@ -21,7 +21,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "type": "module",
   "main": "./src/index.ts",

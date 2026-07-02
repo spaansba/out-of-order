@@ -1,76 +1,59 @@
-/** Tooltip content, built on first hover so a redraw doesn't pay for HTML the
-    pointer never opens. */
 export type Tip = () => string;
 
-function resolver(tip: Tip): () => string {
-  let html: string | null = null;
-  return () => (html ??= tip());
-}
+const HIDE_DELAY = 150;
 
 export class Tooltip {
-  private readonly element: HTMLDivElement;
-  private readonly cursor: HTMLDivElement;
-  private hideTimer: ReturnType<typeof setTimeout> | null = null;
-  // Grace period for the cursor to travel from the target into the tooltip.
-  private static readonly HIDE_DELAY = 150;
+  private readonly anchor: HTMLDivElement;
+  private readonly pop: HTMLDivElement;
+  private hideTimer: number | undefined;
 
   constructor(parent: HTMLElement) {
-    this.cursor = document.createElement("div");
-    this.cursor.className = "ooo-tip-cursor";
-    parent.appendChild(this.cursor);
-
-    this.element = document.createElement("div");
-    this.element.className = "ooo-tip";
-    this.element.setAttribute("popover", "manual");
-    parent.appendChild(this.element);
-
-    // Wired once (not per target) so they don't accumulate. Hovering the tooltip
-    // keeps it open for selecting/copying; leaving it schedules the hide.
-    this.element.addEventListener("mouseenter", () => this.cancelHide());
-    this.element.addEventListener("mouseleave", () => this.scheduleHide());
+    this.anchor = document.createElement("div");
+    this.anchor.className = "ooo-tip-anchor";
+    this.pop = document.createElement("div");
+    this.pop.className = "ooo-tip";
+    this.pop.popover = "manual";
+    parent.append(this.anchor, this.pop);
+    this.pop.addEventListener("mouseenter", () => clearTimeout(this.hideTimer));
+    this.pop.addEventListener("mouseleave", () => this.hideSoon());
   }
 
-  /** Wire a hover target (badge or hop line) so its tooltip pops where the pointer
-      meets it. Badges sit right under the pointer and a long backward hop's
-      endpoints can sit far from where you hover, so the pointer suits both. */
-  wire(target: Element, tip: Tip): void {
-    const html = resolver(tip);
-    target.addEventListener("mouseenter", (event) => this.show(html(), event as MouseEvent));
-    target.addEventListener("mouseleave", () => this.scheduleHide());
-  }
-
-  private show(html: string, event: MouseEvent): void {
-    this.cancelHide();
-    this.cursor.style.left = `${event.clientX}px`;
-    this.cursor.style.top = `${event.clientY}px`;
-    this.element.innerHTML = html;
-    if (!this.element.matches(":popover-open")) {
-      this.element.showPopover();
-    }
-  }
-
-  private scheduleHide(): void {
-    this.cancelHide();
-    this.hideTimer = setTimeout(() => this.hide(), Tooltip.HIDE_DELAY);
-  }
-
-  private cancelHide(): void {
-    if (this.hideTimer !== null) {
+  /** atMouse anchors the tip at the pointer instead of the target's centre, for
+      long thin targets (hop lines) where the centre can be far from the cursor. */
+  wire(target: Element, tip: Tip, atMouse = false): void {
+    target.addEventListener("mouseenter", (event) => {
       clearTimeout(this.hideTimer);
-      this.hideTimer = null;
-    }
+      let x: number;
+      let y: number;
+      if (atMouse && event instanceof MouseEvent) {
+        x = event.clientX;
+        y = event.clientY;
+      } else {
+        const rect = target.getBoundingClientRect();
+        x = rect.left + rect.width / 2;
+        y = rect.top + rect.height / 2;
+      }
+      this.anchor.style.left = `${x}px`;
+      this.anchor.style.top = `${y}px`;
+      this.pop.innerHTML = tip();
+      this.pop.togglePopover(true);
+    });
+    target.addEventListener("mouseleave", () => this.hideSoon());
+  }
+
+  private hideSoon(): void {
+    clearTimeout(this.hideTimer);
+    this.hideTimer = window.setTimeout(() => this.hide(), HIDE_DELAY);
   }
 
   hide(): void {
-    this.cancelHide();
-    if (this.element.matches(":popover-open")) {
-      this.element.hidePopover();
-    }
+    clearTimeout(this.hideTimer);
+    this.pop.togglePopover(false);
   }
 
   destroy(): void {
     this.hide();
-    this.element.remove();
-    this.cursor.remove();
+    this.pop.remove();
+    this.anchor.remove();
   }
 }

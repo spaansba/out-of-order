@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import "@out-of-order/vitest";
 
-// Runs under the real jsdom environment (its user agent contains "jsdom"), so it
+// Runs under the real jsdom environment (which has no layout engine), so it
 // proves the matcher refuses to produce a misleading result rather than silently
 // auditing a layout-less DOM.
 describe("real-browser guard (jsdom)", () => {

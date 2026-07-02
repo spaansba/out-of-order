@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { isInteractive, selectorFor } from "../src/index.js";
+import { isInteractive } from "./semantics.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -10,23 +10,6 @@ function el(html: string): Element {
   document.body.innerHTML = html;
   return document.body.firstElementChild!;
 }
-
-describe("selectorFor", () => {
-  test("keeps the first id and first class, joined with >", () => {
-    document.body.innerHTML =
-      '<div id="card" class="ignored"><button class="btn alt">B</button></div>';
-    // id short-circuits the div (its class is dropped); only the first class of
-    // the button survives.
-    expect(selectorFor(document.querySelector("button")!)).toBe("div#card > button.btn");
-  });
-
-  test("caps the path at four ancestors", () => {
-    document.body.innerHTML =
-      "<section><article><div><span><button>X</button></span></div></article></section>";
-    // section and body are beyond the depth cap, so they're left off.
-    expect(selectorFor(document.querySelector("button")!)).toBe("article > div > span > button");
-  });
-});
 
 describe("isInteractive", () => {
   test("native controls and a link with href need a name", () => {
@@ -51,5 +34,10 @@ describe("isInteractive", () => {
     expect(isInteractive(el('<div role="checkbox">x</div>'))).toBe(true);
     expect(isInteractive(el('<div role="presentation">x</div>'))).toBe(false);
     expect(isInteractive(el("<div>plain</div>"))).toBe(false);
+  });
+
+  test("a multi-token role resolves to its first token", () => {
+    expect(isInteractive(el('<div role="button link">x</div>'))).toBe(true);
+    expect(isInteractive(el('<div role=" presentation button ">x</div>'))).toBe(false);
   });
 });

@@ -1,16 +1,11 @@
 import { ensureRingStyles } from "./styles.js";
-import { OVERLAY_CLASS_PREFIX, type Severity } from "@out-of-order/core";
+import type { Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
-// The overlay's CSS namespace, shared with core so the prefix can't drift: core
-// strips any class starting with it when building selectors, so the overlay's own
-// rings/badges never leak into analysis.
-const RING_CLASS = `${OVERLAY_CLASS_PREFIX}ring`;
-const RING_BAD_CLASS = `${RING_CLASS}--bad`;
-const RING_WARN_CLASS = `${RING_CLASS}--warn`;
-
-/** All three ring states, so a rebuild/destroy can strip whichever one is set. */
-const RING_CLASSES = [RING_CLASS, RING_WARN_CLASS, RING_BAD_CLASS];
+/** Rings mark violating elements on the page itself (badges live in the layer).
+    An attribute rather than a class keeps the page's class lists untouched, so
+    the analyzer's selectors never see the overlay's own markup. */
+const RING_ATTR = "data-ooo-ring";
 
 const SVG_NS = "http://www.w3.org/2000/svg" as const;
 /** Badge radius, and how far to pull a segment back from each badge so the line
@@ -89,11 +84,10 @@ export class Renderer {
   private markers: Marker[] = [];
   private segments: Segment[] = [];
   private readonly byEl = new Map<Element, Marker>();
-  // Elements we've ringed, with the class applied, kept so we can untag them on
-  // rebuild/destroy and toggle them when the overlay is hidden.
-  private ringEls: { element: Element; cls: string }[] = [];
+  // Elements we've ringed, with the severity value applied, kept so we can untag
+  // them on rebuild/destroy and toggle them when the overlay is hidden.
+  private ringEls: { element: Element; value: string }[] = [];
   // The rings live on the page, not in the hideable layer, so their visibility is
-  // tracked here and applied by class — otherwise "Hide overlay" leaves them behind.
   private ringsVisible = true;
   // The badge of the currently keyboard-focused element, filled in as a cursor.
   private focused: Marker | null = null;
@@ -132,9 +126,7 @@ export class Renderer {
       segLayer.append(hit, line);
       this.segments.push({ from, toMarker, line, hit, back });
       if (back) {
-        // Pop the tooltip where the pointer meets the line: a long backward hop's
-        // endpoints can sit far from where you're actually hovering.
-        this.tooltip.wire(hit, tip);
+        this.tooltip.wire(hit, tip, true);
       }
     }
 
@@ -180,14 +172,18 @@ export class Renderer {
 
   /** Toggle the page-element rings with the overlay's visibility. They sit on the
       page rather than inside the hideable layer, so hiding the layer alone leaves
-      them; this drives them by class and survives a rebuild (see markRing). */
+      them; this drives them per element and survives a rebuild (see markRing). */
   setRingsVisible(visible: boolean): void {
     if (this.ringsVisible === visible) {
       return;
     }
     this.ringsVisible = visible;
-    for (const { element, cls } of this.ringEls) {
-      element.classList.toggle(cls, visible);
+    for (const { element, value } of this.ringEls) {
+      if (visible) {
+        element.setAttribute(RING_ATTR, value);
+      } else {
+        element.removeAttribute(RING_ATTR);
+      }
     }
   }
 
@@ -201,7 +197,7 @@ export class Renderer {
     this.sizeW = 0;
     this.sizeH = 0;
     for (const { element } of this.ringEls) {
-      element.classList.remove(...RING_CLASSES);
+      element.removeAttribute(RING_ATTR);
     }
     this.ringEls = [];
   }
@@ -251,13 +247,12 @@ export class Renderer {
   }
 
   private markRing(element: Element, severity: Severity | null): void {
-    const ringClass =
-      severity === "error" ? RING_BAD_CLASS : severity === "warning" ? RING_WARN_CLASS : RING_CLASS;
-    // Keep the class off while hidden so a rebuild mid-hide doesn't repaint the ring.
+    const value = severity === "error" ? "bad" : severity === "warning" ? "warn" : "ok";
+    // Keep the attribute off while hidden so a rebuild mid-hide doesn't repaint the ring.
     if (this.ringsVisible) {
-      element.classList.add(ringClass);
+      element.setAttribute(RING_ATTR, value);
     }
-    this.ringEls.push({ element, cls: ringClass });
+    this.ringEls.push({ element, value });
     // Elements inside a shadow root need the rule mirrored in; document styles
     // don't cross the boundary.
     const root = element.getRootNode();

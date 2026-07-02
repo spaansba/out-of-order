@@ -4,13 +4,13 @@ import { wireSolvers } from "./fixes.js";
 import { wireModal } from "./modal.js";
 import { restoreAutofocus, wireTriage } from "./triage.js";
 
-// A custom rule (not part of core), passed through trace's `rules` option so it runs
+// A custom rule (not part of core), passed through `audit.customRules` so it runs
 // on the overlay next to the built-ins - see the all-caps card. It flags any tab stop
 // whose label is ALL CAPS.
 const noShouting: Rule = {
   id: "no-shouting",
   docs: "https://www.rfc-editor.org/rfc/rfc1855",
-  defaultSeverity: "warning",
+  severity: "warning",
   run: (sequence) =>
     sequence
       .filter((entry) => {
@@ -23,7 +23,7 @@ const noShouting: Rule = {
       })),
 };
 
-const overlay = trace({ rules: [noShouting] });
+const overlay = trace({ audit: { customRules: [noShouting] } });
 
 // Each card gets a "Solve" button; the overlay re-analyzes on DOM mutation, so a
 // fix just touches the DOM and that card's badges flip green on their own.

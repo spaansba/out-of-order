@@ -1,30 +1,45 @@
 import { expect } from "vitest";
-import { audit, type AuditOptions, type AuditResult } from "@out-of-order/core";
+import { audit, formatViolations, type AuditOptions, type AuditResult } from "@out-of-order/core";
 
+let layoutConfirmed = false;
+
+// Probe layout instead of sniffing user agents: every simulated DOM (jsdom,
+// happy-dom, whatever comes next) reports zero-size rects, real browsers never do.
 function assertRealBrowser(): void {
-  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
-  if (typeof window === "undefined" || userAgent.includes("jsdom")) {
+  if (typeof document === "undefined") {
     throw new Error(
-      "toHaveValidTabOrder() needs a real browser and found jsdom. Enable Vitest " +
-        "Browser Mode (test.browser.enabled) for these tests. jsdom has no layout " +
-        "engine, so tab order and visibility cannot be measured.",
+      "toHaveValidTabOrder() needs a real browser and found no DOM at all. Enable " +
+        "Vitest Browser Mode (test.browser.enabled) for these tests.",
     );
   }
+  if (layoutConfirmed) {
+    return;
+  }
+
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:absolute;width:10px;height:10px;";
+  document.documentElement.appendChild(probe);
+  const hasLayout = probe.getBoundingClientRect().width > 0;
+  probe.remove();
+
+  if (!hasLayout) {
+    throw new Error(
+      "toHaveValidTabOrder() needs a real browser and found a DOM without a layout " +
+        "engine (jsdom, happy-dom, or similar). Enable Vitest Browser Mode " +
+        "(test.browser.enabled) for these tests. Without layout, tab order and " +
+        "visibility cannot be measured.",
+    );
+  }
+  layoutConfirmed = true;
 }
 
-/** Accept an Element or a Document/DocumentFragment as the assertion target. */
-function resolveRoot(received: unknown): ParentNode {
-  if (
-    received instanceof Element ||
-    received instanceof Document ||
-    received instanceof DocumentFragment
-  ) {
+/** Accept an Element or a Document as the assertion target. */
+function resolveRoot(received: unknown): Document | Element {
+  if (received instanceof Element || received instanceof Document) {
     return received;
   }
   throw new Error(
-    `toHaveValidTabOrder() expects an Element, Document, or DocumentFragment, received: ${String(
-      received,
-    )}`,
+    `toHaveValidTabOrder() expects an Element or Document, received: ${String(received)}`,
   );
 }
 
@@ -35,20 +50,27 @@ expect.extend({
     const result: AuditResult = audit(root, options);
     const { isNot } = this;
 
-    const issueCount = result.violations.reduce(
-      (total, violation) => total + violation.issues.length,
-      0,
+    const active = result.violations.flatMap((violation) =>
+      violation.issues.filter((issue) => !issue.ignored),
     );
+    const errorCount = active.filter((issue) => issue.severity === "error").length;
+    const warningCount = active.length - errorCount;
 
     return {
       pass: result.valid,
       actual: result.violations,
-      message: () =>
-        isNot
-          ? `Expected tab order to be invalid, but no violations were found ` +
-            `(${result.sequence.length} focusable elements checked).`
-          : `Expected a valid tab order, found ${issueCount} issue(s):\n` +
-            audit(root, { ...options, format: "text" }).violations,
+      message: () => {
+        if (isNot) {
+          return active.length > 0
+            ? `Expected tab order to be invalid, but only warnings were found ` +
+                `(warnings don't invalidate the order):\n${formatViolations(result, "text")}`
+            : `Expected tab order to be invalid, but no violations were found ` +
+                `(${result.sequence.length} focusable elements checked).`;
+        }
+        const counts =
+          `${errorCount} error(s)` + (warningCount > 0 ? ` and ${warningCount} warning(s)` : "");
+        return `Expected a valid tab order, found ${counts}:\n` + formatViolations(result, "text");
+      },
     };
   },
 });
@@ -66,6 +88,3 @@ declare module "vitest" {
   interface Assertion<T = any> extends TabOrderMatchers<T> {}
   interface AsymmetricMatchersContaining extends TabOrderMatchers {}
 }
-
-export { audit };
-export type { AuditOptions, AuditResult } from "@out-of-order/core";

@@ -71,6 +71,6 @@ test("signup form tab order", () => {
 });
 ```
 
-The target can be an `Element`, `Document`, or `DocumentFragment`. On failure the message lists every violation with its rule id and tab position.
+The target can be an `Element` or `Document`. On failure the message lists every violation with its rule id and tab position.
 
 > Why Browser Mode and not jsdom? The checks need CSS layout (visibility and visual position). jsdom has no layout engine, so it can't tell you whether the order is correct in a real browser. This matcher only runs where layout is real.

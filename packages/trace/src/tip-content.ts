@@ -63,7 +63,7 @@ export function segTip(back: boolean, from: number, toStop: number): string {
     ? `<span class="ooo-tip-flag ooo-tip-flag--back">↩ reverse</span>`
     : `<span class="ooo-tip-flag">→ forward</span>`;
   const message = back
-    ? "Focus moves against the reading order — up, or right-to-left."
+    ? "Focus moves against the reading order, to an earlier line or backward within one."
     : "Forward in reading order.";
   return (
     `<div class="ooo-tip-head">${flag}<span class="ooo-tip-hop">#${from} → #${toStop}</span></div>` +
@@ -89,9 +89,6 @@ const EXTERNAL_ICON =
   `<path d="M15 4h5v5"/><path d="M20 4l-9 9"/></svg>`;
 
 // The rule id, linked to its spec doc when one is known (always, in practice).
-// tabindex="-1": the tooltip is a hover-only, invoker-less popover, so a keyboard
-// user can never open it to reach the link anyway. Keeping it out of the tab order
-// stops the analyzer (which reads the live DOM) from numbering it as a stray stop.
 function ruleLabel(issue: Issue): string {
   // Amber for warnings, red (the default) for errors, matching badge and ring.
   const cls = issue.severity === "warning" ? "ooo-tip-rule ooo-tip-rule--warn" : "ooo-tip-rule";
@@ -99,7 +96,7 @@ function ruleLabel(issue: Issue): string {
     return `<span class="${cls}">${issue.rule}</span>`;
   }
   return (
-    `<a class="${cls}" href="${escapeHtml(issue.docs)}" target="_blank" rel="noreferrer" tabindex="-1">` +
+    `<a class="${cls}" href="${escapeHtml(issue.docs)}" target="_blank" rel="noreferrer">` +
     `<span>${issue.rule}</span>${EXTERNAL_ICON}</a>`
   );
 }

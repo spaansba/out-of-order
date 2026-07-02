@@ -1,19 +1,13 @@
 export { audit } from "./audit.js";
-export { DEFAULT_SEVERITY } from "./rules.js";
-export type { Rule, Finding } from "./rules.js";
-export { isInteractive, isScreenReaderOnly, selectorFor, isRuleIgnored } from "./dom.js";
-export { OVERLAY_CLASS_PREFIX } from "./overlay-classes.js";
-export type {
-  AuditOptions,
-  AuditFormat,
-  Formatted,
-  ByElement,
-  SerializedIssue,
-  RuleId,
-  RuleOverride,
-  SequenceEntry,
-  Severity,
-  AuditResult,
-  Issue,
-  Violation,
-} from "./types.js";
+export type { AuditOptions, RuleOverride, AuditResult, Issue, Violation } from "./audit.js";
+export { formatViolations } from "./format.js";
+export type { AuditFormat, ByElement, ByViolation, FlatIssue, SerializedIssue } from "./format.js";
+export { DEFAULT_SEVERITY } from "./rules/index.js";
+export type { Rule, Finding, RuleId, SequenceEntry, Severity } from "./rules/index.js";
+export {
+  isInteractive,
+  isScreenReaderOnly,
+  selectorFor,
+  isRuleIgnored,
+  composedDescendants,
+} from "./dom/index.js";

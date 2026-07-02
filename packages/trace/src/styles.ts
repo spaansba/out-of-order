@@ -1,12 +1,13 @@
 // The `.ooo-*` selectors in the CSS below are written out literally for
-// readability; the class names the JS applies live in classes.ts and share its
-// prefix, so they can't drift from this namespace.
+// readability; every class the JS applies shares the same `ooo-` prefix, so the
+// namespace can't drift. Rings are the exception: they mark page elements rather
+// than overlay nodes, so they key on the data-ooo-ring attribute, never a class.
 
 const RING_CSS = `
-.ooo-ring { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
-.ooo-ring--warn { outline: 1.5px dashed rgba(154, 125, 26, 0.8); outline-offset: 2px; }
-.ooo-ring--bad { outline: 1.5px solid rgba(160, 31, 23, 0.74); outline-offset: 2px; }
-.ooo-ring:focus-visible, .ooo-ring--warn:focus-visible, .ooo-ring--bad:focus-visible { outline: revert; }
+[data-ooo-ring] { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
+[data-ooo-ring="warn"] { outline: 1.5px dashed rgba(154, 125, 26, 0.8); outline-offset: 2px; }
+[data-ooo-ring="bad"] { outline: 1.5px solid rgba(160, 31, 23, 0.74); outline-offset: 2px; }
+[data-ooo-ring]:focus-visible { outline: revert; }
 `;
 
 const OVERLAY_CSS = `
@@ -126,13 +127,12 @@ ${RING_CSS}
 .ooo-af circle { fill: var(--ooo-accent); stroke: var(--ooo-surface); stroke-width: 1.5; }
 .ooo-af path { fill: var(--ooo-surface); }
 
-.ooo-tip-cursor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; anchor-name: --ooo-tip-anchor; }
-
+.ooo-tip-anchor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; anchor-name: --ooo-tip-anchor; }
 
 .ooo-tip { position: fixed; position-anchor: --ooo-tip-anchor;
   inset: auto; top: anchor(center); left: anchor(center); margin: 19px 0 0 -11px;
   position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-  pointer-events: auto; 
+  pointer-events: auto; width: max-content; max-width: 360px;
   background-color: var(--ooo-surface);
   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
   color: var(--ooo-ink); border: 1px solid var(--ooo-line-2); border-radius: 2px;
