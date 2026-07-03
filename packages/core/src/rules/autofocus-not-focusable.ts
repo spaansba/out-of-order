@@ -17,7 +17,8 @@ export const autofocusNotFocusable: RuleDef = {
 
       const selector = selectorFor(element);
       out.push({
-        message: `"${selector}" has autofocus but isn't focusable (no tabindex, not a form control), so it's ignored on load. Remove the autofocus, or make the element focusable (e.g. tabindex="-1").`,
+        message: `"${selector}" has autofocus but isn't focusable (no tabindex, not a form control), so it's ignored on load.`,
+        fix: `Remove the autofocus, or make the element focusable (e.g. tabindex="-1").`,
         target: element,
       });
     }

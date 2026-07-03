@@ -20,6 +20,9 @@ export const redundantTabindex: RuleDef = {
       if (!isNativelyFocusable(entry.element)) {
         return null;
       }
-      return `"${entry.selector}" is already focusable, so its tabindex="0" is redundant. Remove the attribute; the element stays in the tab order on its own.`;
+      return {
+        message: `"${entry.selector}" is already focusable, so its tabindex="0" is redundant.`,
+        fix: `Remove the attribute; the element stays in the tab order on its own.`,
+      };
     }),
 };

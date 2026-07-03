@@ -18,7 +18,8 @@ const noShouting: Rule = {
         return letters.length >= 3 && letters === letters.toUpperCase();
       })
       .map((entry) => ({
-        message: "This label is ALL CAPS, which reads as shouting. Use sentence case.",
+        message: "This label is ALL CAPS, which reads as shouting.",
+        fix: "Use sentence case.",
         target: entry,
       })),
 };

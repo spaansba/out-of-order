@@ -14,7 +14,8 @@
         <p>
           Install one package, call one function. This page walks the three ways to run Out of
           Order: the <code>trace()</code> overlay on your own page, <code>audit()</code> in a test
-          or CI, and the CLI against any URL.
+          or CI, and the CLI against any URL. What the rules catch, and how to re-grade or disable
+          one, is on the <a href="./rules.html">rules page</a>.
         </p>
       </div>
 
@@ -38,11 +39,8 @@
           finding ringed in place.
         </p>
         <pre class="code">
-npm i @out-of-order/trace
-
 import { trace } from "@out-of-order/trace";
 
-// No options, so it analyzes the whole document.
 const overlay = trace();
 
 // Later, tear it down. This removes the layer, observers, and listeners.
@@ -60,13 +58,11 @@ overlay.destroy();</pre
         <h2>Check it: <code>@out-of-order/core</code></h2>
         <p class="note">
           The analyzer on its own, no overlay. It gives you the verdict as plain data, which is what
-          you assert in a test or CI, or feed into your own UI. Trace re-exports core, so if you
-          installed the overlay you already have <code>audit()</code>.
+          you assert in a test or CI, or feed into your own UI. Its own install, with no framework
+          or test-runner deps.
         </p>
         <pre class="code">
-npm i @out-of-order/core
-
-import { audit } from "@out-of-order/core";
+import { audit, formatViolations } from "@out-of-order/core";
 
 const result = audit();
 
@@ -75,8 +71,8 @@ result.sequence; // elements in tab order, each with tabIndex + rect
 result.violations; // one entry per element: { element, selector, orderIndex, issues }
 
 if (!result.valid) {
-  // Pass `format` for a ready-to-print string instead of the structured result.
-  console.log(audit(document.body, { format: "text" }).violations);
+  // formatViolations renders a ready-to-print string from the structured result.
+  console.log(formatViolations(result, "text"));
 }</pre
         >
         <p class="note">
@@ -112,51 +108,6 @@ npx @out-of-order/cli https://example.com --overlay        # opens a browser wit
             rel="noopener"
             >CLI README</a
           >.
-        </p>
-      </section>
-
-      <section class="group">
-        <h2>Turn rules up, down, or off</h2>
-        <p class="note">
-          Every rule runs at a default severity. You can override any of them per call. Re-grade a
-          noisy one to a warning, promote another to an error, or switch one off entirely.
-        </p>
-        <pre class="code">
-audit(document.body, {
-  rules: {
-    "visual-order-mismatch": "warning", // re-grade
-    "redundant-tabindex": "error", // promote
-    "prefer-native-element": "off", // disable
-  },
-});
-
-// The same overrides reach the overlay through its `audit` option.
-trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre
-        >
-        <p class="note">
-          The CLI takes the same overrides through
-          <code>--rule</code>, for example <code>--rule prefer-native-element=off</code>. The full
-          list, with what each rule catches, is on the <a href="./rules.html">rules page</a>.
-        </p>
-      </section>
-
-      <section class="group" id="approve">
-        <h2>Approve a finding in place</h2>
-        <p class="note">
-          Some findings are not bugs: a known false positive, or a deliberate choice you have
-          already weighed. Approve one by putting
-          <code>data-ooo-ignore</code> on the flagged element.
-        </p>
-        <pre class="code">
-&lt;!-- Approve every finding on this element --&gt;
-&lt;button data-ooo-ignore&gt;&hellip;&lt;/button&gt;
-
-&lt;!-- Approve only the named rules, leave the rest live --&gt;
-&lt;div data-ooo-ignore="hidden-while-focusable visual-order-mismatch"&gt;&hellip;&lt;/div&gt;</pre
-        >
-        <p class="note">
-          It is element-scoped, so it approves findings on that element only and is never inherited
-          by its descendants.
         </p>
       </section>
     </main>

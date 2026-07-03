@@ -44,6 +44,8 @@ out-of-order login <url> [--auth <file>]
   --auth <file>        Storage-state file to save (login) or load (audit).
                        Default: per-host file under ~/.config/out-of-order/auth.
   --wait <selector>    Wait for a selector before auditing (JS-heavy pages).
+  --tries <n>          Re-audit up to n times, 1s apart, while the page has no
+                       tabbable elements (default: 5).
   --timeout <ms>       Navigation and selector timeout (default: 30000).
   --viewport <WxH>     Viewport size, e.g. 1440x900.
   --overlay            Open a headed browser with the visual overlay; Ctrl-C to quit.
@@ -55,6 +57,12 @@ function fail(message: string): never {
   process.exit(2);
 }
 
+function warn(message: string): void {
+  const text = `WARNING: ${message}`;
+  const styled = process.stderr.isTTY && !process.env.NO_COLOR ? `\x1b[33m${text}\x1b[0m` : text;
+  process.stderr.write(`\n${styled}\n`);
+}
+
 function parseCliArgs() {
   try {
     return parseArgs({
@@ -64,6 +72,7 @@ function parseCliArgs() {
         rule: { type: "string", multiple: true },
         auth: { type: "string" },
         wait: { type: "string" },
+        tries: { type: "string" },
         timeout: { type: "string" },
         viewport: { type: "string" },
         overlay: { type: "boolean", default: false },
@@ -107,7 +116,7 @@ if (urlArgs.length > 1) {
 }
 const url = toUrl(urlArgs[0]!);
 
-if (isLogin && (values.overlay || values.format || values.rule || values.wait)) {
+if (isLogin && (values.overlay || values.format || values.rule || values.wait || values.tries)) {
   fail("login only accepts --auth, --timeout, and --viewport.");
 }
 if (values.overlay && values.format) {
@@ -121,6 +130,7 @@ if (!FORMATS.includes(format)) {
 }
 
 const rules = parseRuleOverrides(values.rule);
+const tries = parseTries(values.tries);
 const timeout = parseTimeout(values.timeout);
 const viewport = parseViewport(values.viewport);
 
@@ -152,6 +162,17 @@ function parseRuleOverrides(entries: string[] | undefined): AuditOptions["rules"
     overrides[id as RuleId] = match[2] as RuleOverride;
   }
   return overrides;
+}
+
+function parseTries(raw: string | undefined): number {
+  if (raw === undefined) {
+    return 5;
+  }
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) {
+    fail(`Invalid --tries "${raw}". Expected a positive integer.`);
+  }
+  return n;
 }
 
 function parseTimeout(raw: string | undefined): number | undefined {
@@ -274,46 +295,106 @@ try {
       process.on("SIGINT", () => done());
     });
   } else {
-    const out = await page.evaluate(
-      ({ format, rules }) => {
-        const ooo = (window as unknown as { __ooo: OooGlobal }).__ooo;
-        const result = ooo.audit(document, { rules });
-        let output: string;
-        if (format === "json") {
-          const sequence = result.sequence.map((entry) => ({
-            selector: entry.selector,
-            orderIndex: entry.orderIndex,
-            tabIndex: entry.tabIndex,
-            rect: {
-              x: entry.rect.x,
-              y: entry.rect.y,
-              width: entry.rect.width,
-              height: entry.rect.height,
-            },
-          }));
-          output = JSON.stringify(
-            {
+    const auditPage = () =>
+      page
+        .evaluate(
+          ({ format, rules }) => {
+            const ooo = (window as unknown as { __ooo: OooGlobal }).__ooo;
+            const result = ooo.audit(document, { rules });
+            let output: string;
+            if (format === "json") {
+              const sequence = result.sequence.map((entry) => ({
+                selector: entry.selector,
+                orderIndex: entry.orderIndex,
+                tabIndex: entry.tabIndex,
+                rect: {
+                  x: entry.rect.x,
+                  y: entry.rect.y,
+                  width: entry.rect.width,
+                  height: entry.rect.height,
+                },
+              }));
+              output = JSON.stringify(
+                {
+                  valid: result.valid,
+                  sequence,
+                  violations: ooo.formatViolations(result, "by-element"),
+                },
+                null,
+                2,
+              );
+            } else {
+              const formatted = ooo.formatViolations(result, format);
+              output =
+                typeof formatted === "string" ? formatted : JSON.stringify(formatted, null, 2);
+            }
+            return {
+              output,
               valid: result.valid,
-              sequence,
-              violations: ooo.formatViolations(result, "by-element"),
-            },
-            null,
-            2,
-          );
-        } else {
-          const formatted = ooo.formatViolations(result, format);
-          output = typeof formatted === "string" ? formatted : JSON.stringify(formatted, null, 2);
-        }
-        return { output, valid: result.valid, stops: result.sequence.length };
-      },
-      { format, rules },
-    );
+              stops: result.sequence.length,
+              hasPasswordField: document.querySelector('input[type="password"]') !== null,
+            };
+          },
+          { format, rules },
+        )
+        .catch((err: unknown) => {
+          // A client-side redirect can land mid-audit and destroy the context;
+          // that is a retry, not a failure.
+          if (err instanceof Error && err.message.includes("context was destroyed")) {
+            return undefined;
+          }
+          throw err;
+        });
 
-    process.stdout.write(out.output + "\n");
-    if (out.stops === 0) {
+    // SPAs are often still an empty shell at load, or redirect right after
+    // it. Retry until something tabbable renders.
+    let out = await auditPage();
+    for (let attempt = 1; out === undefined || out.stops === 0; attempt++) {
       process.stderr.write(
-        "No tabbable elements found: the audit graded an empty page. " +
-          "If the page renders after load (SPA, loading screen), re-run with --wait <selector>.\n",
+        `Try ${attempt}/${tries}: ${out ? "found 0 tabbable elements" : "the page navigated mid-audit"}.\n`,
+      );
+      if (attempt === tries) {
+        break;
+      }
+      await page.waitForTimeout(1000);
+      out = await auditPage();
+    }
+    if (out === undefined) {
+      throw new Error(
+        "The page kept navigating while being audited. Re-run with --wait <selector>.",
+      );
+    }
+
+    if (out.stops > 0) {
+      process.stderr.write(`Found ${out.stops} tabbable element${out.stops === 1 ? "" : "s"}.\n\n`);
+    }
+    process.stdout.write(out.output + "\n");
+
+    // Auth walls silently swap the page under the audit, so grading one is
+    // almost always a mistake worth flagging. The URL check catches
+    // password-less first steps (SSO, magic links).
+    const finalUrl = new URL(page.url());
+    const loginLikeUrl = /\b(log[-_]?in|sign[-_]?in|sso|auth(enticate|orize)?|oauth2?)\b/i.test(
+      finalUrl.host + finalUrl.pathname,
+    );
+    if (/^https?:$/.test(finalUrl.protocol) && (out.hasPasswordField || loginLikeUrl)) {
+      const reason = out.hasPasswordField
+        ? "it has a password field"
+        : "its URL looks like an auth page";
+      warn(
+        auth.load
+          ? `This looks like a login page (${reason}), so the saved session may have expired. ` +
+              `Refresh it with: out-of-order login ${url}`
+          : `This looks like a login page (${reason}). If you meant to audit the page behind it, ` +
+              `sign in once with "out-of-order login ${url}" and re-run. ` +
+              `Later audits of this host pick the session up automatically.`,
+      );
+    }
+    if (out.stops === 0) {
+      warn(
+        `No tabbable elements found on any of the ${tries} ${tries === 1 ? "try" : "tries"}: ` +
+          "the audit graded an empty page. If the page needs longer to render, " +
+          "re-run with --wait <selector> or raise --tries.",
       );
       process.exitCode = 2;
     } else {

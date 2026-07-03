@@ -108,7 +108,11 @@ const overlay = trace();</pre
         <p class="note">
           A check reads the page as it is the instant it runs. It sees the live DOM and its computed
           styles, including styles behind state selectors like <code>:focus</code>, but it never
-          fires events or runs the page's own JavaScript.
+          fires events or runs the page's own JavaScript. Handlers bound with
+          <code>addEventListener</code> (what Vue <code>@click</code>, React <code>onClick</code>,
+          and most frameworks compile to) leave no DOM trace, so a bare
+          <code>&lt;div @click&gt;</code> with no role is invisible to it. Give custom controls a
+          real role or a native element.
         </p>
         <p class="note">
           So state a script only produces at runtime is invisible to it. If a handler reveals a
@@ -116,7 +120,7 @@ const overlay = trace();</pre
           flag the element as invisible even though a keyboard user would be fine. When that
           happens, drive the interaction yourself, in a test or by hand, and run the check again on
           the state you actually get. A finding you have already weighed can be
-          <a href="./getting-started.html#approve">approved in place</a>.
+          <a href="./rules.html#approve">approved in place</a>.
         </p>
         <p class="note">
           A few things sit in the tab order in real browsers but are left out on purpose, because
@@ -156,13 +160,24 @@ const overlay = trace();</pre
             <tr>
               <td><code>@out-of-order/trace</code></td>
               <td>
-                The framework-agnostic live overlay, built on the analyzer. It re-exports core, so
-                one install covers both modes.
+                The framework-agnostic live overlay, built on the analyzer.
                 <a href="./api.html#trace">API &rarr;</a>
               </td>
               <td>
                 You want to see the tab path and findings on a live page. This is the one most
                 people want.
+              </td>
+            </tr>
+            <tr>
+              <td><code>@out-of-order/vitest</code></td>
+              <td>
+                A <code>toHaveValidTabOrder()</code> matcher for Vitest Browser Mode, built on the
+                analyzer. Released, but the API is still settling.
+                <a href="./api.html#vitest">API &rarr;</a>
+              </td>
+              <td>
+                You already run Vitest Browser Mode and want the check as a one-line assertion in
+                your component tests.
               </td>
             </tr>
             <tr>
@@ -180,10 +195,7 @@ const overlay = trace();</pre
             </tr>
           </tbody>
         </table>
-        <p class="note">
-          A test-runner matcher (Vitest Browser Mode) and a Playwright adapter share the same core
-          and are in progress.
-        </p>
+        <p class="note">A Playwright adapter, sharing the same core, is in progress.</p>
       </section>
     </main>
     <script type="module" src="./src/docs.ts"></script>

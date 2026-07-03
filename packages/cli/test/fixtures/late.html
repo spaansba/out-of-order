@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Late render</title>
+  </head>
+  <body>
+    <script>
+      setTimeout(() => {
+        const button = document.createElement("button");
+        button.textContent = "Late";
+        document.body.append(button);
+      }, 1500);
+    </script>
+  </body>
+</html>

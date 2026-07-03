@@ -169,6 +169,11 @@ a.ooo-tip-rule:hover > span { text-decoration: underline; text-underline-offset:
 .ooo-tip-rule-ic { flex: none; opacity: 0.55; }
 a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
 .ooo-tip-msg { display: block; margin: 0; color: var(--ooo-ink-2); font-size: 12.5px; }
+.ooo-tip-fix { display: block; margin-top: 5px; padding-left: 9px;
+  border-left: 2px solid var(--ooo-line-2); color: var(--ooo-ink-2); font-size: 12px; }
+.ooo-tip-fix-label { display: block;
+  font: 600 9.5px/1.6 var(--ooo-mono);
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--ooo-muted-2); }
 .ooo-tip-ok { margin: 0; color: var(--ooo-ok-strong); font-size: 12.5px; }
 .ooo-tip-item--ignored { opacity: 0.7; }
 .ooo-tip-item--ignored .ooo-tip-rule { color: var(--ooo-muted-2); }

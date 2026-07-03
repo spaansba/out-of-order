@@ -8,7 +8,6 @@ Audit any URL's tab order from the command line. It drives real Chromium (via [P
 
 ```bash
 npx @out-of-order/cli <url> [options]
-npx @out-of-order/cli login <url>
 ```
 
 Playwright's Chromium must be present (once per machine):
@@ -22,6 +21,9 @@ npx playwright install chromium
 ```bash
 # text report to stdout, exits non-zero if the page has errors
 npx @out-of-order/cli https://example.com
+
+# open a headed browser with the live overlay
+npx @out-of-order/cli https://example.com --overlay
 
 # machine-readable output, grouped per element
 npx @out-of-order/cli https://example.com --format by-element
@@ -37,16 +39,13 @@ npx @out-of-order/cli https://example.com --wait "main [role=dialog]"
 
 # audit the mobile layout
 npx @out-of-order/cli https://example.com --viewport 390x844
-
-# open a headed browser with the live overlay, Ctrl-C to quit
-npx @out-of-order/cli https://example.com --overlay
 ```
 
 Auditing your own app on every change? Use the [`@out-of-order/vitest`](../vitest) matcher in your test suite instead. The CLI is for pages you don't have a test harness around: a deployed site, a staging URL, someone else's page.
 
 ## Pages behind a login
 
-Log in once, by hand, in a real browser:
+Only needed when the page is gated behind a login (Playwright's [authentication docs](https://playwright.dev/docs/auth) explain the mechanism). Log in once, by hand, in a real browser:
 
 ```bash
 npx @out-of-order/cli login https://app.example.com
@@ -75,6 +74,7 @@ The file is a Playwright [storage state](https://playwright.dev/docs/auth): it c
 | `--rule <id>=<lvl>` | Set a rule to `off`, `error`, or `warning`. Repeatable. Also applies to the overlay.                                                |
 | `--auth <file>`     | Storage-state file to save (`login`) or load (audit). Default: a per-host file under `~/.config/out-of-order/auth/`.                |
 | `--wait <selector>` | Wait for a selector before auditing (JS-heavy pages).                                                                               |
+| `--tries <n>`       | Re-audit up to `n` times, 1s apart, while the page has no tabbable elements (default: 5).                                           |
 | `--timeout <ms>`    | Navigation and selector timeout (default: 30000).                                                                                   |
 | `--viewport <WxH>`  | Viewport size, e.g. `1440x900`.                                                                                                     |
 | `--overlay`         | Open a headed browser with the visual overlay instead of printing.                                                                  |

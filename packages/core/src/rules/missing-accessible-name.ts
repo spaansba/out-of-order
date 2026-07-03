@@ -17,6 +17,9 @@ export const missingAccessibleName: RuleDef = {
       if (computeAccessibleName(entry.element).trim() !== "") {
         return null;
       }
-      return `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`;
+      return {
+        message: `Focusable element "${entry.selector}" has no accessible name (no text, aria-label, aria-labelledby, associated label, alt, or title).`,
+        fix: `Give it a name: visible text, an associated <label>, alt text, or aria-label.`,
+      };
     }),
 };

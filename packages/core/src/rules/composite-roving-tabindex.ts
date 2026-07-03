@@ -34,7 +34,8 @@ export const compositeRovingTabindex: RuleDef = {
       const role = explicitRole(container);
       const [first, ...rest] = members;
       out.push({
-        message: `${members.length} items inside role="${role}" are separate tab stops. A ${role} should expose one tab stop and move between items with the arrow keys (roving tabindex).`,
+        message: `${members.length} items inside role="${role}" are separate tab stops, but a ${role} should expose only one.`,
+        fix: `Give the ${role} a single tab stop and move between items with the arrow keys (roving tabindex).`,
         target: first!,
         relatedElements: rest.map((entry) => entry.element),
       });

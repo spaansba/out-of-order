@@ -177,42 +177,23 @@ code {
   }
 }
 
-/* ---- index: a collapsible contents list, built in triage.ts, splitting the cards into
-   their error/warning groups in the same order they now run down the page ---- */
+/* ---- index: the contents list, split into groups in the same order they run
+   down the page (built in triage.ts on the playground) ---- */
 .index {
   margin: 1.7rem 0 0.5rem;
   padding-top: 1.2rem;
   padding-bottom: 0.8rem;
   border-top: 1px solid var(--line);
 }
-.index-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  list-style: none;
-  font: 600 10.5px/1 var(--font-mono);
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--accent);
-
-  &::-webkit-details-marker {
-    display: none;
-  }
-  &::before {
-    content: "▸";
-    font-size: 0.92em;
-    transition: transform 0.12s ease;
-  }
-}
-.index[open] .index-summary::before {
-  transform: rotate(90deg);
-}
 .index-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 1.1rem 2.4rem;
-  margin-top: 1.2rem;
+}
+.index-col {
+  display: grid;
+  gap: 1.1rem;
+  align-content: start;
 }
 .index-head {
   display: block;
@@ -358,24 +339,6 @@ section.group > h2 {
   letter-spacing: -0.01em;
   color: var(--ink);
   text-transform: none;
-}
-/* a hover-reveal anchor beside each indexed heading, the way a docs contents page
-   marks its sections; hidden until the entry (or the link itself) is hovered/focused */
-.header-anchor {
-  margin-left: 0.45rem;
-  font: 500 0.78em/1 var(--font-mono);
-  color: var(--accent-2);
-  text-decoration: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-
-  &:hover,
-  &:focus-visible {
-    opacity: 1;
-  }
-  &:hover {
-    text-decoration: underline;
-  }
 }
 section.group > p.note,
 .note {
@@ -935,6 +898,9 @@ dialog.modal-native {
       left: 2.4rem;
     }
   }
+  .pkg {
+    padding-left: 3rem;
+  }
   .scramble {
     grid-template-columns: 1fr;
   }
@@ -986,6 +952,42 @@ dialog.modal-native {
     margin: 0 0.4rem;
     color: var(--line-2);
   }
+}
+
+/* the API page's package blocks: each npm package opens on a doubled rule with a
+   spec-sheet header (name, install line, one-line summary), and the ledger
+   numbering restarts inside every block */
+.pkg-block {
+  counter-reset: section;
+  margin-top: 3.2rem;
+}
+.pkg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 1.2rem;
+  margin: 0 0 1.3rem;
+  padding: 1.25rem 0 0 var(--gutter);
+  border-top: 3px double var(--line-2);
+
+  h2 {
+    margin: 0;
+    font: 600 15px/1.2 var(--font-mono);
+    letter-spacing: 0.02em;
+    color: var(--accent);
+  }
+  p {
+    flex-basis: 100%;
+    margin: 0;
+    max-width: 64ch;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+}
+.pkg-install {
+  margin-left: auto;
+  font: 500 11.5px/1.4 var(--font-mono);
+  color: var(--muted);
 }
 
 /* a neutral code block (no diff caption); same inset as .snippet pre */
