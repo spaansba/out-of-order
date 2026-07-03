@@ -1,5 +1,12 @@
 # @out-of-order/vitest
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [[`d99c2e1`](https://github.com/spaansba/out-of-order/commit/d99c2e1904886123f12dc16d1a5c3027b0355028)]:
+  - @out-of-order/core@0.3.0
+
 ## 0.1.2
 
 ### Patch Changes
