@@ -33,6 +33,8 @@ interface TraceOptions {
   motion?: MotionMode;
   /** Modifier that toggles overlay click-through ("peek"). Defaults to "Alt". */
   peekKey?: ModifierKey;
+  /** Mount the floating in-page control panel. Defaults to true. */
+  controls?: boolean;
   /** Called after every re-analysis with the fresh result. */
   onResult?: (result: AuditResult) => void;
 }

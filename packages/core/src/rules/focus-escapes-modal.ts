@@ -34,8 +34,8 @@ export const focusEscapesModal: RuleDef = {
     const first = leaked[0]!;
     const subject =
       leaked.length === 1
-        ? `"${first.selector}" outside it is still tabbable`
-        : `${leaked.length} controls outside it are still tabbable (e.g. "${first.selector}")`;
+        ? `this control outside it is still tabbable`
+        : `${leaked.length} controls outside it (this one included) are still tabbable`;
 
     return [
       {

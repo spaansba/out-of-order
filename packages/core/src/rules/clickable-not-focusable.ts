@@ -5,7 +5,6 @@ import {
   isFocusManaged,
   isInert,
   looksClickable,
-  selectorFor,
 } from "../dom/index.js";
 import type { Finding, RuleDef } from "./rule.js";
 
@@ -64,9 +63,8 @@ export const clickableNotFocusable: RuleDef = {
       if (!isDisplayed(element)) {
         continue;
       }
-      const selector = selectorFor(element);
       out.push({
-        message: `"${selector}" looks interactive (role or onclick) but is not in the tab order, so keyboard users can't reach it.`,
+        message: `Element looks interactive (role or onclick) but is not in the tab order, so keyboard users can't reach it.`,
         fix: `Use a <button>/<a>, or add tabindex="0" plus Enter/Space handlers.`,
         target: element,
       });

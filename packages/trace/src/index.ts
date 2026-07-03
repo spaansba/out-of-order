@@ -11,7 +11,7 @@ import { Renderer } from "./render.js";
 import { Tracker } from "./track.js";
 import { Mutations } from "./mutations.js";
 import { buildDrawModel, resultSignature } from "./model.js";
-import { setupControls, type ModifierKey } from "./controls.js";
+import { headlessControls, setupControls, type ModifierKey } from "./controls.js";
 
 export type MotionMode = "auto" | "on" | "off";
 
@@ -27,6 +27,10 @@ export interface TraceOptions {
   /** Tap this modifier to toggle the overlay click-through ("peek" at the page
       beneath) without hiding it; tap again to restore. Defaults to "Alt". */
   peekKey?: ModifierKey;
+  /** Mount the floating in-page control panel. Defaults to true. Turn it off
+      when the host brings its own controls (e.g. the browser extension); the
+      peek key keeps working. */
+  controls?: boolean;
   /** Called after every re-analysis with the fresh result. The first call is
       synchronous, before trace() returns. */
   onResult?: (result: AuditResult) => void;
@@ -115,23 +119,27 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     patchPanelState({ peek: next });
   };
 
-  const controls = setupControls(layer, {
-    peekKey: options.peekKey ?? "Alt",
-    open: saved.open ?? true,
-    copyFormat: saved.copyFormat ?? "by-element",
-    onToggleVisible: () => setVisible(!visible),
-    // Peek does nothing with the overlay hidden, so ignore the toggle then.
-    onTogglePeek: () => visible && setPeek(!peeking),
-    onToggleOpen: (open) => patchPanelState({ open }),
-    onCopyFormat: (copyFormat) => patchPanelState({ copyFormat }),
-    // handle.result is always set by the time the copy button can be clicked:
-    // build() runs synchronously before trace() returns.
-    getReport: (format) => {
-      const result = handle.result ?? audit(options.root ?? document, options.audit);
-      const report = formatViolations(result, format);
-      return typeof report === "string" ? report : JSON.stringify(report, null, 2);
-    },
-  });
+  const controls =
+    options.controls === false
+      ? // Peek does nothing with the overlay hidden, so ignore the toggle then.
+        headlessControls(options.peekKey ?? "Alt", () => visible && setPeek(!peeking))
+      : setupControls(layer, {
+          peekKey: options.peekKey ?? "Alt",
+          open: saved.open ?? true,
+          copyFormat: saved.copyFormat ?? "by-element",
+          onToggleVisible: () => setVisible(!visible),
+          // Peek does nothing with the overlay hidden, so ignore the toggle then.
+          onTogglePeek: () => visible && setPeek(!peeking),
+          onToggleOpen: (open) => patchPanelState({ open }),
+          onCopyFormat: (copyFormat) => patchPanelState({ copyFormat }),
+          // handle.result is always set by the time the copy button can be clicked:
+          // build() runs synchronously before trace() returns.
+          getReport: (format) => {
+            const result = handle.result ?? audit(options.root ?? document, options.audit);
+            const report = formatViolations(result, format);
+            return typeof report === "string" ? report : JSON.stringify(report, null, 2);
+          },
+        });
 
   // Replay the persisted state now the panel exists to mirror it. Peek is moot (and
   // disabled) while hidden, so only restore it when the overlay is shown.

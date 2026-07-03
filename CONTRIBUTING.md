@@ -10,15 +10,16 @@ Thanks for helping out!!
 
 ## Layout
 
-| Package                                     | What it is                                                                           |
-| ------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [`@out-of-order/core`](./packages/core)     | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result.              |
-| [`@out-of-order/trace`](./packages/trace)   | Live visual overlay built on the core analyzer.                                      |
-| [`@out-of-order/vitest`](./packages/vitest) | `toHaveValidTabOrder()` matcher for Vitest Browser Mode.                             |
-| [`@out-of-order/cli`](./packages/cli)       | Audit any URL's tab order from the terminal.                                         |
-| [`@out-of-order/demo`](./packages/demo)     | The Vite demo site (private, not published). Use this as PlayGround while developing |
+| Package                                           | What it is                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`@out-of-order/core`](./packages/core)           | Pure analyzer. Wraps `tabbable`, applies rules, returns a plain result.              |
+| [`@out-of-order/trace`](./packages/trace)         | Live visual overlay built on the core analyzer.                                      |
+| [`@out-of-order/vitest`](./packages/vitest)       | `toHaveValidTabOrder()` matcher for Vitest Browser Mode.                             |
+| [`@out-of-order/cli`](./packages/cli)             | Audit any URL's tab order from the terminal.                                         |
+| [`@out-of-order/extension`](./packages/extension) | Chrome side panel that audits the current tab (private, shipped to the Web Store).   |
+| [`@out-of-order/demo`](./packages/demo)           | The Vite demo site (private, not published). Use this as PlayGround while developing |
 
-Everything flows from `core`. `trace`, `vitest`, and `cli` are thin layers on top of `audit`, so most behavior changes start in `packages/core/src`.
+Everything flows from `core`. `trace`, `vitest`, `cli`, and the extension are thin layers on top of `audit`, so most behavior changes start in `packages/core/src`.
 
 ## Setup
 
@@ -43,9 +44,31 @@ pnpm dev          # serve the demo site
 
 The suites use [Vitest Browser Mode](https://vitest.dev/guide/browser/) driving real Chromium through Playwright. This is deliberate: `tabbable` and the visibility rules need real layout, so a green jsdom test would not prove the tab order is correct on screen. Please keep new assertions inside Browser Mode rather than reaching for jsdom.
 
+## Working on the Chrome extension
+
+```bash
+pnpm --filter @out-of-order/extension dev
+```
+
+Then `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick `packages/extension/dist`. Click the toolbar icon to open the side panel. After a rebuild, hit the reload arrow on the extension's card and reopen the panel.
+
+Watch-mode caveat: edits under `public/` alone don't retrigger a build. Save a `src/` file or run `pnpm --filter @out-of-order/extension build`.
+
+Icons render from `packages/extension/icon.svg` via `pnpm --filter @out-of-order/extension icons`. The PNGs are checked in, re-run only after editing the SVG.
+
+### Shipping the extension (maintainers)
+
+The extension never goes to npm. Changesets bump its `package.json` like any other package, and the build stamps that version into `dist/manifest.json`. After the Version Packages PR merges:
+
+```bash
+pnpm --filter @out-of-order/extension zip
+```
+
+Upload the resulting `out-of-order-extension-v<version>.zip` in the [Chrome Web Store dashboard](https://chrome.google.com/webstore/devconsole).
+
 ## Releasing (Changesets)
 
-Every pull request that changes a published package (`core`, `trace`, `cli`, `vitest`) **must include a changeset**.
+Every pull request that changes a released package (`core`, `trace`, `cli`, `vitest`, `extension`) **must include a changeset**.
 From the repo root:
 
 ```bash

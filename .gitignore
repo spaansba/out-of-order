@@ -5,4 +5,5 @@ dist/
 .DS_Store
 coverage/
 __screenshots__/
+packages/extension/*.zip
 CLAUDE.md

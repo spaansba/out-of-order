@@ -1,0 +1,233 @@
+:root {
+  --ooo-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ooo-ink: #18191c;
+  --ooo-ink-2: #34352d;
+  --ooo-muted: #74756d;
+  --ooo-muted-2: #8a8b80;
+  --ooo-line: #dcd9cd;
+  --ooo-line-2: #c6c2b4;
+  --ooo-surface: #fffefb;
+  --ooo-btn: #ecebe4;
+  --ooo-accent: #1f4e79;
+  --ooo-ok: #2f6a47;
+  --ooo-ok-strong: #1f7a44;
+  --ooo-warn: #9a7d1a;
+  --ooo-bad: #a01f17;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ooo-surface);
+  color: var(--ooo-ink);
+  font:
+    13px/1.5 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f5f4ef;
+  border-bottom: 1px solid var(--ooo-line);
+}
+
+.title {
+  color: var(--ooo-ink);
+  font: 600 12px/1 var(--ooo-mono);
+  letter-spacing: 0.01em;
+}
+
+.target {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ooo-muted);
+  font: 500 11px/1 var(--ooo-mono);
+}
+
+.status {
+  margin: 10px 12px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ooo-line-2);
+  border-radius: 3px;
+  background: #f5f4ef;
+  color: var(--ooo-ink-2);
+  font-size: 12px;
+}
+
+.status[data-kind="error"] {
+  border-color: var(--ooo-bad);
+  color: var(--ooo-bad);
+}
+
+#grant {
+  margin: 10px 12px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--ooo-line-2);
+  border-radius: 3px;
+  background: var(--ooo-btn);
+  color: var(--ooo-ink-2);
+  font: 600 11px/1 var(--ooo-mono);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
+}
+
+#grant:hover {
+  background: #e2e0d6;
+  border-color: #b7b3a4;
+  color: var(--ooo-ink);
+}
+
+#results {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ooo-muted);
+  font-size: 12px;
+}
+
+.summary {
+  margin: 0;
+  color: var(--ooo-ink-2);
+  font: 500 12px/1.5 var(--ooo-mono);
+}
+
+.summary--ok {
+  color: var(--ooo-ok-strong);
+}
+
+.finding {
+  border: 1px solid var(--ooo-line);
+  border-radius: 3px;
+  background: var(--ooo-surface);
+}
+
+.finding-selector {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--ooo-line);
+  border-radius: 3px 3px 0 0;
+  background: #f5f4ef;
+  text-align: left;
+  cursor: pointer;
+}
+
+.finding-selector:hover {
+  background: #eeece3;
+}
+
+.finding-order {
+  flex: none;
+  color: var(--ooo-accent);
+  font: 600 12px/1.4 var(--ooo-mono);
+}
+
+.finding-path {
+  min-width: 0;
+  color: var(--ooo-ink-2);
+  font: 12px/1.45 var(--ooo-mono);
+  word-break: break-word;
+}
+
+.issue {
+  padding: 8px 10px;
+}
+
+.issue + .issue {
+  border-top: 1px solid var(--ooo-line);
+}
+
+.issue-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 3px;
+}
+
+.chip {
+  padding: 1px 5px;
+  border-radius: 2px;
+  font: 600 9.5px/1.5 var(--ooo-mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ooo-surface);
+}
+
+.chip--error {
+  background: var(--ooo-bad);
+}
+
+.chip--warning {
+  background: var(--ooo-warn);
+}
+
+.issue-rule {
+  color: var(--ooo-ink-2);
+  font: 600 10px/1.4 var(--ooo-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+a.issue-rule:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.issue-msg {
+  margin: 0;
+  color: var(--ooo-ink-2);
+  font-size: 12.5px;
+}
+
+.issue-fix {
+  margin: 5px 0 0;
+  padding-left: 9px;
+  border-left: 2px solid var(--ooo-line-2);
+  color: var(--ooo-ink-2);
+  font-size: 12px;
+}
+
+.issue-fix-label {
+  display: block;
+  font: 600 9.5px/1.6 var(--ooo-mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ooo-muted-2);
+}
+
+.issue-ignored {
+  margin: 4px 0 0;
+  color: var(--ooo-muted);
+  font-size: 11.5px;
+}
+
+.issue--ignored {
+  opacity: 0.7;
+}

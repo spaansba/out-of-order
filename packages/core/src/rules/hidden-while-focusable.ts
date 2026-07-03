@@ -243,7 +243,7 @@ export const hiddenWhileFocusable: RuleDef = {
       const reason = hiddenReason(entry.element, entry.rect, revealOnFocus);
       return reason
         ? {
-            message: `"${entry.selector}" is tabbable but ${reason}.`,
+            message: `Element is tabbable but ${reason}.`,
             fix: `Hide it from the tab order too (display:none, the hidden attribute, or tabindex="-1"). If it's revealed on :hover, reveal it on :focus as well so keyboard users can see it.`,
           }
         : null;

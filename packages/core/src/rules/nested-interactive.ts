@@ -19,8 +19,8 @@ export const nestedInteractive: RuleDef = {
 
         out.push({
           message: inSequence.has(node)
-            ? `"${entry.selector}" is focusable but nested inside another focusable element ("${selectorFor(node)}"). Nesting interactive controls stacks two tab stops in one place and can hide the inner control's role/name from screen readers.`
-            : `"${entry.selector}" is focusable but nested inside an interactive element ("${selectorFor(node)}"). Nesting interactive controls can hide the inner control's role/name from screen readers.`,
+            ? `Element is focusable but nested inside another focusable element ("${selectorFor(node)}"). Nesting interactive controls stacks two tab stops in one place and can hide the inner control's role/name from screen readers.`
+            : `Element is focusable but nested inside an interactive element ("${selectorFor(node)}"). Nesting interactive controls can hide the inner control's role/name from screen readers.`,
           fix: inSequence.has(node)
             ? `Don't put a focusable element inside another; move the inner control out.`
             : `Don't put a focusable element inside another interactive one; move the inner control out.`,

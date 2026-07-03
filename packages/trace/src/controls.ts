@@ -33,6 +33,17 @@ interface Controls {
   teardown(): void;
 }
 
+/** The panel-less variant: no UI, but the peek key keeps working. */
+export function headlessControls(peekKey: ModifierKey, onTogglePeek: () => void): Controls {
+  const abort = new AbortController();
+  listenForPeekKey(peekKey, abort.signal, onTogglePeek);
+  return {
+    syncVisible: () => {},
+    syncPeek: () => {},
+    teardown: () => abort.abort(),
+  };
+}
+
 export function setupControls(layer: HTMLElement, opts: ControlsOptions): Controls {
   const abort = new AbortController();
   const signal = abort.signal;

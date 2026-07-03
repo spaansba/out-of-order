@@ -37,7 +37,7 @@ export const tabindexOnNoninteractive: RuleDef = {
         return null;
       }
       return {
-        message: `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control), so it adds a dead stop to the tab order.`,
+        message: `Element has tabindex="0" but is non-interactive (no role, not a control), so it adds a dead stop to the tab order.`,
         fix: `If it's decorative, remove the tabindex; if it's meant to be a control, give it a real role (or use a <button>).`,
       };
     }),

@@ -1,6 +1,21 @@
 import { isNativelyFocusable } from "../dom/index.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
+function focusableBecause(element: Element): string {
+  const tag = element.tagName.toLowerCase();
+  const article = "aeiou".includes(tag[0]!) ? "an" : "a";
+  if (tag === "a" || tag === "area") {
+    return `${article} <${tag}> with an href`;
+  }
+  if (tag === "audio" || tag === "video") {
+    return `${article} <${tag}> with controls`;
+  }
+  if (tag === "summary") {
+    return `a <details> element's <summary>`;
+  }
+  return `${article} <${tag}>`;
+}
+
 /** A natively focusable element (<button>, <a href>, <input>, …) carrying an
     explicit tabindex="0". It's already a tab stop, so the attribute is a no-op:
     redundant markup that adds noise and invites a positive value to creep in later.
@@ -21,8 +36,8 @@ export const redundantTabindex: RuleDef = {
         return null;
       }
       return {
-        message: `"${entry.selector}" is already focusable, so its tabindex="0" is redundant.`,
-        fix: `Remove the attribute; the element stays in the tab order on its own.`,
+        message: `Element is ${focusableBecause(entry.element)}, which is focusable by default, so its tabindex="0" is redundant.`,
+        fix: `Remove the tabindex.`,
       };
     }),
 };

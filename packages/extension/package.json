@@ -1,0 +1,41 @@
+{
+  "name": "@out-of-order/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome side panel that audits the current tab's keyboard tab order: findings with fix suggestions, click to locate elements on the page.",
+  "keywords": [
+    "a11y",
+    "accessibility",
+    "chrome-extension",
+    "focus",
+    "tab-order"
+  ],
+  "homepage": "https://github.com/spaansba/out-of-order#readme",
+  "bugs": "https://github.com/spaansba/out-of-order/issues",
+  "license": "MIT",
+  "author": "Bart Spaans",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spaansba/out-of-order.git",
+    "directory": "packages/extension"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "icons": "node scripts/render-icons.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "zip": "pnpm run build && rm -f out-of-order-extension-*.zip && cd dist && zip -rqX \"../out-of-order-extension-v$npm_package_version.zip\" ."
+  },
+  "devDependencies": {
+    "@out-of-order/core": "workspace:*",
+    "@out-of-order/trace": "workspace:*",
+    "@types/chrome": "^0.0.278",
+    "@vitest/browser": "^2.1.0",
+    "playwright": "^1.47.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  }
+}

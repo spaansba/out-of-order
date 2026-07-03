@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Out of Order",
+  "version": "0.0.0",
+  "description": "Audit the keyboard tab order of any page: findings with fix suggestions in a side panel.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Audit tab order (opens side panel)"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "permissions": ["scripting", "sidePanel"],
+  "optional_host_permissions": ["<all_urls>"]
+}

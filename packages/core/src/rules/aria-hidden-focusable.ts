@@ -8,7 +8,7 @@ export const ariaHiddenFocusable: RuleDef = {
     flagEntries(sequence, (entry) =>
       inAriaHidden(entry.element)
         ? {
-            message: `"${entry.selector}" is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce.`,
+            message: `Element is tabbable but inside aria-hidden="true", so a screen-reader user lands on a control the SR won't announce.`,
             fix: `Add tabindex="-1"/inert, or remove aria-hidden.`,
           }
         : null,

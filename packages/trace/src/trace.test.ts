@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { trace, type TraceHandle } from "./index.js";
+import { trace, type TraceHandle, type TraceOptions } from "./index.js";
 
 let handle: TraceHandle | null = null;
 let root: HTMLElement;
 
 /** Mount a fresh, scoped overlay over `html`. */
-function mount(html: string): TraceHandle {
+function mount(html: string, options: Omit<TraceOptions, "root"> = {}): TraceHandle {
   root = document.createElement("div");
   root.innerHTML = html;
   document.body.appendChild(root);
-  handle = trace({ root });
+  handle = trace({ root, ...options });
   return handle;
 }
 
@@ -116,6 +116,16 @@ describe("trace", () => {
     expect(layer().dataset.oooPeek).toBe("off");
     handle!.setVisible(true);
     expect(peek.disabled).toBe(false);
+  });
+
+  test("controls: false skips the panel but keeps the overlay and peek key", () => {
+    mount("<button>A</button>", { controls: false });
+    expect(layer().querySelector(".ooo-panel")).toBeNull();
+    expect(numbered()).toHaveLength(1);
+    tapAlt();
+    expect(layer().dataset.oooPeek).toBe("on");
+    tapAlt();
+    expect(layer().dataset.oooPeek).toBe("off");
   });
 
   test("the title collapses and expands the panel", () => {

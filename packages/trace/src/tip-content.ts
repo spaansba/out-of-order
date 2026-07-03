@@ -57,7 +57,7 @@ function issueItem(issue: Issue): string {
     : "";
   return (
     `<li class="${cls}">${ruleLabel(issue)}` +
-    `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span>${fix}${note}</li>`
+    `<span class="ooo-tip-msg">${escapeHtml(issue.message)}</span>${fix}${note}</li>`
   );
 }
 
@@ -102,12 +102,6 @@ function ruleLabel(issue: Issue): string {
     `<a class="${cls}" href="${escapeHtml(issue.docs)}" target="_blank" rel="noreferrer">` +
     `<span>${issue.rule}</span>${EXTERNAL_ICON}</a>`
   );
-}
-
-/** Messages start with the selector for log/test use; the tooltip already shows
-    it in the header, so trim a leading `"selector" ` to avoid repeating it. */
-function stripSelectorPrefix(message: string): string {
-  return message.replace(/^"[^"]*"\s*/, "");
 }
 
 const HTML_ESCAPES: Record<string, string> = {

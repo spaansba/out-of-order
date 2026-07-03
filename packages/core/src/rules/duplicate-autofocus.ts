@@ -1,5 +1,5 @@
 import { isFocusable } from "tabbable";
-import { composedDescendants, selectorFor } from "../dom/index.js";
+import { composedDescendants } from "../dom/index.js";
 import type { RuleDef } from "./rule.js";
 
 /** autofocus applies to any *focusable* element (even tabindex="-1" non-stops), and
@@ -18,10 +18,8 @@ export const duplicateAutofocus: RuleDef = {
     }
 
     return focusableAutofocus.slice(1).map((element) => {
-      const selector = selectorFor(element);
-
       return {
-        message: `"${selector}" also has autofocus, but a page can autofocus only one element; the first focusable one in document order wins, so this one is silently ignored.`,
+        message: `Element also has autofocus, but a page can autofocus only one element; the first focusable one in document order wins, so this one is silently ignored.`,
         fix: `Remove the extra autofocus.`,
         target: element,
       };
