@@ -67,12 +67,6 @@ export function wireTriage(): () => void {
   const index = buildIndex();
   intro.after(index);
 
-  // Add the per-heading anchor links after the index is built: titleOf reads the h2's
-  // text, so the "#" link must not exist yet or it would leak into the index labels.
-  for (const section of sections) {
-    addHeaderAnchor(section);
-  }
-
   return () => {
     index.remove();
     // Reinsert each card at its recorded spot, last-to-first so every `next` anchor is
@@ -81,27 +75,11 @@ export function wireTriage(): () => void {
       const { section, parent, next } = home[i]!;
       parent.insertBefore(section, next);
       delete section.dataset.severity;
-      section.querySelector(":scope > h2 > .header-anchor")?.remove();
       section
         .querySelectorAll(".rule-tag")
         .forEach((tag) => tag.classList.remove("is-error", "is-warning", "is-approved"));
     }
   };
-}
-
-// A hover-reveal anchor beside each indexed heading, the way a docs contents page marks
-// its sections.
-function addHeaderAnchor(section: HTMLElement): void {
-  const heading = section.querySelector<HTMLElement>(":scope > h2");
-  if (!heading || heading.querySelector(".header-anchor")) {
-    return;
-  }
-  const anchor = document.createElement("a");
-  anchor.className = "header-anchor";
-  anchor.href = `#${section.id}`;
-  anchor.setAttribute("aria-label", `Link to "${titleOf(section)}"`);
-  anchor.textContent = "#";
-  heading.appendChild(anchor);
 }
 
 // Grade a card from its rule tags. Each tag gets its own severity pill; the card itself
@@ -147,28 +125,32 @@ function buildIndex(): HTMLElement {
   const nav = document.createElement("nav");
   nav.className = "index-grid";
   nav.setAttribute("aria-label", "Violations index");
-  for (const bucket of ["error", "warning", "other"] as Bucket[]) {
-    if (!counts[bucket]) {
-      continue;
-    }
+  // Explicit columns rather than row-major grid flow, so the index's own tab
+  // order runs down the left column first: the first bucket left, the rest right.
+  const buckets = (["error", "warning", "other"] as Bucket[]).filter((bucket) => counts[bucket]);
+  const columns = [document.createElement("div"), document.createElement("div")];
+  for (const column of columns) {
+    column.className = "index-col";
+  }
+  for (const bucket of buckets) {
     const group = document.createElement("div");
     group.className = "index-group";
     const head = document.createElement("span");
     head.className = `index-head is-${bucket}`;
     head.textContent = `${SECTION_LABEL[bucket]} · ${counts[bucket]}`;
     group.append(head, lists[bucket]);
-    nav.appendChild(group);
+    columns[bucket === buckets[0] ? 0 : 1]!.appendChild(group);
+  }
+  for (const column of columns) {
+    if (column.childElementCount) {
+      nav.appendChild(column);
+    }
   }
 
-  // Collapsed by default: a native <details> so the toggle is keyboard-operable and the
-  // links inside stay out of the tab order until the reader opens it.
-  const details = document.createElement("details");
-  details.className = "index";
-  const summary = document.createElement("summary");
-  summary.className = "index-summary";
-  summary.textContent = `Contents · ${ordered.length}`;
-  details.append(summary, nav);
-  return details;
+  const wrap = document.createElement("div");
+  wrap.className = "index";
+  wrap.appendChild(nav);
+  return wrap;
 }
 
 function makeList(): HTMLOListElement {

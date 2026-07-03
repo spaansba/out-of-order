@@ -6,7 +6,10 @@ export const noPositiveTabindex: RuleDef = {
   run: (sequence) =>
     flagEntries(sequence, (entry) =>
       entry.tabIndex > 0
-        ? `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile; use 0 or restructure the DOM.`
+        ? {
+            message: `Element has tabindex="${entry.tabIndex}". Positive tabindex overrides the natural DOM order and is fragile.`,
+            fix: `Use tabindex="0" or restructure the DOM.`,
+          }
         : null,
     ),
 };

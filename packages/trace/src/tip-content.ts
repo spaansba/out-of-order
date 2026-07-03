@@ -52,9 +52,12 @@ function issueItem(issue: Issue): string {
   const note = issue.ignored
     ? `<span class="ooo-tip-ignored">Ignored via <code>data-ooo-ignore</code></span>`
     : "";
+  const fix = issue.fix
+    ? `<span class="ooo-tip-fix"><span class="ooo-tip-fix-label">Possible fix</span>${escapeHtml(issue.fix)}</span>`
+    : "";
   return (
     `<li class="${cls}">${ruleLabel(issue)}` +
-    `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span>${note}</li>`
+    `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span>${fix}${note}</li>`
   );
 }
 

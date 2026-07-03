@@ -13,6 +13,7 @@ export interface SerializedIssue {
   rule: Issue["rule"];
   severity: Severity;
   message: string;
+  fix?: string;
   docs?: string;
   /** Selectors of the elements sharing this issue's root cause. */
   related?: string[];
@@ -42,6 +43,7 @@ export interface ByViolation {
     selector: string;
     orderIndex?: number;
     message: string;
+    fix?: string;
     related?: string[];
     ignored?: boolean;
   }[];
@@ -89,6 +91,7 @@ function serialize(issue: Issue): SerializedIssue {
     rule: issue.rule,
     severity: issue.severity,
     message: issue.message,
+    fix: issue.fix,
     docs: issue.docs,
     related: related(issue),
     ignored: issue.ignored,
@@ -123,6 +126,7 @@ function byViolation(violations: Violation[]): ByViolation[] {
         selector: violation.selector,
         orderIndex: violation.orderIndex,
         message: issue.message,
+        fix: issue.fix,
         related: related(issue),
         ignored: issue.ignored,
       });
@@ -158,6 +162,7 @@ function renderText(violations: Violation[]): string {
             `  - ${issue.severity.toUpperCase()} [${issue.rule}] ${issue.message}` +
             (rel?.length ? ` (related: ${rel.join(", ")})` : "") +
             (issue.ignored ? " (ignored via data-ooo-ignore)" : "") +
+            (issue.fix ? `\n    Possible fix: ${issue.fix}` : "") +
             (issue.docs ? `\n    ${issue.docs}` : "")
           );
         })

@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,12 +42,11 @@ function storageState(host: string): string {
   });
 }
 
-async function withCookieServer(body: (origin: string) => Promise<void>): Promise<void> {
-  const server: Server = createServer((req, res) => {
-    const loggedIn = req.headers.cookie?.includes("session=secret");
-    res.setHeader("content-type", "text/html");
-    res.end(loggedIn ? "<button>in</button>" : '<button tabindex="3">out</button>');
-  });
+async function withServer(
+  handler: (req: IncomingMessage, res: ServerResponse) => void,
+  body: (origin: string) => Promise<void>,
+): Promise<void> {
+  const server = createServer(handler);
   await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
   const address = server.address();
   if (address === null || typeof address === "string") {
@@ -58,6 +57,14 @@ async function withCookieServer(body: (origin: string) => Promise<void>): Promis
   } finally {
     server.close();
   }
+}
+
+function withCookieServer(body: (origin: string) => Promise<void>): Promise<void> {
+  return withServer((req, res) => {
+    const loggedIn = req.headers.cookie?.includes("session=secret");
+    res.setHeader("content-type", "text/html");
+    res.end(loggedIn ? "<button>in</button>" : '<button tabindex="3">out</button>');
+  }, body);
 }
 
 describe("argument handling", () => {
@@ -99,6 +106,12 @@ describe("argument handling", () => {
     const { code, stderr } = await run([fixture("clean.html"), "--rule", "no-positive-tabindex"]);
     expect(code).toBe(2);
     expect(stderr).toContain("Invalid --rule");
+  });
+
+  test("invalid tries exits 2", async () => {
+    const { code, stderr } = await run([fixture("clean.html"), "--tries", "0"]);
+    expect(code).toBe(2);
+    expect(stderr).toContain('Invalid --tries "0"');
   });
 
   test("invalid timeout exits 2", async () => {
@@ -199,40 +212,139 @@ describe("auth", () => {
 
 describe("user agent", () => {
   test("headless audits do not advertise HeadlessChrome", async () => {
-    const server: Server = createServer((req, res) => {
-      const headless = req.headers["user-agent"]?.includes("HeadlessChrome");
-      res.setHeader("content-type", "text/html");
-      res.end(headless ? '<button tabindex="3">blocked</button>' : "<button>in</button>");
+    await withServer(
+      (req, res) => {
+        const headless = req.headers["user-agent"]?.includes("HeadlessChrome");
+        res.setHeader("content-type", "text/html");
+        res.end(headless ? '<button tabindex="3">blocked</button>' : "<button>in</button>");
+      },
+      async (origin) => {
+        const { code, stdout } = await run([origin]);
+        expect(code).toBe(0);
+        expect(stdout).toContain("No tab-order issues.");
+      },
+    );
+  });
+});
+
+describe("login page detection", () => {
+  const serveLogin = (_req: IncomingMessage, res: ServerResponse) => {
+    res.setHeader("content-type", "text/html");
+    res.end(
+      '<form><input aria-label="Email" type="email" />' +
+        '<input aria-label="Password" type="password" />' +
+        "<button>Sign in</button></form>",
+    );
+  };
+
+  test("a password field prints a login hint on stderr", async () => {
+    await withServer(serveLogin, async (origin) => {
+      const configDir = mkdtempSync(join(tmpdir(), "ooo-config-"));
+      try {
+        const { code, stderr } = await run([origin], { env: { XDG_CONFIG_HOME: configDir } });
+        expect(code).toBe(0);
+        expect(stderr).toContain("WARNING: This looks like a login page");
+        expect(stderr).toContain(`out-of-order login ${origin}`);
+      } finally {
+        rmSync(configDir, { recursive: true, force: true });
+      }
     });
-    await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
-    const address = server.address();
-    if (address === null || typeof address === "string") {
-      throw new Error("no server port");
-    }
-    try {
-      const { code, stdout } = await run([`http://127.0.0.1:${address.port}`]);
-      expect(code).toBe(0);
-      expect(stdout).toContain("No tab-order issues.");
-    } finally {
-      server.close();
-    }
+  });
+
+  test("a login-looking URL without a password field prints the hint", async () => {
+    await withServer(
+      (_req, res) => {
+        res.setHeader("content-type", "text/html");
+        res.end("<button>Continue</button>");
+      },
+      async (origin) => {
+        const configDir = mkdtempSync(join(tmpdir(), "ooo-config-"));
+        try {
+          const { stderr } = await run([`${origin}/login`], {
+            env: { XDG_CONFIG_HOME: configDir },
+          });
+          expect(stderr).toContain("looks like a login page");
+        } finally {
+          rmSync(configDir, { recursive: true, force: true });
+        }
+      },
+    );
+  });
+
+  test("the hint mentions expiry when a session was loaded", async () => {
+    await withServer(serveLogin, async (origin) => {
+      const dir = mkdtempSync(join(tmpdir(), "ooo-auth-"));
+      const authFile = join(dir, "state.json");
+      writeFileSync(authFile, storageState("127.0.0.1"));
+      try {
+        const { stderr } = await run([origin, "--auth", authFile]);
+        expect(stderr).toContain("may have expired");
+        expect(stderr).toContain(`out-of-order login ${origin}`);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  test("an ordinary page prints no hint", async () => {
+    await withServer(
+      (_req, res) => {
+        res.setHeader("content-type", "text/html");
+        res.end("<button>First</button>");
+      },
+      async (origin) => {
+        const configDir = mkdtempSync(join(tmpdir(), "ooo-config-"));
+        try {
+          const { code, stderr } = await run([origin], { env: { XDG_CONFIG_HOME: configDir } });
+          expect(code).toBe(0);
+          expect(stderr).not.toContain("login");
+        } finally {
+          rmSync(configDir, { recursive: true, force: true });
+        }
+      },
+    );
+  });
+
+  test("a local file with a password field prints no hint", async () => {
+    const { code, stderr } = await run([fixture("login.html")]);
+    expect(code).toBe(0);
+    expect(stderr).not.toContain("login page");
   });
 });
 
 describe("auditing", () => {
-  test("clean page exits 0 with the no-issues message", async () => {
-    const { code, stdout } = await run([fixture("clean.html")]);
+  test("clean page exits 0 with the no-issues message and the stop count", async () => {
+    const { code, stdout, stderr } = await run([fixture("clean.html")]);
     expect(code).toBe(0);
     expect(stdout).toContain("No tab-order issues.");
+    expect(stderr).toContain("Found 3 tabbable elements.");
   });
 
-  test("page without tabbable elements exits 2 and suggests --wait", async () => {
+  test("page without tabbable elements retries, exits 2, and suggests --wait", async () => {
     const { code, stdout, stderr } = await run([fixture("empty.html")]);
     expect(code).toBe(2);
     expect(stdout).toContain("No tab-order issues.");
+    expect(stderr).toContain("Try 1/5: found 0 tabbable elements.");
+    expect(stderr).toContain("Try 5/5: found 0 tabbable elements.");
     expect(stderr).toContain("No tabbable elements found");
     expect(stderr).toContain("--wait");
-  });
+  }, 20000);
+
+  test("--tries overrides the retry count", async () => {
+    const { code, stderr } = await run([fixture("empty.html"), "--tries", "2"]);
+    expect(code).toBe(2);
+    expect(stderr).toContain("Try 2/2: found 0 tabbable elements.");
+    expect(stderr).not.toContain("Try 3");
+  }, 20000);
+
+  test("a page that renders late is caught by a retry", async () => {
+    const { code, stdout, stderr } = await run([fixture("late.html")]);
+    expect(code).toBe(0);
+    expect(stdout).toContain("No tab-order issues.");
+    expect(stderr).toContain("Try 1/5: found 0 tabbable elements.");
+    expect(stderr).toContain("Found 1 tabbable element.");
+    expect(stderr).not.toContain("Try 5/5");
+  }, 20000);
 
   test("page with errors exits 1 and names the rule", async () => {
     const { code, stdout } = await run([fixture("errors.html")]);

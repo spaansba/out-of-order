@@ -211,9 +211,7 @@ function collectSolvers(reimplPairs: ReimplPair[]): { anchor: Element | null; fi
       fix: combine(...redundant.map((element) => setAttrs(element, [["tabindex", null]]))),
     },
     // J · the dialog is a real full-page modal that never inerts the page behind
-    // it, so focus leaks to every background control. The fix swaps it for a native
-    // <dialog> opened with showModal() (handled in modal.ts), which traps focus for
-    // real but still trips focus-escapes-modal: a false positive this card surfaces.
+    // it, so focus leaks to every background control.
     { anchor: queryOne("#open-modal"), fix: nativeDialogFix() },
     // K · each generic element reimplements a native control; swap them all for the
     // native elements, where focus + keyboard activation + semantics come for free,

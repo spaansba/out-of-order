@@ -21,7 +21,8 @@ export const duplicateAutofocus: RuleDef = {
       const selector = selectorFor(element);
 
       return {
-        message: `"${selector}" also has autofocus, but a page can autofocus only one element; the first focusable one in document order wins, so this one is silently ignored. Remove the extra autofocus.`,
+        message: `"${selector}" also has autofocus, but a page can autofocus only one element; the first focusable one in document order wins, so this one is silently ignored.`,
+        fix: `Remove the extra autofocus.`,
         target: element,
       };
     });

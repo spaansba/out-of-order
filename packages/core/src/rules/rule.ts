@@ -22,6 +22,8 @@ export interface RuleContext {
 export interface Finding {
   /** Human-readable description of what's wrong. */
   message: string;
+  /** Suggested remediation. */
+  fix?: string;
   /** The element the finding points at. A {@link SequenceEntry} when it is a tab
       stop (carries orderIndex and a selector), or a bare Element when it is not. */
   target: SequenceEntry | Element;
@@ -46,13 +48,19 @@ export interface Rule {
 /** A rule minus its id, which the registry key supplies. */
 export type RuleDef = Omit<Rule, "id">;
 
-/** Map the tab sequence to at most one finding per entry: return a message to flag
-    the entry, or null to pass it. Collapses the boilerplate of the per-entry rules. */
+/** Map the tab sequence to at most one finding per entry: return a message (plus
+    optional fix) to flag the entry, or null to pass it. Collapses the boilerplate
+    of the per-entry rules. */
 export const flagEntries = (
   sequence: SequenceEntry[],
-  message: (entry: SequenceEntry) => string | null,
+  flag: (entry: SequenceEntry) => string | Pick<Finding, "message" | "fix"> | null,
 ): Finding[] =>
   sequence.flatMap((entry) => {
-    const msg = message(entry);
-    return msg ? [{ message: msg, target: entry }] : [];
+    const found = flag(entry);
+    if (!found) {
+      return [];
+    }
+    return typeof found === "string"
+      ? [{ message: found, target: entry }]
+      : [{ ...found, target: entry }];
   });

@@ -218,15 +218,6 @@
             </tr>
           </tbody>
         </table>
-        <p class="note">
-          <strong>Limitations.</strong> These rules read the rendered DOM and CSS layout, never your
-          JavaScript. Handlers bound with <code>addEventListener</code> (what Vue
-          <code>@click</code>, React <code>onClick</code>, and most frameworks compile to) leave no
-          DOM trace, so <code>clickable-not-focusable</code> cannot see a bare
-          <code>&lt;div @click&gt;</code> that has no role. Give custom controls a real role or a
-          native element. Focus that JavaScript moves or traps at runtime is judged only in the
-          state you audit, not across interactions.
-        </p>
       </section>
 
       <section class="group" id="changing">
@@ -239,20 +230,47 @@
         <pre class="code">
 audit(document.body, {
   rules: {
-    "visual-order-mismatch": "warning",
-    "redundant-tabindex": "error",
-    "prefer-native-element": "off",
+    "visual-order-mismatch": "warning", // re-grade
+    "redundant-tabindex": "error", // promote
+    "prefer-native-element": "off", // disable
   },
-});</pre
+});
+
+// The same overrides reach the overlay through its `audit` option.
+trace({ audit: { rules: { "prefer-native-element": "off" } } });</pre
         >
+        <p class="note">
+          The CLI takes the same overrides through <code>--rule</code>, for example
+          <code>--rule prefer-native-element=off</code>.
+        </p>
+      </section>
+
+      <section class="group" id="approve">
+        <h2>Approve a finding in place</h2>
+        <p class="note">
+          Some findings are not bugs: a known false positive, or a deliberate choice you have
+          already weighed. Approve one by putting
+          <code>data-ooo-ignore</code> on the flagged element.
+        </p>
+        <pre class="code">
+&lt;!-- Approve every finding on this element --&gt;
+&lt;button data-ooo-ignore&gt;&hellip;&lt;/button&gt;
+
+&lt;!-- Approve only the named rules, leave the rest live --&gt;
+&lt;div data-ooo-ignore="hidden-while-focusable visual-order-mismatch"&gt;&hellip;&lt;/div&gt;</pre
+        >
+        <p class="note">
+          It is element-scoped, so it approves findings on that element only and is never inherited
+          by its descendants.
+        </p>
       </section>
 
       <section class="group" id="custom-rule">
         <h2>Adding your own rule</h2>
         <p class="note">
           A rule is a pure function over the computed sequence. Pass yours through the
-          <code>rules</code> option and it runs with the built-ins, both in the result and on the
-          overlay.
+          <code>customRules</code> option and it runs with the built-ins, both in the result and on
+          the overlay.
         </p>
         <pre class="code">
 import { trace } from "@out-of-order/trace";
@@ -260,7 +278,7 @@ import type { Rule } from "@out-of-order/core";
 
 const noShouting: Rule = {
   id: "no-shouting",
-  defaultSeverity: "warning",
+  severity: "warning",
   run: (sequence) =>
     sequence
       .filter((entry) => {
@@ -268,16 +286,16 @@ const noShouting: Rule = {
         return text !== "" &amp;&amp; text === text.toUpperCase();
       })
       .map((entry) => ({
-        message: "This label is ALL CAPS, which reads as shouting. Use sentence case.",
+        message: "This label is ALL CAPS, which reads as shouting.",
+        fix: "Use sentence case.",
         target: entry,
       })),
 };
 
-trace({ rules: [noShouting] });</pre
+trace({ audit: { customRules: [noShouting] } });</pre
         >
         <p class="note">
-          The full <a href="./api.html#rule">Rule, RuleRun, and Finding types</a> are on the API
-          page.
+          The full <a href="./api.html#rule">Rule and Finding types</a> are on the API page.
         </p>
       </section>
     </main>

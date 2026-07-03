@@ -12,6 +12,9 @@ export const preferNativeElement: RuleDef = {
       }
       const tag = entry.element.tagName.toLowerCase();
       const role = entry.element.getAttribute("role");
-      return `"${entry.selector}" is a <${tag}> with role="${role}". Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`;
+      return {
+        message: `"${entry.selector}" is a <${tag}> with role="${role}".`,
+        fix: `Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`,
+      };
     }),
 };

@@ -36,6 +36,9 @@ export const tabindexOnNoninteractive: RuleDef = {
       if (isScrollContainer(element)) {
         return null;
       }
-      return `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control). If it's decorative, remove the tabindex, since it adds a dead stop to the tab order; if it's meant to be a control, give it a real role (or use a <button>).`;
+      return {
+        message: `"${entry.selector}" has tabindex="0" but is non-interactive (no role, not a control), so it adds a dead stop to the tab order.`,
+        fix: `If it's decorative, remove the tabindex; if it's meant to be a control, give it a real role (or use a <button>).`,
+      };
     }),
 };

@@ -39,7 +39,8 @@ export const focusEscapesModal: RuleDef = {
 
     return [
       {
-        message: `A modal dialog is open, but ${subject}, so focus can leak behind the dialog. Mark background content inert (or aria-hidden + remove it from the tab order).`,
+        message: `A modal dialog is open, but ${subject}, so focus can leak behind the dialog.`,
+        fix: `Mark background content inert (or aria-hidden + remove it from the tab order).`,
         target: first,
         // One finding, anchored on the first leaked control, but every other leaked
         // control shares the root cause (background not inert) and is ringed too.

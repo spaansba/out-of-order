@@ -21,6 +21,8 @@ export interface Issue {
   severity: Severity;
   /** Human-readable description of what's wrong. */
   message: string;
+  /** Suggested remediation, when the rule has one. */
+  fix?: string;
   /** Spec link for the rule (WCAG, WAI-ARIA, or ARIA APG). */
   docs?: string;
   /** Other elements sharing this issue's root cause. */
@@ -120,6 +122,7 @@ function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
     rule: rule.id,
     severity,
     message: finding.message,
+    fix: finding.fix,
     docs: rule.docs,
     relatedElements: finding.relatedElements,
   };
