@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -12,8 +12,8 @@
         <span class="kicker">API reference</span>
         <h2>Every package, in full</h2>
         <p>
-          The full API of every npm package, one block each. Every function is
-          kept together with the types it takes and hands back.
+          The full API of every npm package, one block each. Every function is kept together with
+          the types it takes and hands back.
         </p>
       </div>
 
@@ -25,8 +25,7 @@
               <ul class="index-list">
                 <li>
                   <a class="index-link" href="#audit"
-                    ><span class="index-num">01</span
-                    ><span class="index-title">audit()</span></a
+                    ><span class="index-num">01</span><span class="index-title">audit()</span></a
                   >
                 </li>
                 <li>
@@ -73,8 +72,7 @@
               <ul class="index-list">
                 <li>
                   <a class="index-link" href="#trace-fn"
-                    ><span class="index-num">01</span
-                    ><span class="index-title">trace()</span></a
+                    ><span class="index-num">01</span><span class="index-title">trace()</span></a
                   >
                 </li>
               </ul>
@@ -85,9 +83,7 @@
                 <li>
                   <a class="index-link" href="#cli-audit"
                     ><span class="index-num">01</span
-                    ><span class="index-title"
-                      >out-of-order &lt;url&gt;</span
-                    ></a
+                    ><span class="index-title">out-of-order &lt;url&gt;</span></a
                   >
                 </li>
                 <li>
@@ -107,27 +103,23 @@
           <h2>@out-of-order/core</h2>
           <span class="pkg-install">npm i -D @out-of-order/core</span>
           <p>
-            The analyzer. It computes the tab sequence, grades it against the
-            rules, and reshapes the findings. Pure and framework-free: every
-            other package builds on it.
+            The analyzer. It computes the tab sequence, grades it against the rules, and reshapes
+            the findings. Pure and framework-free: every other package builds on it.
           </p>
         </header>
 
         <section class="group" id="audit">
           <h2>audit()<span class="kind">function</span></h2>
-          <p class="sig">
-            <span class="tok">audit</span>(root?, options?) &rarr; AuditResult
+          <p class="sig"><span class="tok">audit</span>(root?, options?) &rarr; AuditResult</p>
+          <p class="note">
+            Computes the tab sequence for <code>root</code> and grades it against the enabled rules.
+            It runs in the browser only, because <code>tabbable</code> uses real CSS layout for
+            visibility and several rules read bounding rects.
           </p>
           <p class="note">
-            Computes the tab sequence for <code>root</code> and grades it
-            against the enabled rules. It runs in the browser only, because
-            <code>tabbable</code> uses real CSS layout for visibility and
-            several rules read bounding rects.
-          </p>
-          <p class="note">
-            The result's <code>violations</code> hold live
-            <code>Element</code>s. For a printable or serializable view, pass
-            the result to <a href="#format"><code>formatViolations()</code></a
+            The result's <code>violations</code> hold live <code>Element</code>s. For a printable or
+            serializable view, pass the result to
+            <a href="#format"><code>formatViolations()</code></a
             >.
           </p>
 
@@ -145,9 +137,8 @@
                 <td><code>root</code></td>
                 <td class="type"><code>Document | Element</code></td>
                 <td>
-                  Optional, defaults to <code>document</code>. The subtree to
-                  analyze. A <code>Document</code> analyzes the whole page,
-                  exactly like tabbing through it.
+                  Optional, defaults to <code>document</code>. The subtree to analyze. A
+                  <code>Document</code> analyzes the whole page, exactly like tabbing through it.
                 </td>
               </tr>
               <tr>
@@ -161,12 +152,9 @@
             </tbody>
           </table>
 
-          <h3 id="auditresult">
-            Returns &rarr; AuditResult<span class="kind">type</span>
-          </h3>
+          <h3 id="auditresult">Returns &rarr; AuditResult<span class="kind">type</span></h3>
           <p class="note">
-            Holds the computed tab sequence, every violation found, and the
-            overall verdict.
+            Holds the computed tab sequence, every violation found, and the overall verdict.
           </p>
           <table class="spec api">
             <thead>
@@ -181,36 +169,29 @@
                 <td><code>valid</code></td>
                 <td class="type"><code>boolean</code></td>
                 <td>
-                  True when no enabled rule produced an <code>error</code>.
-                  Warnings are advisory and never flip it, so read
-                  <code>violations</code> when you want to surface those too.
+                  True when no enabled rule produced an <code>error</code>. Warnings are advisory
+                  and never flip it, so read <code>violations</code> when you want to surface those
+                  too.
                 </td>
               </tr>
               <tr>
                 <td><code>sequence</code></td>
                 <td class="type"><code>SequenceEntry[]</code></td>
-                <td>
-                  Every tab stop, in the exact order the <kbd>Tab</kbd> key
-                  reaches it.
-                </td>
+                <td>Every tab stop, in the exact order the <kbd>Tab</kbd> key reaches it.</td>
               </tr>
               <tr>
                 <td><code>violations</code></td>
                 <td class="type"><code>Violation[]</code></td>
                 <td>
-                  One entry per offending element, each carrying the rules it
-                  failed, across all enabled rules and both severities.
+                  One entry per offending element, each carrying the rules it failed, across all
+                  enabled rules and both severities.
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <h3 id="sequenceentry">
-            SequenceEntry<span class="kind">type</span>
-          </h3>
-          <p class="note">
-            One entry per tab stop in <code>AuditResult.sequence</code>.
-          </p>
+          <h3 id="sequenceentry">SequenceEntry<span class="kind">type</span></h3>
+          <p class="note">One entry per tab stop in <code>AuditResult.sequence</code>.</p>
           <table class="spec api">
             <thead>
               <tr>
@@ -228,9 +209,7 @@
               <tr>
                 <td><code>selector</code></td>
                 <td class="type"><code>string</code></td>
-                <td>
-                  A short, CSS-ish path to the element, for messages and logs.
-                </td>
+                <td>A short, CSS-ish path to the element, for messages and logs.</td>
               </tr>
               <tr>
                 <td><code>orderIndex</code></td>
@@ -241,16 +220,15 @@
                 <td><code>tabIndex</code></td>
                 <td class="type"><code>number</code></td>
                 <td>
-                  The resolved tabindex, <code>0</code> when the element is
-                  focusable without one.
+                  The resolved tabindex, <code>0</code> when the element is focusable without one.
                 </td>
               </tr>
               <tr>
                 <td><code>rect</code></td>
                 <td class="type"><code>DOMRect</code></td>
                 <td>
-                  The element's bounding rect at analysis time, from real
-                  browser layout. This is why several rules need a real browser.
+                  The element's bounding rect at analysis time, from real browser layout. This is
+                  why several rules need a real browser.
                 </td>
               </tr>
             </tbody>
@@ -258,8 +236,8 @@
 
           <h3 id="violation">Violation<span class="kind">type</span></h3>
           <p class="note">
-            One entry per offending <em>element</em> in
-            <code>AuditResult.violations</code>, carrying every rule it failed.
+            One entry per offending <em>element</em> in <code>AuditResult.violations</code>,
+            carrying every rule it failed.
           </p>
           <table class="spec api">
             <thead>
@@ -283,10 +261,7 @@
               <tr>
                 <td><code>orderIndex?</code></td>
                 <td class="type"><code>number</code></td>
-                <td>
-                  Its position in the tab sequence, present only when it is a
-                  stop.
-                </td>
+                <td>Its position in the tab sequence, present only when it is a stop.</td>
               </tr>
               <tr>
                 <td><code>issues</code></td>
@@ -311,16 +286,14 @@
                 <td><code>rule</code></td>
                 <td class="type"><code>string</code></td>
                 <td>
-                  The id of the rule that fired, a built-in id or a custom
-                  rule's own. Stable, so you can key or filter on it.
+                  The id of the rule that fired, a built-in id or a custom rule's own. Stable, so
+                  you can key or filter on it.
                 </td>
               </tr>
               <tr>
                 <td><code>severity</code></td>
                 <td class="type"><code>"error" | "warning"</code></td>
-                <td>
-                  How serious the finding is, after any per-call override.
-                </td>
+                <td>How serious the finding is, after any per-call override.</td>
               </tr>
               <tr>
                 <td><code>message</code></td>
@@ -341,10 +314,9 @@
                 <td><code>relatedElements?</code></td>
                 <td class="type"><code>Element[]</code></td>
                 <td>
-                  Other elements that share this issue's root cause. Ringed
-                  alongside the violation's <code>element</code> but not
-                  reported as separate violations, so one missing fix does not
-                  become N findings.
+                  Other elements that share this issue's root cause. Ringed alongside the
+                  violation's <code>element</code> but not reported as separate violations, so one
+                  missing fix does not become N findings.
                 </td>
               </tr>
               <tr>
@@ -353,8 +325,7 @@
                 <td>
                   True when the element
                   <a href="./rules.html#approve">approves this rule</a> via
-                  <code>data-ooo-ignore</code>. An ignored error never flips
-                  <code>valid</code>.
+                  <code>data-ooo-ignore</code>. An ignored error never flips <code>valid</code>.
                 </td>
               </tr>
             </tbody>
@@ -365,14 +336,12 @@
           <h2>Options &amp; severity</h2>
           <p class="note">
             The severity values and the options object taken by
-            <code>audit()</code> and, through <code>TraceOptions.audit</code>,
-            by <code>trace()</code>.
+            <code>audit()</code> and, through <code>TraceOptions.audit</code>, by
+            <code>trace()</code>.
           </p>
 
           <h3>Severity &amp; RuleOverride<span class="kind">types</span></h3>
-          <p class="note">
-            The grades a rule reports at, and what an override can set it to.
-          </p>
+          <p class="note">The grades a rule reports at, and what an override can set it to.</p>
           <table class="spec api">
             <thead>
               <tr>
@@ -416,26 +385,23 @@
                 </td>
                 <td>
                   Per-rule overrides. Omit a rule to keep its default. Set
-                  <code>"error"</code> or <code>"warning"</code> to enable it at
-                  that grade, or <code>"off"</code> to disable it.
+                  <code>"error"</code> or <code>"warning"</code> to enable it at that grade, or
+                  <code>"off"</code> to disable it.
                 </td>
               </tr>
               <tr>
                 <td><code>customRules?</code></td>
                 <td class="type"><code>Rule[]</code></td>
                 <td>
-                  Extra rules that run alongside the built-ins, overridable
-                  through
-                  <code>rules</code> like any built-in. See
-                  <a href="#rule">custom rules</a>.
+                  Extra rules that run alongside the built-ins, overridable through
+                  <code>rules</code> like any built-in. See <a href="#rule">custom rules</a>.
                 </td>
               </tr>
             </tbody>
           </table>
           <p class="note">
-            <code>RuleId</code> is the union of the built-in rule ids, so
-            overrides autocomplete. The full list is on the
-            <a href="./rules.html">rules page</a>, and the ids with their
+            <code>RuleId</code> is the union of the built-in rule ids, so overrides autocomplete.
+            The full list is on the <a href="./rules.html">rules page</a>, and the ids with their
             default grades are also exported as data, see
             <a href="#helpers">Helpers &amp; exports</a>.
           </p>
@@ -444,16 +410,15 @@
         <section class="group" id="format">
           <h2>formatViolations()<span class="kind">function</span></h2>
           <p class="sig">
-            <span class="tok">formatViolations</span>(result, format) &rarr;
-            string | ByElement[] | ByViolation[] | FlatIssue[]
+            <span class="tok">formatViolations</span>(result, format) &rarr; string | ByElement[] |
+            ByViolation[] | FlatIssue[]
           </p>
           <p class="note">
-            Reshapes a result's <code>violations</code> into the named view and
-            leaves the result itself untouched. <code>"text"</code> renders a
-            human-readable block. The other views are serializable arrays with
-            every element reference flattened to its selector string, so they
-            survive <code>JSON.stringify</code>. The overloads narrow the return
-            type when <code>format</code> is a literal.
+            Reshapes a result's <code>violations</code> into the named view and leaves the result
+            itself untouched. <code>"text"</code> renders a human-readable block. The other views
+            are serializable arrays with every element reference flattened to its selector string,
+            so they survive <code>JSON.stringify</code>. The overloads narrow the return type when
+            <code>format</code> is a literal.
           </p>
 
           <h3>AuditFormat<span class="kind">type</span></h3>
@@ -470,27 +435,21 @@
               <tr>
                 <td><code>"text"</code></td>
                 <td class="type"><code>string</code></td>
-                <td>
-                  A ready-to-print block: one paragraph per element, its issues
-                  indented.
-                </td>
+                <td>A ready-to-print block: one paragraph per element, its issues indented.</td>
               </tr>
               <tr>
                 <td><code>"by-element"</code></td>
                 <td class="type"><code>ByElement[]</code></td>
                 <td>
-                  One entry per offending element with its issues nested, plus
-                  an
-                  <code>issueCount</code>. The serializable twin of
-                  <code>Violation</code>.
+                  One entry per offending element with its issues nested, plus an
+                  <code>issueCount</code>. The serializable twin of <code>Violation</code>.
                 </td>
               </tr>
               <tr>
                 <td><code>"by-violation"</code></td>
                 <td class="type"><code>ByViolation[]</code></td>
                 <td>
-                  One entry per failed rule with the offending elements nested,
-                  plus an
+                  One entry per failed rule with the offending elements nested, plus an
                   <code>elementCount</code>. Errors sort before warnings.
                 </td>
               </tr>
@@ -499,20 +458,17 @@
                 <td class="type"><code>FlatIssue[]</code></td>
                 <td>
                   One entry per element-issue pair, nothing nested: a
-                  <code>SerializedIssue</code> plus the element's
-                  <code>selector</code> and <code>orderIndex?</code>.
+                  <code>SerializedIssue</code> plus the element's <code>selector</code> and
+                  <code>orderIndex?</code>.
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <h3 id="serializedissue">
-            SerializedIssue<span class="kind">type</span>
-          </h3>
+          <h3 id="serializedissue">SerializedIssue<span class="kind">type</span></h3>
           <p class="note">
             The issue shape shared by the formatted views: an
-            <code>Issue</code> with its element references flattened to selector
-            strings.
+            <code>Issue</code> with its element references flattened to selector strings.
           </p>
           <table class="spec api">
             <thead>
@@ -551,9 +507,7 @@
               <tr>
                 <td><code>related?</code></td>
                 <td class="type"><code>string[]</code></td>
-                <td>
-                  Selectors of the elements sharing this issue's root cause.
-                </td>
+                <td>Selectors of the elements sharing this issue's root cause.</td>
               </tr>
               <tr>
                 <td><code>ignored?</code></td>
@@ -565,8 +519,7 @@
 
           <h3 id="byelement">ByElement<span class="kind">type</span></h3>
           <p class="note">
-            One <code>"by-element"</code> entry: an offending element with its
-            failures nested.
+            One <code>"by-element"</code> entry: an offending element with its failures nested.
           </p>
           <table class="spec api">
             <thead>
@@ -585,18 +538,12 @@
               <tr>
                 <td><code>orderIndex?</code></td>
                 <td class="type"><code>number</code></td>
-                <td>
-                  Its position in the tab sequence, present only when it is a
-                  stop.
-                </td>
+                <td>Its position in the tab sequence, present only when it is a stop.</td>
               </tr>
               <tr>
                 <td><code>issueCount</code></td>
                 <td class="type"><code>number</code></td>
-                <td>
-                  How many rules the element failed
-                  (<code>issues.length</code>).
-                </td>
+                <td>How many rules the element failed (<code>issues.length</code>).</td>
               </tr>
               <tr>
                 <td><code>issues</code></td>
@@ -608,8 +555,8 @@
 
           <h3 id="byviolation">ByViolation<span class="kind">type</span></h3>
           <p class="note">
-            One <code>"by-violation"</code> entry: a failed rule with every
-            element that tripped it nested.
+            One <code>"by-violation"</code> entry: a failed rule with every element that tripped it
+            nested.
           </p>
           <table class="spec api">
             <thead>
@@ -638,21 +585,16 @@
               <tr>
                 <td><code>elementCount</code></td>
                 <td class="type"><code>number</code></td>
-                <td>
-                  How many elements failed it (<code>elements.length</code>).
-                </td>
+                <td>How many elements failed it (<code>elements.length</code>).</td>
               </tr>
               <tr>
                 <td><code>elements</code></td>
                 <td class="type">
-                  <code
-                    >{ selector, orderIndex?, message, fix?, related?, ignored?
-                    }[]</code
-                  >
+                  <code>{ selector, orderIndex?, message, fix?, related?, ignored? }[]</code>
                 </td>
                 <td>
-                  The offending elements, each with its own message and, when
-                  present, the related selectors and its
+                  The offending elements, each with its own message and, when present, the related
+                  selectors and its
                   <code>data-ooo-ignore</code> approval.
                 </td>
               </tr>
@@ -661,9 +603,8 @@
 
           <h3 id="flatissue">FlatIssue<span class="kind">type</span></h3>
           <p class="note">
-            One <code>"flat"</code> entry. Extends
-            <code>SerializedIssue</code> with where the issue sits, so a single
-            row carries everything.
+            One <code>"flat"</code> entry. Extends <code>SerializedIssue</code> with where the issue
+            sits, so a single row carries everything.
           </p>
           <table class="spec api">
             <thead>
@@ -682,17 +623,12 @@
               <tr>
                 <td><code>orderIndex?</code></td>
                 <td class="type"><code>number</code></td>
-                <td>
-                  Its position in the tab sequence, present only when it is a
-                  stop.
-                </td>
+                <td>Its position in the tab sequence, present only when it is a stop.</td>
               </tr>
               <tr>
                 <td>&hellip;</td>
                 <td class="type"><code>SerializedIssue</code></td>
-                <td>
-                  Plus every <code>SerializedIssue</code> field, flattened in.
-                </td>
+                <td>Plus every <code>SerializedIssue</code> field, flattened in.</td>
               </tr>
             </tbody>
           </table>
@@ -701,10 +637,9 @@
         <section class="group" id="rule">
           <h2>Custom rules</h2>
           <p class="note">
-            A rule is a pure function over the computed sequence. Pass your own
-            through
-            <code>AuditOptions.customRules</code> and they flow into the result
-            and the overlay like any other.
+            A rule is a pure function over the computed sequence. Pass your own through
+            <code>AuditOptions.customRules</code> and they flow into the result and the overlay like
+            any other.
           </p>
 
           <h3>Rule<span class="kind">type</span></h3>
@@ -722,8 +657,7 @@
                 <td><code>id</code></td>
                 <td class="type"><code>string</code></td>
                 <td>
-                  Surfaced as <code>rule</code> on every <code>Issue</code> the
-                  rule produces.
+                  Surfaced as <code>rule</code> on every <code>Issue</code> the rule produces.
                 </td>
               </tr>
               <tr>
@@ -735,18 +669,14 @@
                 <td><code>severity</code></td>
                 <td class="type"><code>Severity</code></td>
                 <td>
-                  The grade its findings get unless the caller overrides it
-                  through
+                  The grade its findings get unless the caller overrides it through
                   <code>AuditOptions.rules</code>.
                 </td>
               </tr>
               <tr>
                 <td><code>run</code></td>
                 <td class="type">
-                  <code
-                    >(sequence: SequenceEntry[], ctx: RuleContext) =&gt;
-                    Finding[]</code
-                  >
+                  <code>(sequence: SequenceEntry[], ctx: RuleContext) =&gt; Finding[]</code>
                 </td>
                 <td>The rule itself, run over the sequence.</td>
               </tr>
@@ -754,9 +684,7 @@
           </table>
 
           <h3>RuleContext<span class="kind">type</span></h3>
-          <p class="note">
-            Handed to a rule's <code>run</code> as its second argument.
-          </p>
+          <p class="note">Handed to a rule's <code>run</code> as its second argument.</p>
           <table class="spec api">
             <thead>
               <tr>
@@ -769,9 +697,7 @@
               <tr>
                 <td><code>container</code></td>
                 <td class="type"><code>Element</code></td>
-                <td>
-                  The analyzed root, so a rule can look beyond the tab sequence.
-                </td>
+                <td>The analyzed root, so a rule can look beyond the tab sequence.</td>
               </tr>
               <tr>
                 <td><code>inSequence</code></td>
@@ -782,9 +708,7 @@
           </table>
 
           <h3>Finding<span class="kind">type</span></h3>
-          <p class="note">
-            Returned by a rule's <code>run</code>, one per issue.
-          </p>
+          <p class="note">Returned by a rule's <code>run</code>, one per issue.</p>
           <table class="spec api">
             <thead>
               <tr>
@@ -803,8 +727,8 @@
                 <td><code>fix?</code></td>
                 <td class="type"><code>string</code></td>
                 <td>
-                  A suggested remediation. Shown separately from the message
-                  (the overlay renders it as a "Possible fix" line).
+                  A suggested remediation. Shown separately from the message (the overlay renders it
+                  as a "Possible fix" line).
                 </td>
               </tr>
               <tr>
@@ -831,8 +755,7 @@
         <section class="group" id="helpers">
           <h2>Helpers &amp; exports</h2>
           <p class="note">
-            The DOM helpers the built-in rules lean on, exported so a custom
-            rule can reuse them.
+            The DOM helpers the built-in rules lean on, exported so a custom rule can reuse them.
           </p>
           <table class="spec api">
             <thead>
@@ -847,17 +770,14 @@
                 <td><code>isInteractive</code></td>
                 <td class="type"><code>(el: Element) =&gt; boolean</code></td>
                 <td>
-                  Returns whether an element is interactive, meaning a native
-                  control or an element with an interactive ARIA role.
+                  Returns whether an element is interactive, meaning a native control or an element
+                  with an interactive ARIA role.
                 </td>
               </tr>
               <tr>
                 <td><code>selectorFor</code></td>
                 <td class="type"><code>(el: Element) =&gt; string</code></td>
-                <td>
-                  Returns a short, CSS-ish path to an element, useful for
-                  messages and logs.
-                </td>
+                <td>Returns a short, CSS-ish path to an element, useful for messages and logs.</td>
               </tr>
               <tr>
                 <td><code>isScreenReaderOnly</code></td>
@@ -866,9 +786,8 @@
                 </td>
                 <td>
                   Returns whether an element is an intentional
-                  <code>.sr-only</code>-style utility (tiny and clipped), the
-                  standard way to expose text to screen readers, which a rule
-                  must not flag as invisible.
+                  <code>.sr-only</code>-style utility (tiny and clipped), the standard way to expose
+                  text to screen readers, which a rule must not flag as invisible.
                 </td>
               </tr>
               <tr>
@@ -879,8 +798,7 @@
                 <td>
                   Returns whether the element
                   <a href="./rules.html#approve">approves the rule</a> via
-                  <code>data-ooo-ignore</code>. Element-scoped, never inherited
-                  by descendants.
+                  <code>data-ooo-ignore</code>. Element-scoped, never inherited by descendants.
                 </td>
               </tr>
               <tr>
@@ -889,10 +807,9 @@
                   <code>(root: ParentNode) =&gt; Generator&lt;Element&gt;</code>
                 </td>
                 <td>
-                  Yields every element under <code>root</code> in tree order,
-                  descending into open shadow roots. The composed-tree stand-in
-                  for <code>querySelectorAll("*")</code>, which never enters a
-                  shadow root.
+                  Yields every element under <code>root</code> in tree order, descending into open
+                  shadow roots. The composed-tree stand-in for <code>querySelectorAll("*")</code>,
+                  which never enters a shadow root.
                 </td>
               </tr>
             </tbody>
@@ -900,8 +817,8 @@
 
           <h3 id="ruleset-data">The rule set as data</h3>
           <p class="note">
-            The built-in rule set, exported for building tooling around it:
-            option pickers, docs, config validation.
+            The built-in rule set, exported for building tooling around it: option pickers, docs,
+            config validation.
           </p>
           <table class="spec api">
             <thead>
@@ -919,15 +836,12 @@
                 </td>
                 <td>
                   The union of the built-in rule ids, what
-                  <code>AuditOptions.rules</code> keys on. The full list, each
-                  with its clause, is on the
-                  <a href="./rules.html">rules page</a>.
+                  <code>AuditOptions.rules</code> keys on. The full list, each with its clause, is
+                  on the <a href="./rules.html">rules page</a>.
                 </td>
               </tr>
               <tr>
-                <td>
-                  <code>DEFAULT_SEVERITY</code><span class="kind">const</span>
-                </td>
+                <td><code>DEFAULT_SEVERITY</code><span class="kind">const</span></td>
                 <td class="type">
                   <code>Record&lt;RuleId, Severity&gt;</code>
                 </td>
@@ -946,34 +860,28 @@
           <h2>@out-of-order/vitest</h2>
           <span class="pkg-install">npm i -D @out-of-order/vitest</span>
           <p>
-            The audit as a one-line assertion for Vitest Browser Mode. Released,
-            but the API is still settling.
+            The audit as a one-line assertion for Vitest Browser Mode. Released, but the API is
+            still settling.
           </p>
         </header>
 
         <section class="group" id="matcher">
           <h2>toHaveValidTabOrder()<span class="kind">matcher</span></h2>
-          <p class="sig">
-            <span class="tok">expect</span>(root).toHaveValidTabOrder(options?)
-          </p>
+          <p class="sig"><span class="tok">expect</span>(root).toHaveValidTabOrder(options?)</p>
           <p class="note">
-            Import the package once in a setup file and it registers the matcher
-            and its types:
+            Import the package once in a setup file and it registers the matcher and its types:
             <code>import "@out-of-order/vitest";</code>.
           </p>
           <p class="note">
-            The assertion target must be an <code>Element</code> or a
-            <code>Document</code>. It runs <code>audit(root, options)</code> and
-            passes on <code>AuditResult.valid</code>, so warnings never fail a
-            test but errors do. A failure prints the <code>"text"</code> view of
-            the violations. Works with <code>.not</code>, which expects at least
-            one error.
+            The assertion target must be an <code>Element</code> or a <code>Document</code>. It runs
+            <code>audit(root, options)</code> and passes on <code>AuditResult.valid</code>, so
+            warnings never fail a test but errors do. A failure prints the <code>"text"</code> view
+            of the violations. Works with <code>.not</code>, which expects at least one error.
           </p>
           <p class="note">
-            It refuses to run outside a real browser. With no DOM at all, or
-            under a layout-less simulated DOM like <code>jsdom</code> or
-            <code>happy-dom</code>, it throws and tells you to enable Vitest
-            Browser Mode instead of silently passing on meaningless layout.
+            It refuses to run outside a real browser. With no DOM at all, or under a layout-less
+            simulated DOM like <code>jsdom</code> or <code>happy-dom</code>, it throws and tells you
+            to enable Vitest Browser Mode instead of silently passing on meaningless layout.
           </p>
 
           <h3>Parameters</h3>
@@ -991,8 +899,7 @@
                 <td class="type"><code>AuditOptions</code></td>
                 <td>
                   Optional. The same per-rule overrides and custom rules
-                  <code>audit()</code> takes. See
-                  <a href="#options">Options &amp; severity</a>.
+                  <code>audit()</code> takes. See <a href="#options">Options &amp; severity</a>.
                 </td>
               </tr>
             </tbody>
@@ -1014,33 +921,26 @@
           <h2>@out-of-order/trace</h2>
           <span class="pkg-install">npm i -D @out-of-order/trace</span>
           <p>
-            The visual overlay, built on the analyzer: numbered tab stops, the
-            path between them, and every finding ringed in place on the live
-            page.
+            The visual overlay, built on the analyzer: numbered tab stops, the path between them,
+            and every finding ringed in place on the live page.
           </p>
         </header>
 
         <section class="group" id="trace-fn">
           <h2>trace()<span class="kind">function</span></h2>
-          <p class="sig">
-            <span class="tok">trace</span>(options?) &rarr; TraceHandle
-          </p>
+          <p class="sig"><span class="tok">trace</span>(options?) &rarr; TraceHandle</p>
           <p class="note">
-            Mounts the overlay layer, draws the first analysis, and starts
-            observing. It re-analyzes itself on DOM mutation, so most pages need
-            nothing past the call.
+            Mounts the overlay layer, draws the first analysis, and starts observing. It re-analyzes
+            itself on DOM mutation, so most pages need nothing past the call.
           </p>
           <p class="note">
             The audit-shaped fields here (<code>AuditOptions</code>,
-            <code>AuditResult</code>) are <a href="#core">core</a>'s types. The
-            overlay depends on core but does not re-export it, so for the
-            headless <code>audit()</code> path install
+            <code>AuditResult</code>) are <a href="#core">core</a>'s types. The overlay depends on
+            core but does not re-export it, so for the headless <code>audit()</code> path install
             <code>@out-of-order/core</code> and import from there.
           </p>
 
-          <h3 id="traceoptions">
-            Parameters &rarr; TraceOptions<span class="kind">type</span>
-          </h3>
+          <h3 id="traceoptions">Parameters &rarr; TraceOptions<span class="kind">type</span></h3>
           <p class="note">Every field is optional.</p>
           <table class="spec api">
             <thead>
@@ -1054,9 +954,7 @@
               <tr>
                 <td><code>root?</code></td>
                 <td class="type"><code>Document | Element</code></td>
-                <td>
-                  The subtree to analyze. Defaults to <code>document</code>.
-                </td>
+                <td>The subtree to analyze. Defaults to <code>document</code>.</td>
               </tr>
               <tr>
                 <td><code>audit?</code></td>
@@ -1072,8 +970,7 @@
                   <a href="#overlay-types"><code>MotionMode</code></a>
                 </td>
                 <td>
-                  Animation behaviour. Defaults to <code>"auto"</code>, which
-                  follows the user's
+                  Animation behaviour. Defaults to <code>"auto"</code>, which follows the user's
                   <code>prefers-reduced-motion</code> setting, live.
                 </td>
               </tr>
@@ -1083,8 +980,8 @@
                   <a href="#overlay-types"><code>ModifierKey</code></a>
                 </td>
                 <td>
-                  Tap it to peek through the overlay at the page beneath without
-                  hiding it, tap again to restore. Defaults to
+                  Tap it to peek through the overlay at the page beneath without hiding it, tap
+                  again to restore. Defaults to
                   <code>"Alt"</code>.
                 </td>
               </tr>
@@ -1094,17 +991,15 @@
                   <code>(result: AuditResult) =&gt; void</code>
                 </td>
                 <td>
-                  Called after every re-analysis with the fresh result. The
-                  first call is synchronous, before
+                  Called after every re-analysis with the fresh result. The first call is
+                  synchronous, before
                   <code>trace()</code> returns.
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <h3 id="tracehandle">
-            Returns &rarr; TraceHandle<span class="kind">type</span>
-          </h3>
+          <h3 id="tracehandle">Returns &rarr; TraceHandle<span class="kind">type</span></h3>
           <p class="note">For driving the overlay after the mount.</p>
           <table class="spec api">
             <thead>
@@ -1118,17 +1013,12 @@
               <tr>
                 <td><code>visible</code></td>
                 <td class="type"><code>boolean</code></td>
-                <td>
-                  Read-only. Reports whether the overlay is currently visible.
-                </td>
+                <td>Read-only. Reports whether the overlay is currently visible.</td>
               </tr>
               <tr>
                 <td><code>setVisible</code></td>
                 <td class="type"><code>(visible: boolean) =&gt; void</code></td>
-                <td>
-                  Shows or hides the whole overlay, including its badges, lines,
-                  and rings.
-                </td>
+                <td>Shows or hides the whole overlay, including its badges, lines, and rings.</td>
               </tr>
               <tr>
                 <td><code>toggle</code></td>
@@ -1143,17 +1033,12 @@
               <tr>
                 <td><code>result</code></td>
                 <td class="type"><code>AuditResult | null</code></td>
-                <td>
-                  The latest analysis result, or <code>null</code> before the
-                  first draw.
-                </td>
+                <td>The latest analysis result, or <code>null</code> before the first draw.</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 id="overlay-types">
-            MotionMode &amp; ModifierKey<span class="kind">types</span>
-          </h3>
+          <h3 id="overlay-types">MotionMode &amp; ModifierKey<span class="kind">types</span></h3>
           <p class="note">The two option unions above, exported by name.</p>
           <table class="spec api">
             <thead>
@@ -1189,23 +1074,19 @@
           <h2>@out-of-order/cli</h2>
           <span class="pkg-install">npx @out-of-order/cli &lt;url&gt;</span>
           <p>
-            The audit from the terminal, against any URL. No JS API: it launches
-            headless Chromium, runs the same <code>audit()</code>, and prints
-            the findings.
+            The audit from the terminal, against any URL. No JS API: it launches headless Chromium,
+            runs the same <code>audit()</code>, and prints the findings.
           </p>
         </header>
 
         <section class="group" id="cli-audit">
           <h2>out-of-order<span class="kind">command</span></h2>
-          <p class="sig">
-            <span class="tok">out-of-order</span> &lt;url&gt; [options]
-          </p>
+          <p class="sig"><span class="tok">out-of-order</span> &lt;url&gt; [options]</p>
           <p class="note">
             Point it at a URL, a bare domain (<code>https://</code> is assumed,
-            <code>http://</code> for localhost), or a local HTML file. Pages
-            that are still an empty shell at load, common for SPAs, are
-            re-audited up to <code>--tries</code> times until something tabbable
-            renders.
+            <code>http://</code> for localhost), or a local HTML file. Pages that are still an empty
+            shell at load, common for SPAs, are re-audited up to <code>--tries</code> times until
+            something tabbable renders.
           </p>
           <table class="spec api">
             <thead>
@@ -1222,35 +1103,31 @@
                   <code>text | by-element | by-violation | flat | json</code>
                 </td>
                 <td>
-                  Output shape, default <code>text</code>. The middle three are
-                  the
-                  <a href="#format"><code>formatViolations()</code></a> views.
-                  <code>json</code> is CLI-only: the full result with
-                  <code>valid</code>, the tab sequence, and the violations.
+                  Output shape, default <code>text</code>. The middle three are the
+                  <a href="#format"><code>formatViolations()</code></a> views. <code>json</code> is
+                  CLI-only: the full result with <code>valid</code>, the tab sequence, and the
+                  violations.
                 </td>
               </tr>
               <tr>
                 <td><code>--rule</code></td>
                 <td class="type"><code>&lt;id&gt;=&lt;level&gt;</code></td>
                 <td>
-                  Set a rule to <code>off</code>, <code>error</code>, or
-                  <code>warning</code>. Repeatable.
+                  Set a rule to <code>off</code>, <code>error</code>, or <code>warning</code>.
+                  Repeatable.
                 </td>
               </tr>
               <tr>
                 <td><code>--wait</code></td>
                 <td class="type"><code>&lt;selector&gt;</code></td>
-                <td>
-                  Wait for a selector before auditing, for pages that render
-                  after load.
-                </td>
+                <td>Wait for a selector before auditing, for pages that render after load.</td>
               </tr>
               <tr>
                 <td><code>--tries</code></td>
                 <td class="type"><code>&lt;n&gt;</code></td>
                 <td>
-                  Re-audit up to <code>n</code> times, a second apart, while the
-                  page has no tabbable elements. Default 5.
+                  Re-audit up to <code>n</code> times, a second apart, while the page has no
+                  tabbable elements. Default 5.
                 </td>
               </tr>
               <tr>
@@ -1269,16 +1146,15 @@
                 <td>
                   Storage-state file to load, saved by
                   <a href="#cli-login"><code>login</code></a
-                  >. Default: the per-host file under
-                  <code>~/.config/out-of-order/auth</code>.
+                  >. Default: the per-host file under <code>~/.config/out-of-order/auth</code>.
                 </td>
               </tr>
               <tr>
                 <td><code>--overlay</code></td>
                 <td class="type"><code>boolean</code></td>
                 <td>
-                  Open a headed browser with the visual overlay drawn on the
-                  live page instead of printing. Excludes <code>--format</code>.
+                  Open a headed browser with the visual overlay drawn on the live page instead of
+                  printing. Excludes <code>--format</code>.
                 </td>
               </tr>
               <tr>
@@ -1307,24 +1183,19 @@
               <tr>
                 <td><code>0</code></td>
                 <td class="type"><code>valid</code></td>
-                <td>
-                  No error-severity violations. Warnings may still have printed.
-                </td>
+                <td>No error-severity violations. Warnings may still have printed.</td>
               </tr>
               <tr>
                 <td><code>1</code></td>
                 <td class="type"><code>violations</code></td>
-                <td>
-                  At least one error-severity violation, so a CI step fails on
-                  it.
-                </td>
+                <td>At least one error-severity violation, so a CI step fails on it.</td>
               </tr>
               <tr>
                 <td><code>2</code></td>
                 <td class="type"><code>failed run</code></td>
                 <td>
-                  The run itself failed: a usage error, a crash, a non-OK HTTP
-                  status, or a page with no tabbable elements on any try.
+                  The run itself failed: a usage error, a crash, a non-OK HTTP status, or a page
+                  with no tabbable elements on any try.
                 </td>
               </tr>
             </tbody>
@@ -1342,17 +1213,13 @@
 
         <section class="group" id="cli-login">
           <h2>out-of-order login<span class="kind">command</span></h2>
-          <p class="sig">
-            <span class="tok">out-of-order</span> login &lt;url&gt; [options]
+          <p class="sig"><span class="tok">out-of-order</span> login &lt;url&gt; [options]</p>
+          <p class="note">
+            For pages behind a login. Every later audit of that host picks it up automatically.
           </p>
           <p class="note">
-            For pages behind a login. Every later audit of that host picks it up
-            automatically.
-          </p>
-          <p class="note">
-            Needs an http(s) <code>&lt;url&gt;</code>, and takes only the three
-            options below. The session is stored per host under
-            <code>~/.config/out-of-order/auth</code> unless
+            Needs an http(s) <code>&lt;url&gt;</code>, and takes only the three options below. The
+            session is stored per host under <code>~/.config/out-of-order/auth</code> unless
             <code>--auth</code> names a file.
           </p>
           <table class="spec api">
@@ -1368,8 +1235,8 @@
                 <td><code>--auth</code></td>
                 <td class="type"><code>&lt;file&gt;</code></td>
                 <td>
-                  Where to save the storage state. Pass the same file to later
-                  audits with their own <code>--auth</code>.
+                  Where to save the storage state. Pass the same file to later audits with their own
+                  <code>--auth</code>.
                 </td>
               </tr>
               <tr>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -12,20 +12,18 @@
         <span class="kicker">Getting started</span>
         <h2>From install to overlay in a minute</h2>
         <p>
-          Install one package, call one function. This page walks the three ways
-          to run Out of Order: the <code>trace()</code> overlay on your own
-          page, <code>audit()</code> in a test or CI, and the CLI against any
-          URL. What the rules catch, and how to re-grade or disable one, is on
-          the <a href="./rules.html">rules page</a>.
+          Install one package, call one function. This page walks the three ways to run Out of
+          Order: the <code>trace()</code> overlay on your own page, <code>audit()</code> in a test
+          or CI, and the CLI against any URL. What the rules catch, and how to re-grade or disable
+          one, is on the <a href="./rules.html">rules page</a>.
         </p>
       </div>
 
       <section class="group">
         <h2>See it before you install</h2>
         <p class="note">
-          The playground is every focus and keyboard bug the analyzer catches,
-          each one wired to break then get fixed live, with the overlay tracing
-          the real tab path.
+          The playground is every focus and keyboard bug the analyzer catches, each one wired to
+          break then get fixed live, with the overlay tracing the real tab path.
         </p>
         <div class="cta">
           <a class="btn" href="./playground.html">Open the playground &rarr;</a>
@@ -37,8 +35,8 @@
         <h2>See it: <code>@out-of-order/trace</code></h2>
         <p class="note">
           The framework-agnostic overlay. Import it and call
-          <code>trace()</code>, and you have numbered tab stops, the path
-          between them, and every finding ringed in place.
+          <code>trace()</code>, and you have numbered tab stops, the path between them, and every
+          finding ringed in place.
         </p>
         <pre class="code">
 import { trace } from "@out-of-order/trace";
@@ -49,20 +47,19 @@ const overlay = trace();
 overlay.destroy();</pre
         >
         <p class="note">
-          The overlay re-analyzes itself on every DOM mutation, so most pages
-          need nothing beyond the mount. You can scope it to a subtree, hide and
-          show it, or feed it rule overrides through
-          <code>trace(options)</code>. See the
-          <a href="./api.html#trace">trace API</a>.
+          The overlay re-analyzes itself on every DOM mutation, so most pages need nothing beyond
+          the mount. You can scope it to a subtree, hide and show it, or feed it rule overrides
+          through
+          <code>trace(options)</code>. See the <a href="./api.html#trace">trace API</a>.
         </p>
       </section>
 
       <section class="group" id="core">
         <h2>Check it: <code>@out-of-order/core</code></h2>
         <p class="note">
-          The analyzer on its own, no overlay. It gives you the verdict as plain
-          data, which is what you assert in a test or CI, or feed into your own
-          UI. Its own install, with no framework or test-runner deps.
+          The analyzer on its own, no overlay. It gives you the verdict as plain data, which is what
+          you assert in a test or CI, or feed into your own UI. Its own install, with no framework
+          or test-runner deps.
         </p>
         <pre class="code">
 import { audit, formatViolations } from "@out-of-order/core";
@@ -79,9 +76,8 @@ if (!result.valid) {
 }</pre
         >
         <p class="note">
-          <code>valid</code> only goes false on an <code>error</code>. Warnings
-          are advisory and never flip it, so they will not fail a build gate
-          unless you promote them. See the
+          <code>valid</code> only goes false on an <code>error</code>. Warnings are advisory and
+          never flip it, so they will not fail a build gate unless you promote them. See the
           <a href="./api.html#core">core API</a> for every field.
         </p>
       </section>
@@ -89,11 +85,10 @@ if (!result.valid) {
       <section class="group" id="cli">
         <h2>Scan it: <code>@out-of-order/cli</code></h2>
         <p class="note">
-          The same audit against any URL, without touching the page's code. It
-          launches headless Chromium, runs the analyzer on the live page, and
-          prints the findings, with an exit code that fails on errors so it can
-          gate CI. Use it on a deployed site, a staging URL, or someone else's
-          page.
+          The same audit against any URL, without touching the page's code. It launches headless
+          Chromium, runs the analyzer on the live page, and prints the findings, with an exit code
+          that fails on errors so it can gate CI. Use it on a deployed site, a staging URL, or
+          someone else's page.
         </p>
         <pre class="code">
 npx playwright install chromium # once per machine
@@ -105,9 +100,8 @@ npx @out-of-order/cli https://example.com --overlay        # opens a browser wit
         >
         <p class="note">
           For a page behind a login, run
-          <code>npx @out-of-order/cli login &lt;url&gt;</code> once and sign in
-          by hand. The session is saved, and every later audit of that host
-          picks it up. The full option list is in the
+          <code>npx @out-of-order/cli login &lt;url&gt;</code> once and sign in by hand. The session
+          is saved, and every later audit of that host picks it up. The full option list is in the
           <a
             href="https://github.com/spaansba/out-of-order/tree/main/packages/cli"
             target="_blank"
@@ -116,7 +110,6 @@ npx @out-of-order/cli https://example.com --overlay        # opens a browser wit
           >.
         </p>
       </section>
-
     </main>
     <script type="module" src="./src/docs.ts"></script>
   </body>
