@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Audit any URL's tab order from the command line: prints findings to stdout, pipe them into an AI agent or a CI gate.",
   "keywords": [
     "a11y",
