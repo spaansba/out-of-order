@@ -197,11 +197,41 @@ describe("auth", () => {
   });
 });
 
+describe("user agent", () => {
+  test("headless audits do not advertise HeadlessChrome", async () => {
+    const server: Server = createServer((req, res) => {
+      const headless = req.headers["user-agent"]?.includes("HeadlessChrome");
+      res.setHeader("content-type", "text/html");
+      res.end(headless ? '<button tabindex="3">blocked</button>' : "<button>in</button>");
+    });
+    await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      throw new Error("no server port");
+    }
+    try {
+      const { code, stdout } = await run([`http://127.0.0.1:${address.port}`]);
+      expect(code).toBe(0);
+      expect(stdout).toContain("No tab-order issues.");
+    } finally {
+      server.close();
+    }
+  });
+});
+
 describe("auditing", () => {
   test("clean page exits 0 with the no-issues message", async () => {
     const { code, stdout } = await run([fixture("clean.html")]);
     expect(code).toBe(0);
     expect(stdout).toContain("No tab-order issues.");
+  });
+
+  test("page without tabbable elements exits 2 and suggests --wait", async () => {
+    const { code, stdout, stderr } = await run([fixture("empty.html")]);
+    expect(code).toBe(2);
+    expect(stdout).toContain("No tab-order issues.");
+    expect(stderr).toContain("No tabbable elements found");
+    expect(stderr).toContain("--wait");
   });
 
   test("page with errors exits 1 and names the rule", async () => {

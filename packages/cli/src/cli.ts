@@ -207,12 +207,25 @@ try {
   // Playwright's own SIGINT handler would kill the browser before the
   // session can be saved.
   browser = await chromium.launch({ headless: !headed, handleSIGINT: !isLogin });
+
+  // Headless Chromium advertises "HeadlessChrome" in its UA. Backends that reject
+  // it serve the audit a login or block page the headed overlay never sees, so
+  // headless runs present the UA a headed run would.
+  let userAgent: string | undefined;
+  if (!headed) {
+    const probe = await browser.newPage();
+    userAgent = (await probe.evaluate(() => navigator.userAgent)).replace(
+      "HeadlessChrome",
+      "Chrome",
+    );
+    await probe.close();
+  }
   // viewport:null uses the real window size; bypassCSP lets the overlay's <style>
   // and script through on strict sites.
   const context = await browser.newContext(
     headed
       ? { viewport: viewport ?? null, bypassCSP: values.overlay, storageState: auth.load }
-      : { viewport, storageState: auth.load },
+      : { viewport, storageState: auth.load, userAgent },
   );
   if (timeout !== undefined) {
     context.setDefaultTimeout(timeout);
@@ -291,13 +304,21 @@ try {
           const formatted = ooo.formatViolations(result, format);
           output = typeof formatted === "string" ? formatted : JSON.stringify(formatted, null, 2);
         }
-        return { output, valid: result.valid };
+        return { output, valid: result.valid, stops: result.sequence.length };
       },
       { format, rules },
     );
 
     process.stdout.write(out.output + "\n");
-    process.exitCode = out.valid ? 0 : 1;
+    if (out.stops === 0) {
+      process.stderr.write(
+        "No tabbable elements found: the audit graded an empty page. " +
+          "If the page renders after load (SPA, loading screen), re-run with --wait <selector>.\n",
+      );
+      process.exitCode = 2;
+    } else {
+      process.exitCode = out.valid ? 0 : 1;
+    }
   }
 } catch (err) {
   process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
