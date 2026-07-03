@@ -16,6 +16,7 @@ import { headlessControls, setupControls, type ModifierKey } from "./controls.js
 export type MotionMode = "auto" | "on" | "off";
 
 export type { ModifierKey };
+export { addCopySplit, addSwitch, setSwitch, type CopySplitOptions } from "./controls.js";
 
 export interface TraceOptions {
   /** Subtree to analyze. Defaults to document. */
@@ -34,15 +35,25 @@ export interface TraceOptions {
   /** Called after every re-analysis with the fresh result. The first call is
       synchronous, before trace() returns. */
   onResult?: (result: AuditResult) => void;
+  /** Called whenever visibility or peek flips, whatever flipped it (the API,
+      the control panel, or the peek key). Lets a host without the in-page
+      panel (controls: false) mirror the state in its own UI. */
+  onStateChange?: (state: { visible: boolean; peeking: boolean }) => void;
 }
 
 export interface TraceHandle {
   /** Whether the overlay is currently shown. */
   readonly visible: boolean;
+  /** Whether the overlay is currently click-through ("peek"). */
+  readonly peeking: boolean;
   /** Show or hide the whole overlay: badges, arrows, and the element rings. */
   setVisible(visible: boolean): void;
   /** Flip between shown and hidden. */
   toggle(): void;
+  /** Turn peek (click-through) on or off. Ignored while the overlay is hidden. */
+  setPeek(peek: boolean): void;
+  /** Switch the motion behaviour. */
+  setMotion(mode: MotionMode): void;
   /** Remove the overlay layer, observers, and listeners. */
   destroy(): void;
   /** Latest analysis result, or null before the first draw. */
@@ -57,16 +68,14 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   layer.dataset.oooPeek = "off";
   document.body.appendChild(layer);
 
-  const motion = options.motion ?? "auto";
+  let motion = options.motion ?? "auto";
   const reduceQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const applyMotion = (): void => {
     const animate = motion === "on" || (motion === "auto" && !reduceQuery.matches);
     layer.dataset.oooMotion = animate ? "play" : "still";
   };
   applyMotion();
-  if (motion === "auto") {
-    reduceQuery.addEventListener("change", applyMotion);
-  }
+  reduceQuery.addEventListener("change", applyMotion);
 
   const tooltip = new Tooltip(layer);
 
@@ -108,6 +117,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     }
     controls.syncVisible(next);
     patchPanelState({ visible: next });
+    options.onStateChange?.({ visible, peeking });
   };
   const setPeek = (next: boolean): void => {
     peeking = next;
@@ -117,6 +127,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     }
     controls.syncPeek(next);
     patchPanelState({ peek: next });
+    options.onStateChange?.({ visible, peeking });
   };
 
   const controls =
@@ -155,12 +166,23 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     get visible() {
       return visible;
     },
+    get peeking() {
+      return peeking;
+    },
     setVisible,
     toggle: () => setVisible(!visible),
-    destroy: () => {
-      if (motion === "auto") {
-        reduceQuery.removeEventListener("change", applyMotion);
+
+    setPeek: (peek) => {
+      if (visible || !peek) {
+        setPeek(peek);
       }
+    },
+    setMotion: (mode) => {
+      motion = mode;
+      applyMotion();
+    },
+    destroy: () => {
+      reduceQuery.removeEventListener("change", applyMotion);
       controls.teardown();
       tracker.destroy();
       mutations.destroy();

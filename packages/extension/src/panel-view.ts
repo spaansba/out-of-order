@@ -1,4 +1,5 @@
-import type { AuditSnapshot } from "./protocol.js";
+import { addSwitch, setSwitch } from "@out-of-order/trace";
+import type { AuditSnapshot, OverlaySettings } from "./protocol.js";
 
 export type StatusKind = "info" | "error";
 
@@ -12,18 +13,76 @@ export function renderStatus(banner: HTMLElement, kind: StatusKind | null, text 
   }
 }
 
-export function renderIdle(container: HTMLElement): void {
+export interface SettingsHandlers {
+  onOverlay: (on: boolean) => void;
+  onPeek: (on: boolean) => void;
+  onMotion: (on: boolean) => void;
+}
+
+export interface SettingsView {
+  /** Mirror the overlay state the content script reports (it is authoritative:
+      the peek key on the page flips it too). */
+  syncState(visible: boolean, peeking: boolean): void;
+}
+
+export function buildSettings(
+  container: HTMLElement,
+  initial: OverlaySettings,
+  handlers: SettingsHandlers,
+): SettingsView {
+  const signal = new AbortController().signal;
+  let overlayOn = initial.overlay;
+  let peekOn = initial.peek;
+  let motionOn = initial.motion;
+
+  const overlaySwitch = addSwitch(
+    container,
+    "vis",
+    "Overlay",
+    () => handlers.onOverlay(!overlayOn),
+    signal,
+  );
+  const peekSwitch = addSwitch(container, "peek", "Peek", () => handlers.onPeek(!peekOn), signal);
+
   const hint = document.createElement("p");
-  hint.className = "hint";
-  hint.textContent = "Waiting for a page to audit.";
-  container.replaceChildren(hint);
+  hint.className = "ooo-panel-hint";
+  hint.textContent = "tap Alt to peek";
+  container.appendChild(hint);
+
+  const motionSwitch = addSwitch(
+    container,
+    "motion",
+    "Motion",
+    () => {
+      motionOn = !motionOn;
+      setSwitch(motionSwitch, motionOn);
+      handlers.onMotion(motionOn);
+    },
+    signal,
+  );
+
+  const sync = (): void => {
+    setSwitch(overlaySwitch, overlayOn);
+    setSwitch(peekSwitch, peekOn);
+    peekSwitch.disabled = !overlayOn;
+  };
+  sync();
+  setSwitch(motionSwitch, motionOn);
+
+  return {
+    syncState(visible, peeking) {
+      overlayOn = visible;
+      peekOn = peeking;
+      sync();
+    },
+  };
 }
 
 export function renderSnapshot(
   container: HTMLElement,
   snapshot: AuditSnapshot,
   onFocus: (index: number) => void,
-): void {
+): HTMLElement[] {
   const summary = document.createElement("p");
   summary.className = "summary";
   const stops = `${snapshot.stopCount} tab ${snapshot.stopCount === 1 ? "stop" : "stops"}`;
@@ -31,11 +90,14 @@ export function renderSnapshot(
     summary.classList.add("summary--ok");
     summary.textContent = `No tab-order issues. ${stops}.`;
     container.replaceChildren(summary);
-    return;
+    return [];
   }
   const elements = `${snapshot.violations.length} ${snapshot.violations.length === 1 ? "element" : "elements"}`;
   summary.textContent = `${stops}, ${elements} with issues.`;
-  container.replaceChildren(summary, ...snapshot.violations.map(buildFinding));
+  const cards = snapshot.violations.map(buildFinding);
+  container.replaceChildren(summary, ...cards);
+
+  return cards;
 
   function buildFinding(
     violation: AuditSnapshot["violations"][number],

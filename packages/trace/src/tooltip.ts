@@ -35,7 +35,9 @@ export class Tooltip {
       }
       this.anchor.style.left = `${x}px`;
       this.anchor.style.top = `${y}px`;
-      this.pop.innerHTML = tip();
+
+      const parsed = new DOMParser().parseFromString(tip(), "text/html");
+      this.pop.replaceChildren(...parsed.body.childNodes);
       this.pop.togglePopover(true);
     });
     target.addEventListener("mouseleave", () => this.hideSoon());

@@ -231,6 +231,39 @@ describe("trace", () => {
     expect(document.activeElement).toBe(caret);
   });
 
+  test("setPeek flips click-through but never while hidden", () => {
+    mount("<button>A</button>", { controls: false });
+    handle!.setPeek(true);
+    expect(handle!.peeking).toBe(true);
+    expect(layer().dataset.oooPeek).toBe("on");
+    handle!.setPeek(false);
+    expect(layer().dataset.oooPeek).toBe("off");
+    handle!.setVisible(false);
+    handle!.setPeek(true);
+    // Click-through is meaningless with nothing drawn.
+    expect(handle!.peeking).toBe(false);
+    expect(layer().dataset.oooPeek).toBe("off");
+  });
+
+  test("setMotion overrides the mode at runtime", () => {
+    mount("<button>A</button>", { motion: "on" });
+    expect(layer().dataset.oooMotion).toBe("play");
+    handle!.setMotion("off");
+    expect(layer().dataset.oooMotion).toBe("still");
+    handle!.setMotion("on");
+    expect(layer().dataset.oooMotion).toBe("play");
+  });
+
+  test("onStateChange reports visibility and peek flips from any source", () => {
+    const onStateChange = vi.fn();
+    mount("<button>A</button>", { controls: false, onStateChange });
+    tapAlt();
+    expect(onStateChange).toHaveBeenLastCalledWith({ visible: true, peeking: true });
+    handle!.setVisible(false);
+    // Hiding ends the peek; the last call reflects the settled state.
+    expect(onStateChange).toHaveBeenLastCalledWith({ visible: false, peeking: false });
+  });
+
   test("destroy removes the layer and un-rings elements", () => {
     mount("<button>A</button>");
     const button = root.querySelector("button")!;

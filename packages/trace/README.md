@@ -37,15 +37,23 @@ interface TraceOptions {
   controls?: boolean;
   /** Called after every re-analysis with the fresh result. */
   onResult?: (result: AuditResult) => void;
+  /** Called whenever visibility or peek flips, whatever flipped it. */
+  onStateChange?: (state: { visible: boolean; peeking: boolean }) => void;
 }
 
 interface TraceHandle {
   /** Whether the overlay is currently shown. */
   readonly visible: boolean;
+  /** Whether the overlay is currently click-through ("peek"). */
+  readonly peeking: boolean;
   /** Show or hide the whole overlay: badges, arrows, and the element rings. */
   setVisible(visible: boolean): void;
   /** Flip between shown and hidden. */
   toggle(): void;
+  /** Turn peek (click-through) on or off. Ignored while the overlay is hidden. */
+  setPeek(peek: boolean): void;
+  /** Switch the motion behaviour. */
+  setMotion(mode: MotionMode): void;
   /** Remove the overlay layer, observers, and listeners. */
   destroy(): void;
   /** Latest analysis result, or null before the first draw. */

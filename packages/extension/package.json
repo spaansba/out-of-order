@@ -23,7 +23,6 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "icons": "node scripts/render-icons.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "zip": "pnpm run build && rm -f out-of-order-extension-*.zip && cd dist && zip -rqX \"../out-of-order-extension-v$npm_package_version.zip\" ."

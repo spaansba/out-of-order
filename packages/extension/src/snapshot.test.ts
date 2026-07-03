@@ -44,3 +44,20 @@ test("elements inside an embedded trace overlay are excluded", () => {
   expect(snapshot.violations).toHaveLength(0);
   expect(snapshot.stopCount).toBe(1);
 });
+
+test("the snapshot carries a pre-rendered report in every copy format", () => {
+  mount(`
+    <button>First</button>
+    <div tabindex="5">Jumps the queue</div>
+  `);
+
+  const result = audit(document);
+  const snapshot = buildSnapshot(result, pageViolations(result));
+
+  expect(snapshot.reports.text).toContain("tabindex");
+  for (const format of ["by-element", "by-violation", "flat"] as const) {
+    const parsed: unknown = JSON.parse(snapshot.reports[format]);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect((parsed as unknown[]).length).toBeGreaterThan(0);
+  }
+});

@@ -120,17 +120,33 @@ function buildBody(
   hint.textContent = `tap ${PEEK_KEY_LABEL[opts.peekKey]} to peek`;
   body.appendChild(hint);
 
-  addCopyButton(body, opts, signal);
+  addCopySplit(
+    body,
+    { format: opts.copyFormat, onFormat: opts.onCopyFormat, getReport: opts.getReport },
+    signal,
+  );
 
   return { body, visSwitch, peekSwitch };
 }
 
+export interface CopySplitOptions {
+  /** Starting format. Defaults to "by-element". */
+  format?: AuditFormat;
+  /** Called when the user picks another format, so the host can persist it. */
+  onFormat?: (format: AuditFormat) => void;
+  getReport: (format: AuditFormat) => string;
+}
+
 // A split button, GitHub-merge style: the main face copies in the current format;
-// the caret opens a menu to switch it. Picking a format only sets it (persisted so
-// it survives a same-tab navigation) and relabels the main face - the next main
-// click copies in that format.
-function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: AbortSignal): void {
-  let current = opts.copyFormat;
+// the caret opens a menu to switch it. Picking a format only sets it and relabels
+// the main face - the next main click copies in that format. Exported so hosts
+// with their own chrome (the extension panel) get the identical widget.
+export function addCopySplit(
+  parent: HTMLElement,
+  opts: CopySplitOptions,
+  signal: AbortSignal,
+): void {
+  let current = opts.format ?? "by-element";
 
   const wrap = document.createElement("div");
   wrap.className = "ooo-copy-split";
@@ -219,7 +235,7 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
       (event) => {
         current = format.value;
         syncSelection();
-        opts.onCopyFormat(current);
+        opts.onFormat?.(current);
         // detail 0 → keyboard activation: hand focus back to the caret. A mouse
         // click never took it (mousedown is prevented), so leave it alone.
         closeMenu(event.detail === 0);
@@ -305,7 +321,9 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
   parent.appendChild(wrap);
 }
 
-function addSwitch(
+/** A labelled on/off switch row. Exported for hosts that mirror the panel's
+    controls in their own UI (the extension panel); sync state with setSwitch. */
+export function addSwitch(
   parent: HTMLElement,
   name: string,
   text: string,
@@ -325,7 +343,9 @@ function addSwitch(
   sw.setAttribute("role", "switch");
   // The visible label is a sibling span, invisible to the accessibility tree.
   sw.setAttribute("aria-label", text);
-  sw.innerHTML = `<span class="ooo-switch-knob"></span>`;
+  const knob = document.createElement("span");
+  knob.className = "ooo-switch-knob";
+  sw.append(knob);
   sw.addEventListener("mousedown", (event) => event.preventDefault(), {
     signal,
   });
@@ -336,7 +356,7 @@ function addSwitch(
   return sw;
 }
 
-function setSwitch(sw: HTMLButtonElement, on: boolean): void {
+export function setSwitch(sw: HTMLButtonElement, on: boolean): void {
   sw.setAttribute("aria-checked", String(on));
   sw.classList.toggle("ooo-switch--on", on);
 }

@@ -169,6 +169,8 @@ a.ooo-tip-rule:hover > span { text-decoration: underline; text-underline-offset:
 .ooo-tip-rule-ic { flex: none; opacity: 0.55; }
 a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
 .ooo-tip-msg { display: block; margin: 0; color: var(--ooo-ink-2); font-size: 12.5px; }
+.ooo-tip-code { font-family: var(--ooo-mono); font-size: 0.88em; padding: 0.5px 3px;
+  border-radius: 2px; background: var(--ooo-btn); color: var(--ooo-ink); }
 .ooo-tip-fix { display: block; margin-top: 5px; padding-left: 9px;
   border-left: 2px solid var(--ooo-line-2); color: var(--ooo-ink-2); font-size: 12px; }
 .ooo-tip-fix-label { display: block;
