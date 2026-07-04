@@ -124,7 +124,7 @@ const CODE_TOKEN = new RegExp(
     /<[a-z][\w-]*>/, // tag mention: <button>
     /(?:aria|data)-[\w-]+/, // aria-label, data-ooo-ignore
     /\b(?:tabindex|autofocus|inert|onclick|alt)\b/, // bare attribute names
-    /\b[a-z-]+:[a-z-]+\b/, // css declaration: display:none, visibility:hidden
+    /\b[a-z-]+:[a-z0-9-]+(?:\([^)]*\))?/, // css declaration: display:none, opacity:0, filter:opacity(0)
     /:(?:hover|focus|active|focus-visible)\b/, // css pseudo-class
     /\b(?:Enter|Space)\b/, // key names
     /"[^"]*"/, // quoted selector
