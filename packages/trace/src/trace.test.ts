@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { flaggedEntries } from "@out-of-order/core";
 import { trace, type TraceHandle, type TraceOptions } from "./index.js";
 
 let handle: TraceHandle | null = null;
@@ -21,8 +22,9 @@ afterEach(() => {
   handle?.destroy();
   handle = null;
   document.body.innerHTML = "";
-  // Panel state persists in sessionStorage; clear it so tests don't leak into each other.
-  sessionStorage.clear();
+  window.scrollTo(0, 0);
+  // Panel state persists in localStorage; clear it so tests don't leak into each other.
+  localStorage.clear();
 });
 
 describe("trace", () => {
@@ -206,7 +208,7 @@ describe("trace", () => {
     expect(title.tabIndex).toBe(0);
     // The page's button + title + two switches + copy button + caret, all clean.
     expect(handle.result!.sequence).toHaveLength(6);
-    expect(handle.result!.violations).toHaveLength(0);
+    expect(flaggedEntries(handle.result!)).toHaveLength(0);
     expect(handle.result!.valid).toBe(true);
     // Graded but not drawn: no badges, rings, or hops on the overlay's own chrome.
     expect(numbered()).toHaveLength(1);
@@ -264,14 +266,16 @@ describe("trace", () => {
     expect(onStateChange).toHaveBeenLastCalledWith({ visible: false, peeking: false });
   });
 
-  test("destroy removes the layer and un-rings elements", () => {
+  test("destroy removes the layer and un-marks elements", () => {
     mount("<button>A</button>");
     const button = root.querySelector("button")!;
     expect(button.getAttribute("data-ooo-ring")).toBe("ok");
+    expect(button.hasAttribute("data-ooo-anchor")).toBe(true);
     handle!.destroy();
     handle = null;
     expect(document.querySelector(".ooo-layer")).toBeNull();
     expect(button.hasAttribute("data-ooo-ring")).toBe(false);
+    expect(button.hasAttribute("data-ooo-anchor")).toBe(false);
   });
 
   test("onResult fires synchronously on mount and again on rebuild", async () => {
@@ -299,17 +303,155 @@ describe("trace", () => {
     });
   });
 
-  test("rebuilds when content inside a shadow root changes", async () => {
-    mount("");
+  /** Viewport-space center distance between a badge and `el`. */
+  const badgeDrift = (el: Element, badgeEl: Element = numbered()[0]!): number => {
+    const badge = badgeEl.getBoundingClientRect();
+    const target = el.getBoundingClientRect();
+    return Math.hypot(
+      badge.left + badge.width / 2 - (target.left + target.width / 2),
+      badge.top + badge.height / 2 - (target.top + target.height / 2),
+    );
+  };
+
+  test("a badge sits on its element's center", () => {
+    mount('<button style="margin:200px;width:80px;height:40px">A</button>');
+    expect(badgeDrift(root.querySelector("button")!)).toBeLessThan(1.5);
+  });
+
+  test("an element with its own anchor-name keeps it and still gets a badge", () => {
+    mount(
+      '<button style="margin:200px;width:80px;height:40px;anchor-name:--their-menu">A</button>',
+    );
+    const button = root.querySelector("button")!;
+    // The page's name is reused, not clobbered or overridden by ours.
+    expect(getComputedStyle(button).getPropertyValue("anchor-name")).toBe("--their-menu");
+    expect(button.hasAttribute("data-ooo-anchor")).toBe(false);
+    expect(badgeDrift(button)).toBeLessThan(1.5);
+  });
+
+  test("badges stay on their element across a window scroll", async () => {
+    mount('<div style="height:3000px"></div><button>A</button>');
+    const button = root.querySelector("button")!;
+    window.scrollTo(0, 400);
+    await vi.waitFor(() => expect(window.scrollY).toBe(400), { timeout: 2000 });
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    expect(badgeDrift(button)).toBeLessThan(1.5);
+  });
+
+  test("a fixed element's badge follows it through a window scroll", async () => {
+    // The fixed element keeps its viewport spot while the page scrolls under it;
+    // the anchored badge must stay glued without any JS repositioning.
+    mount(
+      '<div style="height:3000px"></div>' +
+        '<button style="position:fixed;top:10px;left:10px;width:80px;height:40px">A</button>',
+    );
+    const button = root.querySelector("button")!;
+    window.scrollTo(0, 300);
+    await vi.waitFor(() => expect(window.scrollY).toBe(300), { timeout: 2000 });
+    await vi.waitFor(() => expect(badgeDrift(button)).toBeLessThan(1.5), { timeout: 2000 });
+  });
+
+  /** Max edge distance between the live hop candidate's box and the span of the
+      two elements' centers (the box the quadrant scheme should produce). */
+  const hopDrift = (a: Element, b: Element): number => {
+    const center = (el: Element): [number, number] => {
+      const rect = el.getBoundingClientRect();
+      return [rect.left + rect.width / 2, rect.top + rect.height / 2];
+    };
+    const live = [...document.querySelectorAll(".ooo-hop")].find(
+      (hop) => getComputedStyle(hop.querySelector(".ooo-hop-line")!).display !== "none",
+    );
+    if (!live) {
+      return Infinity;
+    }
+    const rect = live.getBoundingClientRect();
+    const [ax, ay] = center(a);
+    const [bx, by] = center(b);
+    return Math.max(
+      Math.abs(rect.left - (Math.min(ax, bx) - 0.5)),
+      Math.abs(rect.top - (Math.min(ay, by) - 0.5)),
+      Math.abs(rect.right - (Math.max(ax, bx) + 0.5)),
+      Math.abs(rect.bottom - (Math.max(ay, by) + 0.5)),
+    );
+  };
+
+  test("a seam hop (fixed to in-flow) hides while scrolling and returns glued", async () => {
+    mount(
+      '<button style="position:fixed;top:10px;left:10px;width:80px;height:40px">A</button>' +
+        '<div style="height:3000px"></div>' +
+        '<button style="width:80px;height:40px">B</button>',
+    );
+    const [a, b] = [...root.querySelectorAll("button")];
+    // A seam hop spans two scroll regimes, so it is placed from live geometry
+    // rather than riding a CSS anchor like the other hops.
+    expect(document.querySelectorAll(".ooo-hop")).toHaveLength(1);
+    expect(hopDrift(a!, b!)).toBeLessThan(2);
+    window.scrollTo(0, 400);
+    // Mid-scroll the seam hop ducks out instead of swimming behind the badges.
+    await vi.waitFor(() => expect(layer().dataset.oooShifting).toBe("on"), { timeout: 2000 });
+    // Once the scroll settles it comes back, freshly placed.
+    await vi.waitFor(() => expect(layer().dataset.oooShifting).toBeUndefined(), {
+      timeout: 2000,
+    });
+    expect(window.scrollY).toBe(400);
+    expect(hopDrift(a!, b!)).toBeLessThan(2);
+  });
+
+  test("a badge follows its element inside a scrolled nested container", async () => {
+    mount(
+      '<div id="scroller" style="height:100px;overflow:auto">' +
+        '<div style="height:200px"></div><button>A</button></div>',
+    );
+    const button = root.querySelector("button")!;
+    root.querySelector("#scroller")!.scrollTop = 150;
+    await vi.waitFor(() => expect(badgeDrift(button)).toBeLessThan(1.5), { timeout: 2000 });
+  });
+
+  test("an SVG anchor (no CSS box) gets a JS-placed badge on its element", () => {
+    // anchor-name no-ops on SVG layout elements, so the badge can't ride a CSS
+    // anchor; it's placed from live geometry instead, and must still land on the
+    // link rather than collapsing to the layer origin.
+    mount(
+      '<button style="width:80px;height:40px">A</button>' +
+        '<svg width="120" height="40"><a href="#" aria-label="svg link">' +
+        '<text x="12" y="25">B</text></a></svg>',
+    );
+    const svgAnchor = root.querySelector("svg a")!;
+    expect(numbered()).toHaveLength(2);
+    // No anchor attribute published for it (it could never anchor), and its badge
+    // carries an inline position instead of the --ooo-anchor custom property.
+    expect(svgAnchor.hasAttribute("data-ooo-anchor")).toBe(false);
+    const svgBadge = numbered()[1]!;
+    expect((svgBadge as HTMLElement).style.getPropertyValue("--ooo-anchor")).toBe("");
+    expect(badgeDrift(svgAnchor, svgBadge)).toBeLessThan(1.5);
+    // The hop into the SVG stop can't ride a CSS anchor, so it's a JS-placed seam box.
+    expect(layer().querySelectorAll(".ooo-hop")).toHaveLength(1);
+    expect(hopDrift(root.querySelector("button")!, svgAnchor)).toBeLessThan(2);
+  });
+
+  test("shadow-DOM stops get badges, and hops cross the boundary", async () => {
+    mount("<button>Light</button>");
     // The host arrives after trace() mounted, so its shadow root must be picked up
     // by the rebuild that its (light DOM) insertion triggers.
     const host = document.createElement("div");
     const shadow = host.attachShadow({ mode: "open" });
     shadow.innerHTML = "<button>A</button>";
     root.appendChild(host);
-    await vi.waitFor(() => expect(numbered()).toHaveLength(1), { timeout: 2000 });
+    await vi.waitFor(() => expect(handle!.result!.sequence).toHaveLength(2), { timeout: 2000 });
+    // Badges draw in the main layer, anchored across the boundary via ::part.
+    await vi.waitFor(() => expect(numbered()).toHaveLength(2), { timeout: 2000 });
+    const inner = shadow.querySelector("button")!;
+    expect(inner.getAttribute("data-ooo-ring")).toBe("ok");
+    expect(badgeDrift(inner, numbered()[1]!)).toBeLessThan(1.5);
+    // The light->shadow hop rides CSS anchors across the boundary (::part) as a single box.
+    expect(layer().querySelectorAll(".ooo-hop")).toHaveLength(1);
+    expect(hopDrift(root.querySelector("button")!, inner)).toBeLessThan(2);
     // This mutation happens inside the shadow root only; no light-DOM node changes.
     shadow.innerHTML = "<button>A</button><button>B</button>";
-    await vi.waitFor(() => expect(numbered()).toHaveLength(2), { timeout: 2000 });
+    await vi.waitFor(() => expect(numbered()).toHaveLength(3), { timeout: 2000 });
+    // Destroy releases the part tokens the anchors rode on.
+    handle!.destroy();
+    handle = null;
+    expect(shadow.querySelector("button")!.part.length).toBe(0);
   });
 });

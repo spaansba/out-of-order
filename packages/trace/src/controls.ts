@@ -130,17 +130,14 @@ function buildBody(
 }
 
 export interface CopySplitOptions {
-  /** Starting format. Defaults to "by-element". */
   format?: AuditFormat;
-  /** Called when the user picks another format, so the host can persist it. */
   onFormat?: (format: AuditFormat) => void;
   getReport: (format: AuditFormat) => string;
 }
 
 // A split button, GitHub-merge style: the main face copies in the current format;
 // the caret opens a menu to switch it. Picking a format only sets it and relabels
-// the main face - the next main click copies in that format. Exported so hosts
-// with their own chrome (the extension panel) get the identical widget.
+// the main face - the next main click copies in that format.
 export function addCopySplit(
   parent: HTMLElement,
   opts: CopySplitOptions,
@@ -321,8 +318,6 @@ export function addCopySplit(
   parent.appendChild(wrap);
 }
 
-/** A labelled on/off switch row. Exported for hosts that mirror the panel's
-    controls in their own UI (the extension panel); sync state with setSwitch. */
 export function addSwitch(
   parent: HTMLElement,
   name: string,

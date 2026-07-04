@@ -61,7 +61,7 @@ function issueItem(issue: Issue): string {
   );
 }
 
-export function segTip(back: boolean, from: number, toStop: number): string {
+export function segmentTip(back: boolean, from: number, toStop: number): string {
   const flag = back
     ? `<span class="ooo-tip-flag ooo-tip-flag--back">↩ reverse</span>`
     : `<span class="ooo-tip-flag">→ forward</span>`;

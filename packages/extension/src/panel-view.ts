@@ -20,8 +20,6 @@ export interface SettingsHandlers {
 }
 
 export interface SettingsView {
-  /** Mirror the overlay state the content script reports (it is authoritative:
-      the peek key on the page flips it too). */
   syncState(visible: boolean, peeking: boolean): void;
 }
 

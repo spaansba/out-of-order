@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { audit } from "./index.js";
+import { audit, flaggedEntries } from "./index.js";
 import { ALL_RULES } from "./rules/index.js";
 
 afterEach(() => {
@@ -7,7 +7,7 @@ afterEach(() => {
 });
 
 const allIssues = (root: Document | Element, options?: Parameters<typeof audit>[1]) =>
-  audit(root, options).violations.flatMap((violation) => violation.issues);
+  flaggedEntries(audit(root, options)).flatMap((entry) => entry.issues);
 
 describe("audit", () => {
   test("reports an empty, valid result when nothing is focusable", () => {
@@ -15,7 +15,7 @@ describe("audit", () => {
     const result = audit(document.body);
     expect(result.valid).toBe(true);
     expect(result.sequence).toHaveLength(0);
-    expect(result.violations).toHaveLength(0);
+    expect(flaggedEntries(result)).toHaveLength(0);
   });
 
   test("numbers the sequence in tab order with real geometry", () => {
@@ -24,7 +24,7 @@ describe("audit", () => {
     expect(sequence.map((entry) => entry.element.tagName)).toEqual(["BUTTON", "A"]);
     expect(sequence.map((entry) => entry.orderIndex)).toEqual([0, 1]);
     expect(sequence[0]!.selector).toContain("button");
-    expect(sequence[0]!.rect.width).toBeGreaterThan(0);
+    expect(sequence[0]!.rect!.width).toBeGreaterThan(0);
   });
 
   test("treats a Document root as its documentElement", () => {
@@ -39,7 +39,7 @@ describe("audit", () => {
     const result = audit(empty);
     expect(result.valid).toBe(true);
     expect(result.sequence).toHaveLength(0);
-    expect(result.violations).toHaveLength(0);
+    expect(flaggedEntries(result)).toHaveLength(0);
   });
 
   test("pierces an open shadow root", () => {
@@ -63,7 +63,7 @@ describe("audit", () => {
 
   test("groups an element's issues under one violation with its docs link", () => {
     document.body.innerHTML = "<button></button>"; // unnamed → missing-accessible-name
-    const violation = audit(document.body).violations.find((v) =>
+    const violation = flaggedEntries(audit(document.body)).find((v) =>
       v.issues.some((issue) => issue.rule === "missing-accessible-name"),
     )!;
     expect(violation.element).toBe(document.querySelector("button"));
@@ -77,7 +77,7 @@ describe("audit", () => {
     // duplicate-autofocus targets bare Elements; the loser is still a tab stop.
     document.body.innerHTML = "<button autofocus>A</button><button autofocus>B</button>";
     const second = document.querySelectorAll("button")[1]!;
-    const violation = audit(document.body).violations.find((v) => v.element === second)!;
+    const violation = flaggedEntries(audit(document.body)).find((v) => v.element === second)!;
     expect(violation.issues.map((i) => i.rule)).toContain("duplicate-autofocus");
     expect(violation.orderIndex).toBe(1);
   });
@@ -146,7 +146,7 @@ describe("severity", () => {
     // redundant-tabindex is a warning, and the only rule this trips.
     document.body.innerHTML = '<button tabindex="0">Save</button>';
     const result = audit(document.body);
-    const issues = result.violations.flatMap((v) => v.issues);
+    const issues = flaggedEntries(result).flatMap((v) => v.issues);
     expect(issues.map((i) => i.rule)).toContain("redundant-tabindex");
     expect(issues.every((i) => i.severity === "warning")).toBe(true);
     expect(result.valid).toBe(true);
@@ -162,7 +162,7 @@ describe("severity", () => {
     const result = audit(document.body, {
       rules: { "no-positive-tabindex": "warning" },
     });
-    const issue = result.violations
+    const issue = flaggedEntries(result)
       .flatMap((v) => v.issues)
       .find((i) => i.rule === "no-positive-tabindex")!;
     expect(issue.severity).toBe("warning");
@@ -183,7 +183,7 @@ describe("data-ooo-ignore", () => {
   test("a bare attribute approves every finding on the element", () => {
     document.body.innerHTML = "<button data-ooo-ignore></button>"; // unnamed
     const result = audit(document.body);
-    const issues = result.violations.flatMap((v) => v.issues);
+    const issues = flaggedEntries(result).flatMap((v) => v.issues);
     expect(issues.some((i) => i.rule === "missing-accessible-name")).toBe(true);
     // Still reported, just approved: it stays in the result, flagged ignored.
     expect(issues.every((i) => i.ignored)).toBe(true);
@@ -195,7 +195,7 @@ describe("data-ooo-ignore", () => {
     // Two errors on one element: a positive tabindex and no accessible name.
     document.body.innerHTML =
       '<button tabindex="1" data-ooo-ignore="no-positive-tabindex"></button>';
-    const issues = audit(document.body).violations.flatMap((v) => v.issues);
+    const issues = flaggedEntries(audit(document.body)).flatMap((v) => v.issues);
     const positive = issues.find((i) => i.rule === "no-positive-tabindex")!;
     const unnamed = issues.find((i) => i.rule === "missing-accessible-name")!;
     expect(positive.ignored).toBe(true);
@@ -207,7 +207,7 @@ describe("data-ooo-ignore", () => {
   test("is element-scoped: an ancestor's attribute doesn't cover a child", () => {
     document.body.innerHTML = "<div data-ooo-ignore><button></button></div>";
     const result = audit(document.body);
-    const unnamed = result.violations
+    const unnamed = flaggedEntries(result)
       .flatMap((v) => v.issues)
       .find((i) => i.rule === "missing-accessible-name")!;
     expect(unnamed.ignored).toBeFalsy();

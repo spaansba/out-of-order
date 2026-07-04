@@ -59,6 +59,8 @@ An honest focus check needs CSS layout: what is really visible, what is clipped,
 
 A check reads the page as it is the instant it runs. It sees the live DOM and its computed styles, including styles behind state selectors like `:focus`, but it never fires events or runs the page's own JavaScript. Anything that only exists at runtime is invisible to it: if a handler reveals a hidden element the moment it is tabbed to, the check sees only the resting state and can flag it as invisible even though a keyboard user would be fine. When that happens, drive the interaction yourself and run the check again on the state you actually get. A finding you have already weighed can be [approved in place](https://spaansba.github.io/out-of-order/getting-started.html#approve) with `data-ooo-ignore`.
 
+Some checks read the page's stylesheet rules, and the browser's same-origin policy forbids reading the rules of a cross-origin stylesheet, so anything defined only there is invisible to the check.
+
 A few things sit in the tab order in real browsers but are left out on purpose, because they cannot be reasoned about across browsers: an `<iframe>`, since its own document owns its stops, and a keyboard-focusable scroll container, since browsers disagree on it.
 
 ## License

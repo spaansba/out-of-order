@@ -1,4 +1,4 @@
-import type { Violation } from "@out-of-order/core";
+import type { Entry } from "@out-of-order/core";
 import { trace, type TraceHandle } from "@out-of-order/trace";
 import { buildSnapshot, pageViolations } from "./snapshot.js";
 import type { ContentMessage, PanelMessage } from "./protocol.js";
@@ -14,7 +14,7 @@ if (!window.__oooExtension) {
 
   let overlay: TraceHandle | null = null;
   let activePort: chrome.runtime.Port | null = null;
-  let lastViolations: Violation[] = [];
+  let lastViolations: Entry[] = [];
 
   const focusViolation = (index: number): void => {
     const element = lastViolations[index]?.element;

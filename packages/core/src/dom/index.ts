@@ -5,6 +5,8 @@ export {
   containsComposed,
 } from "./composed-tree.js";
 export { isRuleIgnored } from "./ignore.js";
+export { createReads, directReads } from "./reads.js";
+export type { DomReads } from "./reads.js";
 export { selectorFor } from "./selector.js";
 export {
   compositeAncestor,
@@ -17,6 +19,7 @@ export {
   nativeReplacement,
 } from "./semantics.js";
 export {
+  floatingAncestor,
   inAriaHidden,
   isDisplayed,
   isInert,

@@ -1,27 +1,31 @@
-import { closestAncestor, composedParent, isScreenReaderOnly } from "../dom/index.js";
+import {
+  closestAncestor,
+  composedParent,
+  isScreenReaderOnly,
+  type DomReads,
+} from "../dom/index.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 /** Resolved opacity is 0 on the element or any ancestor (so it paints nothing).
     Prefers the native checkVisibility() (which folds in the opacity chain), falling
     back to walking the ancestors on engines that lack it. */
-function isTransparent(element: Element): boolean {
+function isTransparent(element: Element, reads: DomReads): boolean {
   const check = (element as HTMLElement).checkVisibility;
   if (typeof check === "function") {
     return !check.call(element, { opacityProperty: true });
   }
   return (
-    closestAncestor(element, (node) => parseFloat(getComputedStyle(node).opacity || "1") === 0) !==
-    null
+    closestAncestor(element, (node) => parseFloat(reads.style(node).opacity || "1") === 0) !== null
   );
 }
 
 /** filter:opacity(0) on the element or an ancestor paints the whole subtree
     invisible, but checkVisibility's opacityProperty only folds in the opacity
     property, so the filter chain needs its own walk. */
-function hasZeroOpacityFilter(element: Element): boolean {
+function hasZeroOpacityFilter(element: Element, reads: DomReads): boolean {
   return (
     closestAncestor(element, (node) => {
-      const value = /opacity\(([^)]+)\)/.exec(getComputedStyle(node).filter)?.[1];
+      const value = /opacity\(([^)]+)\)/.exec(reads.style(node).filter)?.[1];
       return value !== undefined && parseFloat(value) === 0;
     }) !== null
   );
@@ -30,8 +34,8 @@ function hasZeroOpacityFilter(element: Element): boolean {
 /** clip:rect() that leaves no visible region (right<=left or bottom<=top). The
     border box keeps its full size, so the zero-size check never sees this. Clip
     only applies to absolutely positioned elements. */
-function hasEmptyClip(element: Element): boolean {
-  const style = getComputedStyle(element);
+function hasEmptyClip(element: Element, reads: DomReads): boolean {
+  const style = reads.style(element);
   if (style.position !== "absolute" && style.position !== "fixed") {
     return false;
   }
@@ -50,13 +54,13 @@ function hasEmptyClip(element: Element): boolean {
     element can never be brought into view. `overflow:hidden` is a scroll container
     the browser scrolls to reveal a focused descendant, so it isn't a dead end and is
     excluded here (see the reveal-on-focus handling in `hiddenReason`). */
-function isClipped(element: Element, rect: DOMRect): boolean {
+function isClipped(element: Element, rect: DOMRect, reads: DomReads): boolean {
   for (let node = composedParent(element); node; node = composedParent(node)) {
-    const containerRect = node.getBoundingClientRect();
+    const containerRect = reads.rect(node);
     if (containerRect.width === 0 && containerRect.height === 0) {
       continue;
     }
-    const style = getComputedStyle(node);
+    const style = reads.style(node);
     const outX = rect.right <= containerRect.left || rect.left >= containerRect.right;
     const outY = rect.bottom <= containerRect.top || rect.top >= containerRect.bottom;
     const clipX = style.overflowX === "clip";
@@ -74,7 +78,7 @@ function isClipped(element: Element, rect: DOMRect): boolean {
     past those is unreachable. Overflow past the inline-END edge is scrollable (the
     browser reveals it when the element gains focus), so which horizontal side is a
     dead end follows the document's direction. */
-function isOffPage(element: Element, rect: DOMRect): boolean {
+function isOffPage(element: Element, rect: DOMRect, reads: DomReads): boolean {
   const win = element.ownerDocument?.defaultView;
   if (!win) {
     return false;
@@ -83,7 +87,7 @@ function isOffPage(element: Element, rect: DOMRect): boolean {
     return true;
   }
   const root = element.ownerDocument.documentElement;
-  return getComputedStyle(root).direction === "rtl"
+  return reads.style(root).direction === "rtl"
     ? rect.left + win.scrollX >= root.clientWidth
     : rect.right + win.scrollX <= 0;
 }
@@ -91,8 +95,8 @@ function isOffPage(element: Element, rect: DOMRect): boolean {
 /** Why `element` is invisible given a single measured `rect`, or null if it's
     perceivable. Reads only the state as measured; the focus-reveal check lives in
     `hiddenReason`. Skips the intentional screen-reader-only pattern. */
-function staticHiddenReason(element: Element, rect: DOMRect): string | null {
-  if (isScreenReaderOnly(element, rect)) {
+function staticHiddenReason(element: Element, rect: DOMRect, reads: DomReads): string | null {
+  if (isScreenReaderOnly(element, rect, reads)) {
     return null;
   }
   // An <area> has no box of its own; its hit region lives on the associated
@@ -102,22 +106,22 @@ function staticHiddenReason(element: Element, rect: DOMRect): string | null {
   if (element.tagName.toLowerCase() === "area") {
     return null;
   }
-  if (isTransparent(element)) {
+  if (isTransparent(element, reads)) {
     return "opacity:0, invisible but still tabbable";
   }
-  if (hasZeroOpacityFilter(element)) {
+  if (hasZeroOpacityFilter(element, reads)) {
     return "filter:opacity(0), invisible but still tabbable";
   }
-  if (hasEmptyClip(element)) {
+  if (hasEmptyClip(element, reads)) {
     return "clipped to nothing by clip:rect()";
   }
   if (rect.width < 1 || rect.height < 1) {
     return "zero size, no visible target";
   }
-  if (isOffPage(element, rect)) {
+  if (isOffPage(element, rect, reads)) {
     return "positioned off-screen (e.g. left:-9999px), invisible but still tabbable";
   }
-  if (isClipped(element, rect)) {
+  if (isClipped(element, rect, reads)) {
     return "clipped by an overflow:clip ancestor";
   }
   return null;
@@ -216,8 +220,13 @@ function focusRevealSelectors(doc: Document): string[] {
  * when a keyboard user reaches it, so it's exonerated. Pass `revealOnFocus` from
  * {@link focusRevealSelectors} to enable that exemption.
  */
-function hiddenReason(element: Element, rect: DOMRect, revealOnFocus: string[]): string | null {
-  const reason = staticHiddenReason(element, rect);
+function hiddenReason(
+  element: Element,
+  rect: DOMRect,
+  revealOnFocus: string[],
+  reads: DomReads,
+): string | null {
+  const reason = staticHiddenReason(element, rect, reads);
   if (!reason) {
     return null;
   }
@@ -236,11 +245,11 @@ function hiddenReason(element: Element, rect: DOMRect, revealOnFocus: string[]):
 export const hiddenWhileFocusable: RuleDef = {
   docs: "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
   severity: "error",
-  run: (sequence, { container }) => {
+  run: (sequence, { container, reads }) => {
     // Scan the page's focus-reveal rules once, not per element.
     const revealOnFocus = focusRevealSelectors(container.ownerDocument);
     return flagEntries(sequence, (entry) => {
-      const reason = hiddenReason(entry.element, entry.rect, revealOnFocus);
+      const reason = hiddenReason(entry.element, entry.rect, revealOnFocus, reads);
       return reason
         ? {
             message: `Element is tabbable but ${reason}.`,

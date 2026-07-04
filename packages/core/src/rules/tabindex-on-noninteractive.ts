@@ -9,7 +9,7 @@ import { flagEntries, type RuleDef } from "./rule.js";
 export const tabindexOnNoninteractive: RuleDef = {
   docs: "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
   severity: "error",
-  run: (sequence) =>
+  run: (sequence, { reads }) =>
     flagEntries(sequence, (entry) => {
       if (entry.tabIndex !== 0) {
         return null;
@@ -33,7 +33,7 @@ export const tabindexOnNoninteractive: RuleDef = {
       }
       // A keyboard-scrollable region legitimately takes tabindex="0", even when it
       // isn't currently overflowing, so key on computed overflow, not a live size.
-      if (isScrollContainer(element)) {
+      if (isScrollContainer(element, reads)) {
         return null;
       }
       return {

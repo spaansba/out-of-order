@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit } from "../index.js";
+import { audit, flaggedEntries } from "../index.js";
 import { fired } from "./test-helpers.js";
 
 afterEach(() => {
@@ -44,7 +44,7 @@ describe("redundant-tabindex", () => {
   });
   test("11 flags the element itself, not a sibling", () => {
     document.body.innerHTML = '<input tabindex="0"><button>Save</button>';
-    const redundant = audit(document.body).violations.filter((v) =>
+    const redundant = flaggedEntries(audit(document.body)).filter((v) =>
       v.issues.some((i) => i.rule === "redundant-tabindex"),
     );
     expect(redundant).toHaveLength(1);

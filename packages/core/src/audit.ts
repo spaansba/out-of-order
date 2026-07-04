@@ -1,5 +1,5 @@
 import { tabbable, getTabIndex } from "tabbable";
-import { selectorFor, isRuleIgnored } from "./dom/index.js";
+import { selectorFor, isRuleIgnored, createReads, floatingAncestor } from "./dom/index.js";
 import {
   ALL_RULES,
   type Finding,
@@ -31,26 +31,35 @@ export interface Issue {
   ignored?: boolean;
 }
 
-/** One offending element and every rule it failed. */
-export interface Violation {
-  /** The offending element. */
+/** One graded element */
+export interface Entry {
   element: Element;
-  /** A CSS-ish path to the element, for messages and logs. */
   selector: string;
-  /** Position in the tab sequence, when the element is a tab stop. */
-  orderIndex?: number;
-  /** The rules this element failed. */
   issues: Issue[];
+  /** Zero-based position in the tab sequence, when the element is a tab stop. */
+  orderIndex?: number;
+  /** Resolved tabindex, when the element is a tab stop. */
+  tabIndex?: number;
+  /** Bounding rect at analysis time, when the element is a tab stop. */
+  rect?: DOMRect;
+  /** The fixed/sticky ancestor-or-self the element rides in, or null in flow. */
+  floatRoot?: Element | null;
 }
 
 export interface AuditResult {
   /** True when no enabled rule produced an `error` severity finding. */
   valid: boolean;
-  /** Elements in the exact order tabbing will reach them. */
-  sequence: SequenceEntry[];
-  /** One entry per offending element, each carrying its failed rules. Pass the
-      result to `formatViolations` for a serializable or human-readable view. */
-  violations: Violation[];
+  /** Every tab stop in the exact order tabbing reaches them, each carrying its
+      issues */
+  sequence: Entry[];
+  /** Flagged elements that aren't tab stops at all (interactive but not
+      focusable); each always carries at least one issue. */
+  offSequence: Entry[];
+}
+
+/** Every flagged element (tab stops first, then off-sequence), one row each.  */
+export function flaggedEntries(result: AuditResult): Entry[] {
+  return [...result.sequence, ...result.offSequence].filter((entry) => entry.issues.length > 0);
 }
 
 export interface AuditOptions {
@@ -131,22 +140,85 @@ function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
 function locate(
   finding: Finding,
   entryFor: Map<Element, SequenceEntry>,
-): {
-  element: Element;
-  selector: string;
-  orderIndex?: number;
-} {
+): { element: Element; selector: string } {
   const { target } = finding;
   // Rules targeting bare Elements may still hit a tab stop; recover its
-  // sequence entry so the violation keeps its orderIndex and sorts in place.
+  // sequence entry so the finding lands on the in-sequence element.
   const entry = "orderIndex" in target ? target : entryFor.get(target);
   return entry
-    ? {
-        element: entry.element,
-        selector: entry.selector,
-        orderIndex: entry.orderIndex,
-      }
+    ? { element: entry.element, selector: entry.selector }
     : { element: target as Element, selector: selectorFor(target as Element) };
+}
+
+function computeTabSequence(container: Element, reads: ReturnType<typeof createReads>) {
+  const elements = tabbable(container, {
+    getShadowRoot: true,
+  });
+
+  const sequence: SequenceEntry[] = elements.map((element, orderIndex) => ({
+    element,
+    orderIndex,
+    selector: selectorFor(element),
+    tabIndex: getTabIndex(element),
+    rect: reads.rect(element),
+    floatRoot: floatingAncestor(element, reads),
+  }));
+
+  return sequence;
+}
+
+function assembleRules(options: AuditOptions): Rule[] {
+  const customRules = options.customRules ?? [];
+  const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
+    id,
+    ...def,
+  }));
+  const rules = [...builtins, ...customRules];
+  warnDuplicateRuleIds(builtins, customRules);
+  warnUnknownRules(options.rules, rules);
+  return rules;
+}
+
+function collectIssues(
+  rules: Rule[],
+  options: AuditOptions,
+  sequence: SequenceEntry[],
+  entryFor: Map<Element, SequenceEntry>,
+  ctx: Parameters<Rule["run"]>[1],
+): Map<Element, { selector: string; issues: Issue[] }> {
+  const byElement = new Map<Element, { selector: string; issues: Issue[] }>();
+  for (const rule of rules) {
+    const { enabled, severity } = resolveRule(options, rule);
+    if (!enabled) {
+      continue;
+    }
+
+    for (const finding of rule.run(sequence, ctx)) {
+      const { element, selector } = locate(finding, entryFor);
+      let found = byElement.get(element);
+      if (!found) {
+        found = { selector, issues: [] };
+        byElement.set(element, found);
+      }
+      const issue = toIssue(finding, rule, severity);
+      if (isRuleIgnored(element, rule.id)) {
+        issue.ignored = true;
+      }
+      found.issues.push(issue);
+    }
+  }
+  return byElement;
+}
+
+// Errors before warnings, stable within a severity.
+function bySeverity(issues: Issue[]): Issue[] {
+  return issues.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
+}
+
+function hasUnignoredError(entries: Entry[]): boolean {
+  return entries.some((entry) =>
+    entry.issues.some((issue) => issue.severity === "error" && !issue.ignored),
+  );
 }
 
 /**
@@ -159,74 +231,47 @@ export function audit(
   root: Document | Element = document,
   options: AuditOptions = {},
 ): AuditResult {
-  const customRules = options.customRules ?? [];
   // Duck-typed instead of instanceof so documents from other realms (iframes) work.
   const container = "documentElement" in root ? root.documentElement : root;
 
   if (!container) {
-    return { valid: true, sequence: [], violations: [] };
+    return { valid: true, sequence: [], offSequence: [] };
   }
 
-  const elements = tabbable(container, {
-    getShadowRoot: true,
-  });
-
-  const sequence: SequenceEntry[] = elements.map((element, orderIndex) => ({
-    element,
-    orderIndex,
-    selector: selectorFor(element),
-    tabIndex: getTabIndex(element),
-    rect: element.getBoundingClientRect(),
-  }));
-
-  const entryFor = new Map(sequence.map((entry) => [entry.element, entry]));
+  const reads = createReads();
+  const tabbed = computeTabSequence(container, reads);
+  const entryFor = new Map(tabbed.map((entry) => [entry.element, entry]));
   const ctx = {
     container,
     inSequence: new Set(entryFor.keys()),
+    reads,
   };
 
-  const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
-    id,
-    ...def,
-  }));
-  const rules = [...builtins, ...customRules];
-  warnDuplicateRuleIds(builtins, customRules);
-  warnUnknownRules(options.rules, rules);
+  const rules = assembleRules(options);
+  const found = collectIssues(rules, options, tabbed, entryFor, ctx);
 
-  const byElement = new Map<Element, Violation>();
-  for (const rule of rules) {
-    const { enabled, severity } = resolveRule(options, rule);
-    if (!enabled) {
+  const sequence: Entry[] = tabbed.map((entry) => ({
+    element: entry.element,
+    selector: entry.selector,
+    orderIndex: entry.orderIndex,
+    tabIndex: entry.tabIndex,
+    rect: entry.rect,
+    floatRoot: entry.floatRoot,
+    issues: bySeverity(found.get(entry.element)?.issues ?? []),
+  }));
+
+  const offSequence: Entry[] = [];
+  for (const [element, { selector, issues }] of found) {
+    if (entryFor.has(element)) {
       continue;
     }
-
-    for (const finding of rule.run(sequence, ctx)) {
-      const { element, selector, orderIndex } = locate(finding, entryFor);
-      let violation = byElement.get(element);
-      if (!violation) {
-        violation = { element, selector, orderIndex, issues: [] };
-        byElement.set(element, violation);
-      }
-      const issue = toIssue(finding, rule, severity);
-      if (isRuleIgnored(element, rule.id)) {
-        issue.ignored = true;
-      }
-      violation.issues.push(issue);
-    }
+    offSequence.push({
+      element,
+      selector,
+      floatRoot: floatingAncestor(element, reads),
+      issues: bySeverity(issues),
+    });
   }
 
-  const violations = [...byElement.values()].sort(
-    (a, b) => (a.orderIndex ?? Infinity) - (b.orderIndex ?? Infinity),
-  );
-  for (const violation of violations) {
-    violation.issues.sort((a, b) =>
-      a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1,
-    );
-  }
-
-  const hasErrors = violations.some((violation) =>
-    violation.issues.some((issue) => issue.severity === "error" && !issue.ignored),
-  );
-
-  return { valid: !hasErrors, sequence, violations };
+  return { valid: !hasUnignoredError([...sequence, ...offSequence]), sequence, offSequence };
 }

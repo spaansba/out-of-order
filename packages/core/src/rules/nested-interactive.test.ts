@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit } from "../index.js";
+import { audit, flaggedEntries } from "../index.js";
 import { fired } from "./test-helpers.js";
 
 afterEach(() => {
@@ -24,7 +24,7 @@ describe("nested-interactive", () => {
   });
   test("06 flags the inner control, not the outer wrapper", () => {
     document.body.innerHTML = '<a href="#"><button>Buy</button></a>';
-    const nested = audit(document.body).violations.filter((v) =>
+    const nested = flaggedEntries(audit(document.body)).filter((v) =>
       v.issues.some((i) => i.rule === "nested-interactive"),
     );
     expect(nested).toHaveLength(1);

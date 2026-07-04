@@ -1,179 +1,276 @@
-import { ensureRingStyles } from "./styles.js";
+import { ensureRingStyles, setAnchorRules } from "./styles.js";
 import type { Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
-/** Rings mark violating elements on the page itself (badges live in the layer).
-    An attribute rather than a class keeps the page's class lists untouched, so
-    the analyzer's selectors never see the overlay's own markup. */
+// Attributes on page elements, not classes, so the analyzer's selectors never
+// see the overlay's own markup.
 const RING_ATTR = "data-ooo-ring";
+const ANCHOR_ATTR = "data-ooo-anchor";
 
-const SVG_NS = "http://www.w3.org/2000/svg" as const;
-/** Badge radius, and how far to pull a segment back from each badge so the line
-    stops just outside the circles (the arrowhead now sits at the midpoint). */
-const RADIUS = 11;
-const SEG_PAD = RADIUS + 5;
-/** Below this in both dimensions an element is too small to host a centered
-    badge, so it gets pinned off the top-right corner instead. */
-const SMALL_SIZE = 30;
-
-function svgEl<Tag extends keyof SVGElementTagNameMap>(
-  tag: Tag,
-  attrs: Record<string, string | number> = {},
-  ...kids: Node[]
-): SVGElementTagNameMap[Tag] {
-  const node = document.createElementNS(SVG_NS, tag);
-  for (const attrName in attrs) {
-    node.setAttribute(attrName, String(attrs[attrName]));
-  }
-  node.append(...kids);
-  return node;
-}
-
-/** One numbered (or ⊘) badge to draw over an element. */
 export interface StopSpec {
   element: Element;
-  /** Badge label: the 1-based position, or "⊘" for an off-sequence marker. */
   label: string;
-  /** Worst severity among the element's findings, driving badge + ring colour
-      (amber warning / red error), or null when the element is clean (green). */
   severity: Severity | null;
-  /** A real tab stop (numbered) vs. an interactive-but-unreachable control (⊘). */
   inSeq: boolean;
-  /** Carries the `autofocus` attribute → gets an informational marker (not a
-      violation): this is where focus lands on load. */
   autofocus: boolean;
-  /** Tooltip shown on hover (built lazily — see Tip). */
+  /** Rides a fixed/sticky ancestor: anchor scroll compensation misses those, so
+      its badge/hops are position:fixed instead of document-space. */
+  floats: boolean;
   tip: Tip;
 }
 
-export interface SegSpec {
-  /** Runs against the reading order (fixed at analyze time, see Segment.back). */
+export interface SegmentSpec {
   back: boolean;
-  /** Tooltip shown on hover (built lazily — see Tip). */
   tip: Tip;
 }
 
-interface Marker {
+type HopVariant = "se" | "ne" | "sw" | "nw";
+
+const HOP_VARIANT_CLASSES = ["ooo-hop--se", "ooo-hop--ne", "ooo-hop--sw", "ooo-hop--nw"];
+
+interface MixedHop {
+  hop: HTMLElement;
+  from: Element;
+  to: Element;
+  back: boolean;
+}
+
+interface NamedHop {
+  hop: HTMLElement;
+  from: Element;
+  to: Element;
+}
+
+interface ManualBadge {
+  badge: HTMLElement;
   element: Element;
-  group: SVGGElement;
-  /** Cached center, so the connecting segments can update from what moved. */
-  centerX: number;
-  centerY: number;
+  floats: boolean;
 }
 
-interface Segment {
-  from: Marker;
-  toMarker: Marker;
-  /** Visible connector: a 3-point polyline (start → mid → end) so a marker-mid
-      arrowhead lands in the middle of the hop. */
-  line: SVGPolylineElement;
-  hit: SVGLineElement;
-  /** Whether this hop runs against the reading order. Fixed here (not recomputed
-      from live geometry) so the line's colour stays locked to the element's ring
-      and doesn't flicker when a sticky element scrolls. */
-  back: boolean;
-}
-
-/**
- * Owns the SVG layer: badges, connecting arrows, and the per-element rings.
- * Geometry only: it knows nothing about the analyzer; the orchestrator hands it
- * a draw model (StopSpec/SegSpec) and tells it when to re-place markers.
- */
 export class Renderer {
-  private svg: SVGSVGElement | null = null;
-  private markers: Marker[] = [];
-  private segments: Segment[] = [];
-  private readonly byEl = new Map<Element, Marker>();
-  // Elements we've ringed, with the severity value applied, kept so we can untag
-  // them on rebuild/destroy and toggle them when the overlay is hidden.
+  private drawLayer: HTMLElement | null = null;
+  private readonly byEl = new Map<Element, HTMLElement>();
+  private anchored: { element: Element; exported: Element[] }[] = [];
+  private mixed: MixedHop[] = [];
+  private namedHops: NamedHop[] = [];
+  private manuallyPlacedBadges: ManualBadge[] = [];
   private ringEls: { element: Element; value: string }[] = [];
-  // The rings live on the page, not in the hideable layer, so their visibility is
   private ringsVisible = true;
-  // The badge of the currently keyboard-focused element, filled in as a cursor.
-  private focused: Marker | null = null;
-  // Last SVG size written; reset in clear() since each draw makes a fresh svg.
-  private sizeW = 0;
-  private sizeH = 0;
+  private focused: HTMLElement | null = null;
 
   constructor(
     private readonly layer: HTMLElement,
     private readonly tooltip: Tooltip,
   ) {}
 
-  draw(stops: StopSpec[], segs: SegSpec[], offStops: StopSpec[]): void {
+  public draw(stops: StopSpec[], segments: SegmentSpec[], offStops: StopSpec[]): void {
     this.clear();
-    const svg = svgEl("svg", { class: "ooo-svg" }, buildDefs());
-    // Segments live in their own group, appended first so badges paint over them.
-    const segLayer = svgEl("g");
-    svg.appendChild(segLayer);
-    this.svg = svg;
+    this.drawLayer = document.createElement("div");
+    this.drawLayer.className = "ooo-draw";
 
-    stops.forEach((stop) => this.addMarker(stop));
+    const all = [...stops, ...offStops];
 
-    for (let idx = 0; idx < this.markers.length - 1; idx++) {
-      const from = this.markers[idx]!;
-      const toMarker = this.markers[idx + 1]!;
-      const { back, tip } = segs[idx]!;
-      // Forward (green) hops are correct: click-through, no tooltip. Only backward
-      // (red) hops carry the fat hit-line and a hover tooltip.
-      const hit = svgEl("line", {
-        class: back ? "ooo-hit ooo-hit--back" : "ooo-hit",
-      });
-      const line = svgEl("polyline", {
-        class: back ? "ooo-seg ooo-seg--back" : "ooo-seg",
-        "marker-mid": back ? "url(#ooo-arrow-back)" : "url(#ooo-arrow)",
-      });
-      segLayer.append(hit, line);
-      this.segments.push({ from, toMarker, line, hit, back });
-      if (back) {
-        this.tooltip.wire(hit, tip, true);
-      }
+    const names = this.resolveAnchorNames(all);
+    for (const stop of all) {
+      this.markRing(stop.element, stop.severity);
+    }
+    this.publishAnchors(all, names);
+
+    this.drawHops(stops, segments, names, this.drawLayer);
+    for (const stop of all) {
+      this.addBadge(stop, names.get(stop.element)!, this.drawLayer);
     }
 
-    offStops.forEach((stop) => this.addMarker(stop));
-    this.layer.appendChild(svg);
+    this.layer.appendChild(this.drawLayer);
+    this.placeManual();
   }
 
-  /** One getBoundingClientRect pass to set geometry (initial + scroll frames).
-      All rect reads run before any SVG writes, so a scroll frame triggers a
-      single layout flush instead of one reflow per marker (read→write→read…). */
-  seed(): void {
-    const rects = this.markers.map((marker) => marker.element.getBoundingClientRect());
-    this.syncSize();
-    this.markers.forEach((marker, idx) => this.applyRect(marker, rects[idx]!));
-    this.updateSegments();
-  }
-
-  applyMoved(moved: ReadonlyArray<{ target: Element; rect: DOMRectReadOnly }>): void {
-    this.syncSize();
-    for (const { target, rect } of moved) {
-      const marker = this.byEl.get(target);
-      if (!marker) {
+  /** Reuse an anchor name if element already has one there, else use our own */
+  private resolveAnchorNames(stops: StopSpec[]): Map<Element, string> {
+    const names = new Map<Element, string>();
+    for (const stop of stops) {
+      if (needsManualPlacement(stop.element)) {
         continue;
       }
-      this.applyRect(marker, rect);
+
+      if (stop.element.getRootNode() instanceof ShadowRoot) {
+        continue;
+      }
+
+      const existing = getComputedStyle(stop.element).getPropertyValue("anchor-name");
+
+      if (existing && existing !== "none") {
+        names.set(stop.element, existing.split(",")[0]!.trim());
+      }
     }
-    this.updateSegments();
+
+    return names;
   }
 
-  setFocused(element: Element | null): void {
-    const marker = element ? (this.byEl.get(element) ?? null) : null;
-    if (this.focused === marker) {
+  /** Generate and publish an anchor name for every stop that didn't already
+      have one, then install the matching anchor rules. */
+  private publishAnchors(stops: StopSpec[], names: Map<Element, string>): void {
+    for (const stop of stops) {
+      if (needsManualPlacement(stop.element)) {
+        continue;
+      }
+      if (!names.has(stop.element)) {
+        names.set(stop.element, this.publishAnchor(stop.element));
+      }
+    }
+
+    setAnchorRules(this.anchored.length);
+  }
+
+  /** A hop between a floating and an in-flow stop spans two scroll regimes,
+      which anchors can't express: only the default anchor gets scroll
+      adjustment, and it moves the box as a whole. Those hops are JS-placed (via
+      placeManual); same-regime hops ride the CSS anchors published above. */
+  private drawHops(
+    stops: StopSpec[],
+    segments: SegmentSpec[],
+    names: Map<Element, string>,
+    draw: HTMLElement,
+  ): void {
+    for (let idx = 0; idx < stops.length - 1; idx++) {
+      const from = stops[idx]!;
+      const to = stops[idx + 1]!;
+      // A seam hop (JS-placed from live geometry) also covers any endpoint that
+      // can't be a CSS anchor, since the CSS quadrant candidates need both.
+      if (
+        from.floats !== to.floats ||
+        needsManualPlacement(from.element) ||
+        needsManualPlacement(to.element)
+      ) {
+        this.addMixedHop(from.element, to.element, segments[idx]!, draw);
+        continue;
+      }
+      // The .ooo-draw layer is still detached here, so reading endpoint geometry
+      // to pick the quadrant doesn't thrash layout against the DOM we append.
+      const variant = centerQuadrant(from.element, to.element);
+      const hop = this.addHop(
+        from.floats,
+        names.get(from.element)!,
+        names.get(to.element)!,
+        variant,
+        segments[idx]!,
+        draw,
+      );
+      this.namedHops.push({ hop, from: from.element, to: to.element });
+    }
+  }
+
+  /** Whether any box depends on live geometry: JS-placed seam hops and badges,
+      or anchored hops whose baked quadrant class a reflow can invalidate. Lets
+      the scroll/resize listeners bail on pages with nothing to re-derive. */
+  public get hasLiveGeometry(): boolean {
+    return (
+      this.mixed.length > 0 || this.manuallyPlacedBadges.length > 0 || this.namedHops.length > 0
+    );
+  }
+
+  /** Re-derive every box facet that JS owns from live geometry: seam hop and
+      non-anchorable badge positions, plus anchored hops' quadrant classes. */
+  public placeManual(): void {
+    // All rect reads before any writes: one layout flush for the whole pass.
+    const rects = this.mixed.map(({ from, to }) => [
+      from.getBoundingClientRect(),
+      to.getBoundingClientRect(),
+    ]);
+
+    const badgeRects = this.manuallyPlacedBadges.map(({ element }) =>
+      element.getBoundingClientRect(),
+    );
+
+    const variants = this.namedHops.map(({ from, to }) => centerQuadrant(from, to));
+
+    this.mixed.forEach(({ hop, back }, idx) => {
+      const [a, b] = rects[idx]!;
+      const ax = a!.left + a!.width / 2;
+      const ay = a!.top + a!.height / 2;
+      const bx = b!.left + b!.width / 2;
+      const by = b!.top + b!.height / 2;
+      // Same box + variant an anchored hop picks, so the line styles apply unchanged.
+      const variant = quadrant(ax, ay, bx, by);
+      hop.className = `ooo-hop ooo-hop--seam ooo-hop--${variant}${back ? " ooo-hop--back" : ""} ooo-fix`;
+      hop.style.left = `${Math.min(ax, bx) - 0.5}px`;
+      hop.style.top = `${Math.min(ay, by) - 0.5}px`;
+      hop.style.width = `${Math.abs(bx - ax) + 1}px`;
+      hop.style.height = `${Math.abs(by - ay) + 1}px`;
+    });
+
+    this.manuallyPlacedBadges.forEach(({ badge, floats }, idx) => {
+      const rect = badgeRects[idx]!;
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      badge.style.left = `${floats ? cx : cx + window.scrollX}px`;
+      badge.style.top = `${floats ? cy : cy + window.scrollY}px`;
+    });
+
+    // A reflow can flip a hop's quadrant, and the box insets key on the baked
+    // variant class (a stale one computes a negative size and collapses to
+    // nothing), so restamp it. Touch the DOM only on change: this runs per
+    // frame during a resize drag.
+    this.namedHops.forEach(({ hop }, idx) => {
+      const next = `ooo-hop--${variants[idx]}`;
+      if (!hop.classList.contains(next)) {
+        hop.classList.remove(...HOP_VARIANT_CLASSES);
+        hop.classList.add(next);
+      }
+    });
+  }
+
+  private addMixedHop(from: Element, to: Element, segment: SegmentSpec, parent: HTMLElement): void {
+    const hop = document.createElement("div");
+    const line = document.createElement("div");
+    line.className = "ooo-hop-line";
+    hop.appendChild(line);
+    if (segment.back) {
+      this.tooltip.wire(line, segment.tip, true);
+    }
+    parent.appendChild(hop);
+    this.mixed.push({ hop, from, to, back: segment.back });
+  }
+
+  /** Publish --ooo-N for an element so the layer can anchor to it. Light DOM:
+      an attribute the generated rule keys on. Shadow DOM: a part token (plus
+      exportparts through any nested hosts), since ::part is the one way a
+      document-scope rule can put an anchor name on a shadow element. */
+  private publishAnchor(element: Element): string {
+    const id = this.anchored.length;
+    const exported: Element[] = [];
+    const root = element.getRootNode();
+    if (root instanceof ShadowRoot) {
+      element.part.add(`ooo-${id}`);
+      // ::part reaches one boundary; re-export through nested hosts above.
+      let host = root.host;
+      let hostRoot = host.getRootNode();
+      while (hostRoot instanceof ShadowRoot) {
+        appendExportPart(host, `ooo-${id}`);
+        exported.push(host);
+        host = hostRoot.host;
+        hostRoot = host.getRootNode();
+      }
+    } else {
+      element.setAttribute(ANCHOR_ATTR, String(id));
+    }
+    this.anchored.push({ element, exported });
+    return `--ooo-${id}`;
+  }
+
+  public setFocused(element: Element | null): void {
+    const badge = element ? (this.byEl.get(element) ?? null) : null;
+    if (this.focused === badge) {
       return;
     }
-    this.focused?.group.classList.remove("ooo-badge--on");
-    this.focused = marker;
-    this.focused?.group.classList.add("ooo-badge--on");
+    this.focused?.classList.remove("ooo-badge--on");
+    this.focused = badge;
+    this.focused?.classList.add("ooo-badge--on");
   }
 
-  elementsToObserve(): Element[] {
-    return this.markers.map((marker) => marker.element);
-  }
-
-  /** Toggle the page-element rings with the overlay's visibility. They sit on the
-      page rather than inside the hideable layer, so hiding the layer alone leaves
-      them; this drives them per element and survives a rebuild (see markRing). */
-  setRingsVisible(visible: boolean): void {
+  // Rings sit on the page, not in the hideable layer, so hiding the layer
+  // alone would leave them behind.
+  public setRingsVisible(visible: boolean): void {
     if (this.ringsVisible === visible) {
       return;
     }
@@ -187,24 +284,30 @@ export class Renderer {
     }
   }
 
-  clear(): void {
-    this.svg?.remove();
-    this.svg = null;
-    this.markers = [];
-    this.segments = [];
+  public clear(): void {
+    this.drawLayer?.remove();
+    this.drawLayer = null;
     this.byEl.clear();
+    this.mixed = [];
+    this.namedHops = [];
+    this.manuallyPlacedBadges = [];
     this.focused = null;
-    this.sizeW = 0;
-    this.sizeH = 0;
+    this.anchored.forEach(({ element, exported }, id) => {
+      element.removeAttribute(ANCHOR_ATTR);
+      element.part.remove(`ooo-${id}`);
+      for (const host of exported) {
+        removeExportPart(host, `ooo-${id}`);
+      }
+    });
+    this.anchored = [];
+    setAnchorRules(0);
     for (const { element } of this.ringEls) {
       element.removeAttribute(RING_ATTR);
     }
     this.ringEls = [];
   }
 
-  private addMarker(spec: StopSpec): void {
-    this.markRing(spec.element, spec.severity);
-
+  private addBadge(spec: StopSpec, anchorName: string, parent: HTMLElement): void {
     let cls = "ooo-badge";
     if (spec.severity) {
       cls += spec.severity === "error" ? " ooo-badge--bad" : " ooo-badge--warn";
@@ -212,38 +315,50 @@ export class Renderer {
     if (!spec.inSeq) {
       cls += " ooo-badge--off";
     }
-
-    // Children sit at the badge's local origin, so applyRect moves the whole group
-    // with one transform. y=4 centres the label baseline.
-    const circle = svgEl("circle", { r: RADIUS });
-    const text = svgEl("text", { "text-anchor": "middle", y: 4 });
-    text.textContent = spec.label;
-    const group = svgEl("g", { class: cls }, circle, text);
-    // Small "focus lands here" badge in the corner: a disc with a downward arrow.
-    // Informational (blue), not a violation.
-    if (spec.autofocus) {
-      group.appendChild(
-        svgEl(
-          "g",
-          { class: "ooo-af", transform: `translate(${RADIUS}, ${-RADIUS})` },
-          svgEl("circle", { r: 7 }),
-          svgEl("path", { d: "M-3,-2 L3,-2 L0,2.5 Z" }),
-        ),
-      );
+    if (spec.floats) {
+      cls += " ooo-fix";
     }
-    this.svg!.appendChild(group);
+    const badge = document.createElement("div");
+    badge.className = cls;
+    if (needsManualPlacement(spec.element)) {
+      this.manuallyPlacedBadges.push({ badge, element: spec.element, floats: spec.floats });
+    } else {
+      badge.style.setProperty("--ooo-anchor", anchorName);
+    }
+    badge.textContent = spec.label;
+    if (spec.autofocus) {
+      const af = document.createElement("div");
+      af.className = "ooo-af";
+      badge.appendChild(af);
+    }
+    parent.appendChild(badge);
+    this.byEl.set(spec.element, badge);
+    this.tooltip.wire(badge, spec.tip);
+  }
 
-    const marker: Marker = {
-      element: spec.element,
-      group,
-      centerX: 0,
-      centerY: 0,
-    };
-    this.markers.push(marker);
-    this.byEl.set(spec.element, marker);
-    // Every badge is hoverable: the tooltip shows the stop's name/role and either
-    // its findings or a clean "no issues" confirmation.
-    this.tooltip.wire(group, spec.tip);
+  private addHop(
+    fixed: boolean,
+    fromName: string,
+    toName: string,
+    variant: HopVariant,
+    segment: SegmentSpec,
+    parent: HTMLElement,
+  ): HTMLElement {
+    const hop = document.createElement("div");
+    hop.className =
+      `ooo-hop ooo-hop--${variant}` +
+      `${segment.back ? " ooo-hop--back" : ""}${fixed ? " ooo-fix" : ""}`;
+    hop.style.setProperty("--ooo-from", fromName);
+    hop.style.setProperty("--ooo-to", toName);
+    const line = document.createElement("div");
+    line.className = "ooo-hop-line";
+    hop.appendChild(line);
+    // Only backward (red) hops are hoverable; forward hops stay click-through.
+    if (segment.back) {
+      this.tooltip.wire(line, segment.tip, true);
+    }
+    parent.appendChild(hop);
+    return hop;
   }
 
   private markRing(element: Element, severity: Severity | null): void {
@@ -260,93 +375,49 @@ export class Renderer {
       ensureRingStyles(root);
     }
   }
-
-  private applyRect(marker: Marker, rect: DOMRectReadOnly): void {
-    // Small elements get the badge pinned off their top-right corner instead
-    // of centered, so the badge doesn't swallow them.
-    if (rect.width < SMALL_SIZE && rect.height < SMALL_SIZE) {
-      marker.centerX = rect.right + RADIUS;
-      marker.centerY = rect.top - RADIUS;
-    } else {
-      marker.centerX = rect.left + rect.width / 2;
-      marker.centerY = rect.top + rect.height / 2;
-    }
-    marker.group.setAttribute("transform", `translate(${marker.centerX}, ${marker.centerY})`);
-  }
-
-  /** Redraw every hop: shorten it to the badge edges and drop the arrow at the
-      midpoint. Colour (green forward / red backward) is fixed at analyze time
-      (see Segment.back) and not recomputed here, so it can't drift from the ring. */
-  private updateSegments(): void {
-    for (const seg of this.segments) {
-      const deltaX = seg.toMarker.centerX - seg.from.centerX;
-      const deltaY = seg.toMarker.centerY - seg.from.centerY;
-      const len = Math.hypot(deltaX, deltaY) || 1;
-      const unitX = deltaX / len;
-      const unitY = deltaY / len;
-
-      let startX = seg.from.centerX;
-      let startY = seg.from.centerY;
-      let endX = seg.toMarker.centerX;
-      let endY = seg.toMarker.centerY;
-      if (len > 2 * SEG_PAD + 6) {
-        startX = seg.from.centerX + unitX * SEG_PAD;
-        startY = seg.from.centerY + unitY * SEG_PAD;
-        endX = seg.toMarker.centerX - unitX * SEG_PAD;
-        endY = seg.toMarker.centerY - unitY * SEG_PAD;
-      }
-      const midX = (startX + endX) / 2;
-      const midY = (startY + endY) / 2;
-
-      seg.hit.setAttribute("x1", String(startX));
-      seg.hit.setAttribute("y1", String(startY));
-      seg.hit.setAttribute("x2", String(endX));
-      seg.hit.setAttribute("y2", String(endY));
-      // A midpoint vertex carries the marker-mid arrowhead, oriented along the hop.
-      seg.line.setAttribute("points", `${startX},${startY} ${midX},${midY} ${endX},${endY}`);
-    }
-  }
-
-  private syncSize(): void {
-    if (!this.svg) {
-      return;
-    }
-    // Scroll frames don't resize the viewport, so skip the write unless it changed.
-    const width = document.documentElement.clientWidth;
-    const height = document.documentElement.clientHeight;
-    if (width === this.sizeW && height === this.sizeH) {
-      return;
-    }
-    this.sizeW = width;
-    this.sizeH = height;
-    this.svg.setAttribute("width", String(width));
-    this.svg.setAttribute("height", String(height));
-  }
 }
 
-/** Two arrowheads (forward green, backward red) dropped at each hop's midpoint
-    via marker-mid. refX centers the glyph on the midpoint vertex. */
-function buildDefs(): SVGDefsElement {
-  const defs = svgEl("defs");
-  for (const [markerId, fill] of [
-    ["ooo-arrow", "#2f6a47"],
-    ["ooo-arrow-back", "#b3261e"],
-  ] as const) {
-    const path = svgEl("path", { d: "M3,2.5 L14,8 L3,13.5 L6.5,8 Z", fill });
-    const marker = svgEl(
-      "marker",
-      {
-        id: markerId,
-        markerWidth: 16,
-        markerHeight: 16,
-        refX: 8,
-        refY: 8,
-        orient: "auto",
-        markerUnits: "userSpaceOnUse",
-      },
-      path,
-    );
-    defs.appendChild(marker);
+// CSS anchor-name only takes effect on elements that generate a principal CSS
+// box. SVG layout elements (and other non-HTML content) don't, so anchoring a
+// badge to one silently no-ops; those badges and any hop touching them are
+// placed from live geometry instead.
+function needsManualPlacement(element: Element): boolean {
+  return !(element instanceof HTMLElement);
+}
+
+// Which quadrant B sits in relative to A, picking the matching hop box + line
+// orientation. Pure CSS can't recover this sign from the two anchors, so it's
+// read from live geometry (scroll-invariant, so a redraw only owes it to reflow).
+function centerQuadrant(from: Element, to: Element): HopVariant {
+  const a = from.getBoundingClientRect();
+  const b = to.getBoundingClientRect();
+  return quadrant(
+    a.left + a.width / 2,
+    a.top + a.height / 2,
+    b.left + b.width / 2,
+    b.top + b.height / 2,
+  );
+}
+
+function quadrant(ax: number, ay: number, bx: number, by: number): HopVariant {
+  return `${by >= ay ? "s" : "n"}${bx >= ax ? "e" : "w"}` as HopVariant;
+}
+
+// exportparts is a plain comma-separated attribute (no token list API), so the
+// page's own entries must be preserved around ours.
+function appendExportPart(host: Element, token: string): void {
+  const current = host.getAttribute("exportparts");
+  host.setAttribute("exportparts", current ? `${current}, ${token}` : token);
+}
+
+function removeExportPart(host: Element, token: string): void {
+  const rest = (host.getAttribute("exportparts") ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry && entry !== token);
+  if (rest.length) {
+    host.setAttribute("exportparts", rest.join(", "));
+  } else {
+    host.removeAttribute("exportparts");
   }
-  return defs;
 }

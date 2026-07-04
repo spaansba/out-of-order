@@ -1,3 +1,5 @@
+import type { DomReads } from "../dom/reads.js";
+
 export type Severity = "error" | "warning";
 
 export interface SequenceEntry {
@@ -9,6 +11,9 @@ export interface SequenceEntry {
   tabIndex: number;
   /** Bounding rect at analysis time (real layout, browser only). */
   rect: DOMRect;
+  /** The fixed/sticky ancestor-or-self the element rides in, or null when it
+      sits in normal flow */
+  floatRoot: Element | null;
 }
 
 /** Everything a rule may need beyond the sequence itself. */
@@ -16,6 +21,7 @@ export interface RuleContext {
   /** The analyzed root element (lets rules look beyond the tab sequence). */
   container: Element;
   inSequence: Set<Element>;
+  reads: DomReads;
 }
 
 /** One problem a rule reports, before grading. */
@@ -36,7 +42,7 @@ export interface Finding {
 export type RuleRun = (sequence: SequenceEntry[], ctx: RuleContext) => Finding[];
 
 export interface Rule {
-  /** Stable rule identifier, surfaced on every Violation it produces. */
+  /** Stable rule identifier, surfaced on every issue it produces. */
   id: string;
   /** Spec link the rule is grounded in (WCAG, WAI-ARIA, or ARIA APG). */
   docs?: string;

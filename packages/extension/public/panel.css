@@ -27,9 +27,19 @@ body {
     sans-serif;
 }
 
-.toolbar {
+.chrome {
   position: sticky;
   top: 0;
+  z-index: 2;
+  background: var(--ooo-surface);
+}
+
+.chrome:has(> :not(.toolbar):not([hidden])) {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ooo-line);
+}
+
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,9 +74,7 @@ body {
   height: 24px;
   border-radius: 3px;
   color: var(--ooo-muted);
-  transition:
-    background 0.14s ease,
-    color 0.14s ease;
+  transition: background 0.14s ease, color 0.14s ease;
 }
 
 .tool-icon:hover {
@@ -85,10 +93,7 @@ body {
   font: 600 11px/1 var(--ooo-mono);
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease,
-    color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
 #settings-toggle:hover,
@@ -136,9 +141,7 @@ body {
   border-radius: 999px;
   background: #e7e4da;
   cursor: pointer;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease;
 }
 
 .ooo-switch-knob {
@@ -173,7 +176,6 @@ body {
   font-size: 10.5px;
   letter-spacing: 0.01em;
 }
-
 
 .status {
   margin: 10px 12px 0;
@@ -249,10 +251,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease,
-    color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
 .ooo-copy-caret {
@@ -266,10 +265,7 @@ body {
   color: var(--ooo-ink-2);
   font: 600 11px/1 var(--ooo-mono);
   cursor: pointer;
-  transition:
-    background 0.14s ease,
-    border-color 0.14s ease,
-    color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 
 /* Raise whichever half is hovered so its border draws over the shared seam. */
@@ -295,8 +291,7 @@ body {
   background: var(--ooo-surface);
   border: 1px solid var(--ooo-line-2);
   border-radius: 3px;
-  box-shadow:
-    0 10px 30px -12px rgba(24, 25, 28, 0.4),
+  box-shadow: 0 10px 30px -12px rgba(24, 25, 28, 0.4),
     0 1px 2px rgba(24, 25, 28, 0.08);
 }
 

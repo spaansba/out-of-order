@@ -1,13 +1,19 @@
-import { composedDescendants, containsComposed, isDisplayed, isInert } from "../dom/index.js";
+import {
+  composedDescendants,
+  containsComposed,
+  isDisplayed,
+  isInert,
+  type DomReads,
+} from "../dom/index.js";
 import type { RuleDef } from "./rule.js";
 
 /** The first genuinely-modal, on-screen container in `root`: a `<dialog>:modal`
     (opened via showModal()) or an `aria-modal="true"` element. Non-modal dialogs
     (show() or a bare `open`) and hidden ones are excluded, since their background is
     meant to stay interactive. */
-function openModal(root: ParentNode): Element | null {
+function openModal(root: ParentNode, reads: DomReads): Element | null {
   for (const element of composedDescendants(root)) {
-    if (element.matches('dialog:modal, [aria-modal="true"]') && isDisplayed(element)) {
+    if (element.matches('dialog:modal, [aria-modal="true"]') && isDisplayed(element, reads)) {
       return element;
     }
   }
@@ -17,8 +23,8 @@ function openModal(root: ParentNode): Element | null {
 export const focusEscapesModal: RuleDef = {
   docs: "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
   severity: "error",
-  run: (sequence, { container }) => {
-    const modal = openModal(container);
+  run: (sequence, { container, reads }) => {
+    const modal = openModal(container, reads);
     if (!modal) {
       return [];
     }

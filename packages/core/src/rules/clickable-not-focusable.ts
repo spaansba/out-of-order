@@ -11,7 +11,7 @@ import type { Finding, RuleDef } from "./rule.js";
 export const clickableNotFocusable: RuleDef = {
   docs: "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
   severity: "error",
-  run: (_sequence, { container, inSequence }) => {
+  run: (_sequence, { container, inSequence, reads }) => {
     // Every ancestor-or-self of a tab stop, collected once. A clickable element
     // that's in this set merely wraps a real focusable control, so the keyboard
     // can still get in, so skip it.
@@ -53,14 +53,14 @@ export const clickableNotFocusable: RuleDef = {
         continue;
       }
 
-      const rect = element.getBoundingClientRect();
+      const rect = reads.rect(element);
       if (rect.width < 1 || rect.height < 1) {
         continue;
       } // not rendered / no target
 
       // visibility:hidden keeps its layout box but receives no pointer events, so
       // it isn't mouse-clickable either: no keyboard parity gap to flag.
-      if (!isDisplayed(element)) {
+      if (!isDisplayed(element, reads)) {
         continue;
       }
       out.push({

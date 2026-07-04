@@ -3,6 +3,7 @@ import {
   composedParent,
   containsComposed,
   isScrollContainer,
+  type DomReads,
 } from "../dom/index.js";
 import type { Finding, RuleDef, RuleRun } from "./rule.js";
 
@@ -11,23 +12,12 @@ import type { Finding, RuleDef, RuleRun } from "./rule.js";
     ~8px a sighted user doesn't perceive a line break. */
 const LINE_TOLERANCE_PX = 8;
 
-/** The nearest fixed/sticky ancestor-or-self: the scroll-detached "chrome" layer
-    (sticky navbar, fixed header) the element rides in, or null if it sits in
-    normal flow. */
-function floatingAncestor(element: Element): Element | null {
-  return closestAncestor(element, (node) => {
-    const pos = getComputedStyle(node).position;
-
-    return pos === "fixed" || pos === "sticky";
-  });
-}
-
 /** The nearest ancestor that independently scrolls `element` (excluding itself), or
     null if it only rides the document scroll. Two stops with different scroll
     ancestors don't share a scroll context, so the visual-order check skips the pair
     (their on-screen relationship moves with the scrollbar). */
-function scrollAncestor(element: Element): Element | null {
-  return closestAncestor(element.parentElement, isScrollContainer);
+function scrollAncestor(element: Element, reads: DomReads): Element | null {
+  return closestAncestor(element.parentElement, (node) => isScrollContainer(node, reads));
 }
 
 /** The deepest element containing both `a` and `b` in the composed tree. */
@@ -100,12 +90,8 @@ function encloses(outer: LogicalRect, inner: LogicalRect): boolean {
  * mode in effect where the two stops are laid out, so an RTL row or a vertical-rl
  * page is judged by its own reading order, not by top→bottom, left→right.
  */
-const run: RuleRun = (sequence) => {
-  // Each element's floating ancestor, computed once (it walks the tree calling
-  // getComputedStyle); the adjacent-pair loop below would otherwise recompute
-  // every element's twice, as the "cur" of one pair and the "prev" of the next.
-  const floats = sequence.map((entry) => floatingAncestor(entry.element));
-  const scrollers = sequence.map((entry) => scrollAncestor(entry.element));
+const run: RuleRun = (sequence, { reads }) => {
+  const scrollers = sequence.map((entry) => scrollAncestor(entry.element, reads));
   const out: Finding[] = [];
   for (let idx = 1; idx < sequence.length; idx++) {
     const prev = sequence[idx - 1]!;
@@ -116,7 +102,7 @@ const run: RuleRun = (sequence) => {
     // other outside, or in separate boxes), then their up/down/left/right
     // relationship moves with a scrollbar, so a "backward hop" between them isn't
     // real. Skip the pair.
-    if (floats[idx - 1] !== floats[idx] || scrollers[idx - 1] !== scrollers[idx]) {
+    if (prev.floatRoot !== cur.floatRoot || scrollers[idx - 1] !== scrollers[idx]) {
       continue;
     }
 
@@ -134,7 +120,7 @@ const run: RuleRun = (sequence) => {
     // stops out relative to each other: their nearest common ancestor. Judging an
     // RTL or vertical layout in physical coordinates flags every ordinary row.
     const context = commonAncestor(prev.element, cur.element) ?? document.documentElement;
-    const style = getComputedStyle(context);
+    const style = reads.style(context);
     const prevRect = toLogical(prev.rect, style);
     const curRect = toLogical(cur.rect, style);
 

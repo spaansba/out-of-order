@@ -6,9 +6,10 @@
     <link rel="stylesheet" href="panel.css" />
   </head>
   <body>
-    <header class="toolbar">
-      <span class="title">Out of Order</span>
-      <div class="tools">
+    <header class="chrome">
+      <div class="toolbar">
+        <span class="title">Out of Order</span>
+        <div class="tools">
         <a
           class="tool-icon"
           href="https://spaansba.github.io/out-of-order/"
@@ -37,20 +38,21 @@
             />
           </svg>
         </a>
-        <button
-          id="settings-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="settings"
-        >
-          Settings
-        </button>
+          <button
+            id="settings-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="settings"
+          >
+            Settings
+          </button>
+        </div>
       </div>
+      <section id="settings" class="settings" aria-label="Settings" hidden></section>
+      <div id="status" class="status" hidden></div>
+      <button id="grant" type="button" hidden>Allow access to all sites</button>
+      <div id="copy" class="copy" hidden></div>
     </header>
-    <section id="settings" class="settings" aria-label="Settings" hidden></section>
-    <div id="status" class="status" hidden></div>
-    <button id="grant" type="button" hidden>Allow access to all sites</button>
-    <div id="copy" class="copy" hidden></div>
     <main id="results" aria-live="polite"></main>
     <script src="panel.js" defer></script>
   </body>
