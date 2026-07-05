@@ -8,20 +8,17 @@ possible fix. Click a finding's selector to scroll to the element on the page.
 
 ## Usage
 
-Click the toolbar icon to open the side panel. While it is open, the active tab
-is audited continuously:
+Click the toolbar icon to open the side panel, and again to close it. While it
+is open, the active tab is audited continuously:
 
 - The [`@out-of-order/trace`](../trace) overlay is drawn on the page: numbered
-  tab stops, the path between them, findings ringed in place (without its
-  floating panel, the side panel is the control surface).
+  tab stops, the path between them, findings ringed in place.
 - The findings list updates live as the page changes, and follows you across
   tab switches and navigations.
 - Click a finding's selector to scroll to and flash that element. Tabbing on
   the page works the other way: the finding for the focused element is
   highlighted and scrolled into view.
 - Copy the findings in any report format from the button above the list.
-- Settings toggles the overlay, peek (click-through, also a lone Alt tap on the
-  page), and the overlay's motion. They persist across pages and sessions.
 
 Close the panel to stop auditing: the overlay and the analyzer detach from the
 page.
