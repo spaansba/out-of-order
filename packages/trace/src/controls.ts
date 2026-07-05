@@ -132,7 +132,7 @@ function buildBody(
 export interface CopySplitOptions {
   format?: AuditFormat;
   onFormat?: (format: AuditFormat) => void;
-  getReport: (format: AuditFormat) => string;
+  getReport: (format: AuditFormat) => string | Promise<string>;
 }
 
 // A split button, GitHub-merge style: the main face copies in the current format;
@@ -181,11 +181,13 @@ export function addCopySplit(
   };
   signal.addEventListener("abort", () => clearTimeout(revert));
 
-  const copy = (): void => {
-    void navigator.clipboard.writeText(opts.getReport(current)).then(
-      () => flash("Copied"),
-      () => flash("Copy failed"),
-    );
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(await opts.getReport(current));
+      flash("Copied");
+    } catch {
+      flash("Copy failed");
+    }
   };
 
   const closeMenu = (refocus = false): void => {
@@ -278,7 +280,7 @@ export function addCopySplit(
       signal,
     });
   }
-  main.addEventListener("click", copy, { signal });
+  main.addEventListener("click", () => void copy(), { signal });
   caret.addEventListener(
     "click",
     (event) => {

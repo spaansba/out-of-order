@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "vitest";
 import { audit } from "@out-of-order/core";
-import { buildSnapshot, pageViolations } from "./snapshot.js";
+import { buildSnapshot, formatReport, pageViolations } from "./snapshot.js";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -45,18 +45,18 @@ test("elements inside an embedded trace overlay are excluded", () => {
   expect(snapshot.stopCount).toBe(1);
 });
 
-test("the snapshot carries a pre-rendered report in every copy format", () => {
+test("reports are formatted on demand in every copy format", () => {
   mount(`
     <button>First</button>
     <div tabindex="5">Jumps the queue</div>
   `);
 
   const result = audit(document);
-  const snapshot = buildSnapshot(result, pageViolations(result));
+  const violations = pageViolations(result);
 
-  expect(snapshot.reports.text).toContain("tabindex");
+  expect(formatReport(result, violations, "text")).toContain("tabindex");
   for (const format of ["by-element", "by-violation", "flat"] as const) {
-    const parsed: unknown = JSON.parse(snapshot.reports[format]);
+    const parsed: unknown = JSON.parse(formatReport(result, violations, format));
     expect(Array.isArray(parsed)).toBe(true);
     expect((parsed as unknown[]).length).toBeGreaterThan(0);
   }

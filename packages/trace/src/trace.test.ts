@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { flaggedEntries } from "@out-of-order/core";
-import { trace, type TraceHandle, type TraceOptions } from "./index.js";
+import { addCopySplit, trace, type TraceHandle, type TraceOptions } from "./index.js";
 
 let handle: TraceHandle | null = null;
 let root: HTMLElement;
@@ -25,6 +25,7 @@ afterEach(() => {
   window.scrollTo(0, 0);
   // Panel state persists in localStorage; clear it so tests don't leak into each other.
   localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("trace", () => {
@@ -231,6 +232,27 @@ describe("trace", () => {
     items[2]!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(menu.hidden).toBe(true);
     expect(document.activeElement).toBe(caret);
+  });
+
+  test("copy awaits an async getReport before writing to the clipboard", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const abort = new AbortController();
+    addCopySplit(
+      container,
+      { format: "text", getReport: (format) => Promise.resolve(`report:${format}`) },
+      abort.signal,
+    );
+
+    (container.querySelector(".ooo-copy") as HTMLButtonElement).click();
+
+    // The report is a Promise: an unawaited copy would write "[object Promise]".
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("report:text"));
+
+    abort.abort();
+    container.remove();
   });
 
   test("setPeek flips click-through but never while hidden", () => {

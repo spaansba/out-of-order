@@ -1,11 +1,11 @@
-import type { Entry } from "@out-of-order/core";
+import type { AuditResult, Entry } from "@out-of-order/core";
 import {
   EXTENSION_ACTIVE_EVENT,
   TRACE_ACTIVE_EVENT,
   trace,
   type TraceHandle,
 } from "@out-of-order/trace";
-import { buildSnapshot, pageViolations } from "./snapshot.js";
+import { buildSnapshot, formatReport, pageViolations } from "./snapshot.js";
 import type { ContentMessage, PanelMessage } from "./protocol.js";
 
 declare global {
@@ -19,6 +19,7 @@ if (!window.__oooExtension) {
 
   let overlay: TraceHandle | null = null;
   let activePort: chrome.runtime.Port | null = null;
+  let lastResult: AuditResult | null = null;
   let lastViolations: Entry[] = [];
 
   const claimPage = (): void => {
@@ -61,17 +62,17 @@ if (!window.__oooExtension) {
     const post = (message: ContentMessage): void => port.postMessage(message);
 
     // trace re-analyzes on DOM mutation, so pushing from onResult keeps the
-    // panel live without polling. The key omits reports (derived from the
-    // verdict), so only real verdict changes trigger a repaint.
+    // panel live without polling. Only verdict changes are worth a repaint.
     let lastSent = "";
     try {
       overlay = trace({
         controls: false,
         yieldToExtension: false,
         onResult: (result) => {
+          lastResult = result;
           lastViolations = pageViolations(result);
           const snapshot = buildSnapshot(result, lastViolations);
-          const key = JSON.stringify([snapshot.valid, snapshot.stopCount, snapshot.violations]);
+          const key = JSON.stringify(snapshot);
           if (key === lastSent) {
             return;
           }
@@ -98,6 +99,9 @@ if (!window.__oooExtension) {
     port.onMessage.addListener((message: PanelMessage) => {
       if (message.kind === "focus-violation") {
         focusViolation(message.index);
+      } else if (message.kind === "report-request" && lastResult) {
+        const text = formatReport(lastResult, lastViolations, message.format);
+        post({ kind: "report", format: message.format, text });
       } else if (message.kind === "settings" && overlay) {
         const { settings } = message;
         overlay.setVisible(settings.overlay);

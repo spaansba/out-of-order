@@ -4,7 +4,6 @@ import {
   DEFAULT_SETTINGS,
   FORMATS,
   PANEL_PORT,
-  type AuditSnapshot,
   type ContentMessage,
   type OverlaySettings,
   type PanelMessage,
@@ -26,8 +25,8 @@ let port: chrome.runtime.Port | null = null;
 let currentTabId: number | null = null;
 let panelWindowId: number | null = null;
 let settings = loadSettings();
-let lastSnapshot: AuditSnapshot | null = null;
 let findingCards: HTMLElement[] = [];
+const pendingReports = new Map<AuditFormat, (text: string) => void>();
 
 function mustFind<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -46,6 +45,18 @@ function saveLocal(key: string, value: string): void {
 function showBanner(kind: StatusKind, text: string): void {
   results.replaceChildren();
   renderStatus(banner, kind, text);
+}
+
+// The content script formats reports on demand, so a copy click round-trips to
+// it rather than reading a pre-built string.
+function requestReport(format: AuditFormat): Promise<string> {
+  if (!port) {
+    return Promise.resolve("");
+  }
+  return new Promise((resolve) => {
+    pendingReports.set(format, resolve);
+    port?.postMessage({ kind: "report-request", format } satisfies PanelMessage);
+  });
 }
 
 function loadSettings(): OverlaySettings {
@@ -99,7 +110,7 @@ addCopySplit(
   {
     format: savedFormat && FORMATS.includes(savedFormat) ? savedFormat : "by-element",
     onFormat: (format) => saveLocal(FORMAT_KEY, format),
-    getReport: (format) => lastSnapshot?.reports[format] ?? "",
+    getReport: requestReport,
   },
   new AbortController().signal,
 );
@@ -113,7 +124,6 @@ const RESTRICTED =
 async function attach(tabId: number, url: string | undefined): Promise<void> {
   detach();
   currentTabId = tabId;
-  lastSnapshot = null;
   copyWrap.hidden = true;
   renderStatus(banner, null);
   grantButton.hidden = true;
@@ -140,9 +150,11 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
   port = opened;
   opened.onMessage.addListener((message: ContentMessage) => {
     if (message.kind === "audit") {
-      lastSnapshot = message.snapshot;
       copyWrap.hidden = false;
       findingCards = renderSnapshot(results, message.snapshot, focusViolation);
+    } else if (message.kind === "report") {
+      pendingReports.get(message.format)?.(message.text);
+      pendingReports.delete(message.format);
     } else if (message.kind === "state") {
       // The page is authoritative: the peek key over there flips state too.
       patchSettings({ overlay: message.visible, peek: message.peeking }, false);
@@ -157,6 +169,11 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
     // Read lastError so a page moving into the back/forward cache (which closes
     // the port) doesn't log "Unchecked runtime.lastError".
     void chrome.runtime.lastError;
+    // A copy awaiting a report the dead port will never answer resolves empty.
+    for (const resolve of pendingReports.values()) {
+      resolve("");
+    }
+    pendingReports.clear();
     // Navigation kills the content script and its port; onUpdated re-attaches.
     if (port === opened) {
       port = null;

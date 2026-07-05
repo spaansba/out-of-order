@@ -85,6 +85,13 @@ export function formatViolations(
   }
 }
 
+/** A format rendered to a string: "text" as-is, the structured views
+    JSON-stringified. What consumers that copy or print a report want. */
+export function reportText(result: AuditResult, format: AuditFormat): string {
+  const rendered = formatViolations(result, format);
+  return typeof rendered === "string" ? rendered : JSON.stringify(rendered, null, 2);
+}
+
 const related = (issue: Issue): string[] | undefined => issue.relatedElements?.map(selectorFor);
 
 function serialize(issue: Issue): SerializedIssue {

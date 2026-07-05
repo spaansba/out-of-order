@@ -1,4 +1,4 @@
-import { audit, formatViolations, type AuditOptions, type AuditResult } from "@out-of-order/core";
+import { audit, reportText, type AuditOptions, type AuditResult } from "@out-of-order/core";
 import { ensureStyles } from "./styles.js";
 import { Tooltip } from "./tooltip.js";
 import { Renderer } from "./render.js";
@@ -300,11 +300,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
           onCopyFormat: (copyFormat) => patchPanelState({ copyFormat }),
           // handle.result is always set by the time the copy button can be clicked:
           // build() runs synchronously before trace() returns.
-          getReport: (format) => {
-            const result = handle.result ?? audit(root, options.audit);
-            const report = formatViolations(result, format);
-            return typeof report === "string" ? report : JSON.stringify(report, null, 2);
-          },
+          getReport: (format) => reportText(handle.result ?? audit(root, options.audit), format),
         });
 
   // Replay the persisted state now the panel exists to mirror it. Peek is moot (and

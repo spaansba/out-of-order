@@ -4,12 +4,12 @@ export const PANEL_PORT = "ooo-panel";
 
 export const FORMATS: AuditFormat[] = ["text", "by-element", "by-violation", "flat"];
 
-/** Serializable audit result that crosses the panel/content-script boundary. */
+/** Serializable audit result that crosses the panel/content-script boundary.
+    Reports are not included: they are formatted on demand at copy time. */
 export interface AuditSnapshot {
   valid: boolean;
   stopCount: number;
   violations: ByElement[];
-  reports: Record<AuditFormat, string>;
 }
 
 export interface OverlaySettings {
@@ -27,12 +27,14 @@ export const DEFAULT_SETTINGS: OverlaySettings = {
 /** Panel -> content script, over the port. */
 export type PanelMessage =
   | { kind: "focus-violation"; index: number }
-  | { kind: "settings"; settings: OverlaySettings };
+  | { kind: "settings"; settings: OverlaySettings }
+  | { kind: "report-request"; format: AuditFormat };
 
 /** Content script -> panel, over the port. Pushed on connect and on every
     re-analysis that changes the verdict. */
 export type ContentMessage =
   | { kind: "audit"; snapshot: AuditSnapshot }
+  | { kind: "report"; format: AuditFormat; text: string }
   | { kind: "state"; visible: boolean; peeking: boolean }
   | { kind: "focused"; index: number | null }
   | { kind: "error"; message: string };
