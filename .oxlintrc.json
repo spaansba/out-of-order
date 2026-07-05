@@ -4,6 +4,9 @@
   "rules": {
     "id-length": ["error", { "min": 1, "properties": "never" }],
     "curly": ["error", "all"],
-    "typescript/explicit-member-accessibility": ["error", { "overrides": { "constructors": "no-public" } }]
+    "typescript/explicit-member-accessibility": [
+      "error",
+      { "overrides": { "constructors": "no-public" } }
+    ]
   }
 }

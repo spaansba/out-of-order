@@ -140,7 +140,9 @@ function codeTags(str: string): string {
   let out = "";
   let last = 0;
   for (const m of str.matchAll(CODE_TOKEN)) {
-    out += escapeHtml(str.slice(last, m.index)) + `<code class="ooo-tip-code">${escapeHtml(m[0])}</code>`;
+    out +=
+      escapeHtml(str.slice(last, m.index)) +
+      `<code class="ooo-tip-code">${escapeHtml(m[0])}</code>`;
     last = m.index + m[0].length;
   }
   return out + escapeHtml(str.slice(last));

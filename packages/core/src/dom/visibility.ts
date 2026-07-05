@@ -55,10 +55,7 @@ export function isScrollContainer(element: Element, reads: DomReads = directRead
 /** The nearest fixed/sticky ancestor-or-self: the scroll-detached "chrome" layer
     (sticky navbar, fixed header) the element rides in, or null if it sits in
     normal flow. */
-export function floatingAncestor(
-  element: Element,
-  reads: DomReads = directReads,
-): Element | null {
+export function floatingAncestor(element: Element, reads: DomReads = directReads): Element | null {
   return closestAncestor(element, (node) => {
     const pos = reads.style(node).position;
     return pos === "fixed" || pos === "sticky";

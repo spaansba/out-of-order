@@ -23,7 +23,11 @@ body {
   margin: 0;
   background: var(--ooo-surface);
   color: var(--ooo-ink);
-  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font:
+    13px/1.5 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
     sans-serif;
 }
 
@@ -74,7 +78,9 @@ body {
   height: 24px;
   border-radius: 3px;
   color: var(--ooo-muted);
-  transition: background 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease;
 }
 
 .tool-icon:hover {
@@ -93,7 +99,10 @@ body {
   font: 600 11px/1 var(--ooo-mono);
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
 
 #settings-toggle:hover,
@@ -141,7 +150,9 @@ body {
   border-radius: 999px;
   background: #e7e4da;
   cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease;
 }
 
 .ooo-switch-knob {
@@ -202,7 +213,10 @@ body {
   font: 600 11px/1 var(--ooo-mono);
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
 
 #grant:hover {
@@ -251,7 +265,10 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
 
 .ooo-copy-caret {
@@ -265,7 +282,10 @@ body {
   color: var(--ooo-ink-2);
   font: 600 11px/1 var(--ooo-mono);
   cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
 
 /* Raise whichever half is hovered so its border draws over the shared seam. */
@@ -291,7 +311,8 @@ body {
   background: var(--ooo-surface);
   border: 1px solid var(--ooo-line-2);
   border-radius: 3px;
-  box-shadow: 0 10px 30px -12px rgba(24, 25, 28, 0.4),
+  box-shadow:
+    0 10px 30px -12px rgba(24, 25, 28, 0.4),
     0 1px 2px rgba(24, 25, 28, 0.08);
 }
 

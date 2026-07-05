@@ -47,7 +47,9 @@ export function buildDrawModel(
   const segments: SegmentSpec[] = [];
   for (let idx = 0; idx < drawn.length - 1; idx++) {
     const to = drawn[idx + 1]!;
-    const back = to.issues.some((issue) => issue.rule === "visual-order-mismatch" && !issue.ignored);
+    const back = to.issues.some(
+      (issue) => issue.rule === "visual-order-mismatch" && !issue.ignored,
+    );
     segments.push({
       back,
       tip: () => segmentTip(back, drawn[idx]!.orderIndex! + 1, to.orderIndex! + 1),

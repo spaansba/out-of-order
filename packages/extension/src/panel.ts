@@ -236,7 +236,10 @@ workerPort.onMessage.addListener((message: WorkerMessage) => {
 void (async () => {
   panelWindowId = (await chrome.windows.getCurrent()).id ?? null;
   if (panelWindowId !== null) {
-    workerPort.postMessage({ kind: "register", windowId: panelWindowId } satisfies SidePanelMessage);
+    workerPort.postMessage({
+      kind: "register",
+      windowId: panelWindowId,
+    } satisfies SidePanelMessage);
   }
   await attachActive();
 })();
