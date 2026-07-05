@@ -72,31 +72,24 @@ function loadSettings(): OverlaySettings {
 function patchSettings(patch: Partial<OverlaySettings>, push = true): void {
   settings = { ...settings, ...patch };
   saveLocal(SETTINGS_KEY, JSON.stringify(settings));
+  settingsView.syncState(settings.overlay, settings.peek);
   if (push) {
     port?.postMessage({ kind: "settings", settings } satisfies PanelMessage);
   }
 }
 
 const settingsView = buildSettings(settingsPanel, settings, {
-  // Hiding the overlay ends a peek; mirror that here so a stale peek=true isn't
-  // pushed to the next page.
-  onOverlay: (on) => {
-    patchSettings(on ? { overlay: on } : { overlay: on, peek: false });
-    settingsView.syncState(settings.overlay, settings.peek);
-  },
-  onPeek: (on) => {
-    patchSettings({ peek: on });
-    settingsView.syncState(settings.overlay, settings.peek);
-  },
+  // Hiding the overlay ends a peek; drop a stale peek=true so it isn't pushed to
+  // the next page.
+  onOverlay: (on) => patchSettings(on ? { overlay: on } : { overlay: on, peek: false }),
+  onPeek: (on) => patchSettings({ peek: on }),
   onMotion: (on) => patchSettings({ motion: on }),
 });
 
 listenForPeekKey("Alt", new AbortController().signal, () => {
-  if (!settings.overlay) {
-    return;
+  if (settings.overlay) {
+    patchSettings({ peek: !settings.peek });
   }
-  patchSettings({ peek: !settings.peek });
-  settingsView.syncState(settings.overlay, settings.peek);
 });
 
 settingsToggle.addEventListener("click", () => {
@@ -158,7 +151,6 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
     } else if (message.kind === "state") {
       // The page is authoritative: the peek key over there flips state too.
       patchSettings({ overlay: message.visible, peek: message.peeking }, false);
-      settingsView.syncState(message.visible, message.peeking);
     } else if (message.kind === "focused") {
       highlightFinding(message.index);
     } else if (message.kind === "error") {

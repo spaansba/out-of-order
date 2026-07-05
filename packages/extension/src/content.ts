@@ -50,9 +50,7 @@ if (!window.__oooExtension) {
     );
   };
 
-  // The overlay lives exactly as long as a panel is connected: mounted on
-  // connect, torn down on disconnect (panel closed, tab switched away, or the
-  // panel attached to another tab).
+  // The overlay lives exactly as long as a panel is connected.
   chrome.runtime.onConnect.addListener((port) => {
     overlay?.destroy();
     overlay = null;

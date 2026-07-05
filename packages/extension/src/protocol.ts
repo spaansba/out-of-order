@@ -7,7 +7,6 @@ export const FORMATS: AuditFormat[] = ["text", "by-element", "by-violation", "fl
 /** Serializable audit result that crosses the panel/content-script boundary.
     Reports are not included: they are formatted on demand at copy time. */
 export interface AuditSnapshot {
-  valid: boolean;
   stopCount: number;
   violations: ByElement[];
 }

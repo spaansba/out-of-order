@@ -24,7 +24,6 @@ test("snapshot survives JSON serialization and index-aligns with live violations
   expect(violations.length).toBeGreaterThan(0);
   expect(snapshot.violations.map((v) => v.selector)).toEqual(violations.map((v) => v.selector));
   expect(snapshot.stopCount).toBe(3);
-  expect(snapshot.valid).toBe(result.valid);
   expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot);
 });
 

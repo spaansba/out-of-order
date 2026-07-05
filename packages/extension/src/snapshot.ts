@@ -8,10 +8,12 @@ import {
 } from "@out-of-order/core";
 import type { AuditSnapshot } from "./protocol.js";
 
-/** Violations on page content proper: pages that embed the trace overlay
-    themselves would otherwise report the overlay's own controls. */
+// Skip the trace overlay's own controls: a page that embeds trace itself would
+// otherwise report them as findings.
+const isPageContent = (entry: Entry): boolean => !entry.element.closest(".ooo-layer");
+
 export function pageViolations(result: AuditResult): Entry[] {
-  return flaggedEntries(result).filter((entry) => !entry.element.closest(".ooo-layer"));
+  return flaggedEntries(result).filter(isPageContent);
 }
 
 const scopedResult = (result: AuditResult, violations: Entry[]): AuditResult => ({
@@ -24,8 +26,7 @@ const scopedResult = (result: AuditResult, violations: Entry[]): AuditResult => 
     can point back at an element by array index alone. */
 export function buildSnapshot(result: AuditResult, violations: Entry[]): AuditSnapshot {
   return {
-    valid: result.valid,
-    stopCount: result.sequence.filter((stop) => !stop.element.closest(".ooo-layer")).length,
+    stopCount: result.sequence.filter(isPageContent).length,
     violations: formatViolations(scopedResult(result, violations), "by-element"),
   };
 }

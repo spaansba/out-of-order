@@ -29,48 +29,53 @@ export function buildSettings(
   handlers: SettingsHandlers,
 ): SettingsView {
   const signal = new AbortController().signal;
-  let overlayOn = initial.overlay;
-  let peekOn = initial.peek;
-  let motionOn = initial.motion;
+  const state = { ...initial };
 
   const overlaySwitch = addSwitch(
     container,
     "vis",
     "Overlay",
-    () => handlers.onOverlay(!overlayOn),
+    () => handlers.onOverlay(!state.overlay),
     signal,
   );
-  const peekSwitch = addSwitch(container, "peek", "Peek", () => handlers.onPeek(!peekOn), signal);
+  const peekSwitch = addSwitch(
+    container,
+    "peek",
+    "Peek",
+    () => handlers.onPeek(!state.peek),
+    signal,
+  );
 
   const hint = document.createElement("p");
   hint.className = "ooo-panel-hint";
   hint.textContent = "tap Alt to peek";
   container.appendChild(hint);
 
+  // Motion never round-trips back through syncState, so its handler owns the flip.
   const motionSwitch = addSwitch(
     container,
     "motion",
     "Motion",
     () => {
-      motionOn = !motionOn;
-      setSwitch(motionSwitch, motionOn);
-      handlers.onMotion(motionOn);
+      state.motion = !state.motion;
+      sync();
+      handlers.onMotion(state.motion);
     },
     signal,
   );
 
   const sync = (): void => {
-    setSwitch(overlaySwitch, overlayOn);
-    setSwitch(peekSwitch, peekOn);
-    peekSwitch.disabled = !overlayOn;
+    setSwitch(overlaySwitch, state.overlay);
+    setSwitch(peekSwitch, state.peek);
+    setSwitch(motionSwitch, state.motion);
+    peekSwitch.disabled = !state.overlay;
   };
   sync();
-  setSwitch(motionSwitch, motionOn);
 
   return {
     syncState(visible, peeking) {
-      overlayOn = visible;
-      peekOn = peeking;
+      state.overlay = visible;
+      state.peek = peeking;
       sync();
     },
   };
