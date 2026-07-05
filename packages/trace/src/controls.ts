@@ -356,7 +356,11 @@ export function setSwitch(sw: HTMLButtonElement, on: boolean): void {
   sw.classList.toggle("ooo-switch--on", on);
 }
 
-function listenForPeekKey(peekKey: ModifierKey, signal: AbortSignal, onTap: () => void): void {
+export function listenForPeekKey(
+  peekKey: ModifierKey,
+  signal: AbortSignal,
+  onTap: () => void,
+): void {
   let armed = false;
   window.addEventListener(
     "keydown",

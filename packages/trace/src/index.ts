@@ -10,7 +10,13 @@ import { loadPanelState, patchPanelState, type PanelState } from "./panel-state.
 export type MotionMode = "auto" | "on" | "off";
 
 export type { ModifierKey };
-export { addCopySplit, addSwitch, setSwitch, type CopySplitOptions } from "./controls.js";
+export {
+  addCopySplit,
+  addSwitch,
+  listenForPeekKey,
+  setSwitch,
+  type CopySplitOptions,
+} from "./controls.js";
 
 export interface TraceOptions {
   /** Subtree to analyze. Defaults to document. */

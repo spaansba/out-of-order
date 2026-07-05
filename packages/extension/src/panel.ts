@@ -1,4 +1,4 @@
-import { addCopySplit } from "@out-of-order/trace";
+import { addCopySplit, listenForPeekKey } from "@out-of-order/trace";
 import type { AuditFormat } from "@out-of-order/core";
 import {
   DEFAULT_SETTINGS,
@@ -69,6 +69,14 @@ const settingsView = buildSettings(settingsPanel, settings, {
     settingsView.syncState(settings.overlay, settings.peek);
   },
   onMotion: (on) => patchSettings({ motion: on }),
+});
+
+listenForPeekKey("Alt", new AbortController().signal, () => {
+  if (!settings.overlay) {
+    return;
+  }
+  patchSettings({ peek: !settings.peek });
+  settingsView.syncState(settings.overlay, settings.peek);
 });
 
 settingsToggle.addEventListener("click", () => {
