@@ -61,8 +61,8 @@ if (!window.__oooExtension) {
     const post = (message: ContentMessage): void => port.postMessage(message);
 
     // trace re-analyzes on DOM mutation, so pushing from onResult keeps the
-    // panel live without polling. ranAt is excluded from the dedupe key: every
-    // rebuild reports, but only verdict changes are worth a repaint.
+    // panel live without polling. The key omits reports (derived from the
+    // verdict), so only real verdict changes trigger a repaint.
     let lastSent = "";
     try {
       overlay = trace({

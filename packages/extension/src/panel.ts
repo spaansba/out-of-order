@@ -2,16 +2,14 @@ import { addCopySplit, listenForPeekKey } from "@out-of-order/trace";
 import type { AuditFormat } from "@out-of-order/core";
 import {
   DEFAULT_SETTINGS,
+  FORMATS,
   PANEL_PORT,
-  SIDE_PANEL_PORT,
   type AuditSnapshot,
   type ContentMessage,
   type OverlaySettings,
   type PanelMessage,
-  type SidePanelMessage,
-  type WorkerMessage,
 } from "./protocol.js";
-import { buildSettings, renderSnapshot, renderStatus } from "./panel-view.js";
+import { buildSettings, renderSnapshot, renderStatus, type StatusKind } from "./panel-view.js";
 
 const banner = mustFind<HTMLElement>("#status");
 const grantButton = mustFind<HTMLButtonElement>("#grant");
@@ -23,7 +21,6 @@ const settingsPanel = mustFind<HTMLElement>("#settings");
 const ALL_SITES: chrome.permissions.Permissions = { origins: ["<all_urls>"] };
 const SETTINGS_KEY = "ooo:settings";
 const FORMAT_KEY = "ooo:copy-format";
-const FORMATS: AuditFormat[] = ["text", "by-element", "by-violation", "flat"];
 
 let port: chrome.runtime.Port | null = null;
 let currentTabId: number | null = null;
@@ -40,6 +37,17 @@ function mustFind<T extends Element>(selector: string): T {
   return element;
 }
 
+function saveLocal(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
+
+function showBanner(kind: StatusKind, text: string): void {
+  results.replaceChildren();
+  renderStatus(banner, kind, text);
+}
+
 function loadSettings(): OverlaySettings {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}");
@@ -52,9 +60,7 @@ function loadSettings(): OverlaySettings {
 
 function patchSettings(patch: Partial<OverlaySettings>, push = true): void {
   settings = { ...settings, ...patch };
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {}
+  saveLocal(SETTINGS_KEY, JSON.stringify(settings));
   if (push) {
     port?.postMessage({ kind: "settings", settings } satisfies PanelMessage);
   }
@@ -92,11 +98,7 @@ addCopySplit(
   copyWrap,
   {
     format: savedFormat && FORMATS.includes(savedFormat) ? savedFormat : "by-element",
-    onFormat: (format) => {
-      try {
-        localStorage.setItem(FORMAT_KEY, format);
-      } catch {}
-    },
+    onFormat: (format) => saveLocal(FORMAT_KEY, format),
     getReport: (format) => lastSnapshot?.reports[format] ?? "",
   },
   new AbortController().signal,
@@ -116,17 +118,14 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
   renderStatus(banner, null);
   grantButton.hidden = true;
   if (url && RESTRICTED.test(url)) {
-    results.replaceChildren();
-    renderStatus(banner, "info", "Chrome doesn't allow extensions on this page.");
+    showBanner("info", "Chrome doesn't allow extensions on this page.");
     return;
   }
   try {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
   } catch (error) {
-    results.replaceChildren();
     if (!(await chrome.permissions.contains(ALL_SITES))) {
-      renderStatus(
-        banner,
+      showBanner(
         "info",
         "Out of Order needs access to the sites you want to audit. Allow it once below.",
       );
@@ -134,7 +133,7 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
       return;
     }
     const detail = error instanceof Error ? error.message : String(error);
-    renderStatus(banner, "error", `Can't audit this page. (${detail})`);
+    showBanner("error", `Can't audit this page. (${detail})`);
     return;
   }
   const opened = chrome.tabs.connect(tabId, { name: PANEL_PORT });
@@ -151,8 +150,7 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
     } else if (message.kind === "focused") {
       highlightFinding(message.index);
     } else if (message.kind === "error") {
-      results.replaceChildren();
-      renderStatus(banner, "error", `Can't audit this page. (${message.message})`);
+      showBanner("error", `Can't audit this page. (${message.message})`);
     }
   });
   opened.onDisconnect.addListener(() => {
@@ -223,23 +221,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// A port to the worker so the toolbar icon can toggle this panel closed: the
-// worker learns our window here and messages us to close (there is no
-// sidePanel.close() API).
-const workerPort = chrome.runtime.connect({ name: SIDE_PANEL_PORT });
-workerPort.onMessage.addListener((message: WorkerMessage) => {
-  if (message.kind === "close") {
-    window.close();
-  }
-});
-
+// Learn which window this panel is docked in so it only follows tab changes
+// in its own window (onActivated fires for every window).
 void (async () => {
-  panelWindowId = (await chrome.windows.getCurrent()).id ?? null;
-  if (panelWindowId !== null) {
-    workerPort.postMessage({
-      kind: "register",
-      windowId: panelWindowId,
-    } satisfies SidePanelMessage);
-  }
-  await attachActive();
+  const currentWindow = chrome.windows.getCurrent();
+  const attaching = attachActive();
+  panelWindowId = (await currentWindow).id ?? null;
+  await attaching;
 })();

@@ -131,20 +131,16 @@ export function renderSnapshot(
       chip.className = `chip chip--${issue.severity}`;
       chip.textContent = issue.severity;
       head.append(chip);
+      const rule = document.createElement(issue.docs ? "a" : "span");
+      rule.className = "issue-rule";
+      rule.textContent = issue.rule;
       if (issue.docs) {
-        const rule = document.createElement("a");
-        rule.className = "issue-rule";
-        rule.href = issue.docs;
-        rule.target = "_blank";
-        rule.rel = "noreferrer";
-        rule.textContent = issue.rule;
-        head.append(rule);
-      } else {
-        const rule = document.createElement("span");
-        rule.className = "issue-rule";
-        rule.textContent = issue.rule;
-        head.append(rule);
+        const link = rule as HTMLAnchorElement;
+        link.href = issue.docs;
+        link.target = "_blank";
+        link.rel = "noreferrer";
       }
+      head.append(rule);
       row.append(head);
 
       const message = document.createElement("p");
