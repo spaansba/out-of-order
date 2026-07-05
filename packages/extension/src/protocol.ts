@@ -1,6 +1,15 @@
 import type { AuditFormat, ByElement } from "@out-of-order/core";
 
 export const PANEL_PORT = "ooo-panel";
+export const SIDE_PANEL_PORT = "ooo-sidepanel";
+
+/** Panel -> service worker: which window this panel is docked in, so a repeat
+    action click can toggle the right one closed. */
+export type SidePanelMessage = { kind: "register"; windowId: number };
+
+/** Service worker -> panel: Chrome has no sidePanel.close(), so the panel must
+    close itself. */
+export type WorkerMessage = { kind: "close" };
 
 /** Serializable audit result that crosses the panel/content-script boundary. */
 export interface AuditSnapshot {

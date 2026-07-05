@@ -3,10 +3,13 @@ import type { AuditFormat } from "@out-of-order/core";
 import {
   DEFAULT_SETTINGS,
   PANEL_PORT,
+  SIDE_PANEL_PORT,
   type AuditSnapshot,
   type ContentMessage,
   type OverlaySettings,
   type PanelMessage,
+  type SidePanelMessage,
+  type WorkerMessage,
 } from "./protocol.js";
 import { buildSettings, renderSnapshot, renderStatus } from "./panel-view.js";
 
@@ -220,7 +223,20 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+// A port to the worker so the toolbar icon can toggle this panel closed: the
+// worker learns our window here and messages us to close (there is no
+// sidePanel.close() API).
+const workerPort = chrome.runtime.connect({ name: SIDE_PANEL_PORT });
+workerPort.onMessage.addListener((message: WorkerMessage) => {
+  if (message.kind === "close") {
+    window.close();
+  }
+});
+
 void (async () => {
   panelWindowId = (await chrome.windows.getCurrent()).id ?? null;
+  if (panelWindowId !== null) {
+    workerPort.postMessage({ kind: "register", windowId: panelWindowId } satisfies SidePanelMessage);
+  }
   await attachActive();
 })();
