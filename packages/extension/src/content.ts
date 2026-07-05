@@ -1,5 +1,10 @@
 import type { Entry } from "@out-of-order/core";
-import { trace, type TraceHandle } from "@out-of-order/trace";
+import {
+  EXTENSION_ACTIVE_EVENT,
+  TRACE_ACTIVE_EVENT,
+  trace,
+  type TraceHandle,
+} from "@out-of-order/trace";
 import { buildSnapshot, pageViolations } from "./snapshot.js";
 import type { ContentMessage, PanelMessage } from "./protocol.js";
 
@@ -15,6 +20,18 @@ if (!window.__oooExtension) {
   let overlay: TraceHandle | null = null;
   let activePort: chrome.runtime.Port | null = null;
   let lastViolations: Entry[] = [];
+
+  const claimPage = (): void => {
+    document.dispatchEvent(new CustomEvent(EXTENSION_ACTIVE_EVENT));
+  };
+
+  // A page-mounted trace() announces itself at mount; answer while attached so
+  // one mounting after our claim (SPA route change, lazy init) still turns off.
+  document.addEventListener(TRACE_ACTIVE_EVENT, () => {
+    if (activePort) {
+      claimPage();
+    }
+  });
 
   const focusViolation = (index: number): void => {
     const element = lastViolations[index]?.element;
@@ -39,6 +56,8 @@ if (!window.__oooExtension) {
     overlay?.destroy();
     overlay = null;
     activePort = port;
+    // Kill any overlay the page mounted itself so the two don't stack.
+    claimPage();
     const post = (message: ContentMessage): void => port.postMessage(message);
 
     // trace re-analyzes on DOM mutation, so pushing from onResult keeps the
@@ -48,6 +67,7 @@ if (!window.__oooExtension) {
     try {
       overlay = trace({
         controls: false,
+        yieldToExtension: false,
         onResult: (result) => {
           lastViolations = pageViolations(result);
           const snapshot = buildSnapshot(result, lastViolations);

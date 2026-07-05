@@ -1,4 +1,9 @@
-import { ensureRingStyles, setAnchorRules } from "./styles.js";
+import {
+  createAnchorSheet,
+  ensureRingStyles,
+  releaseAnchorSheet,
+  setAnchorRules,
+} from "./styles.js";
 import type { Severity } from "@out-of-order/core";
 import type { Tooltip, Tip } from "./tooltip.js";
 
@@ -57,6 +62,8 @@ export class Renderer {
   private ringEls: { element: Element; value: string }[] = [];
   private ringsVisible = true;
   private focused: HTMLElement | null = null;
+  private readonly anchorSheet = createAnchorSheet();
+  private readonly token = nextInstanceToken();
 
   constructor(
     private readonly layer: HTMLElement,
@@ -100,7 +107,11 @@ export class Renderer {
       const existing = getComputedStyle(stop.element).getPropertyValue("anchor-name");
 
       if (existing && existing !== "none") {
-        names.set(stop.element, existing.split(",")[0]!.trim());
+        const name = existing.split(",")[0]!.trim();
+
+        if (!name.startsWith("--ooo-")) {
+          names.set(stop.element, name);
+        }
       }
     }
 
@@ -119,7 +130,7 @@ export class Renderer {
       }
     }
 
-    setAnchorRules(this.anchored.length);
+    setAnchorRules(this.anchorSheet, this.token, this.anchored.length);
   }
 
   /** A hop between a floating and an in-flow stop spans two scroll regimes,
@@ -237,25 +248,25 @@ export class Renderer {
       exportparts through any nested hosts), since ::part is the one way a
       document-scope rule can put an anchor name on a shadow element. */
   private publishAnchor(element: Element): string {
-    const id = this.anchored.length;
+    const key = `${this.token}-${this.anchored.length}`;
     const exported: Element[] = [];
     const root = element.getRootNode();
     if (root instanceof ShadowRoot) {
-      element.part.add(`ooo-${id}`);
+      element.part.add(`ooo-${key}`);
       // ::part reaches one boundary; re-export through nested hosts above.
       let host = root.host;
       let hostRoot = host.getRootNode();
       while (hostRoot instanceof ShadowRoot) {
-        appendExportPart(host, `ooo-${id}`);
+        appendExportPart(host, `ooo-${key}`);
         exported.push(host);
         host = hostRoot.host;
         hostRoot = host.getRootNode();
       }
     } else {
-      element.setAttribute(ANCHOR_ATTR, String(id));
+      element.setAttribute(ANCHOR_ATTR, key);
     }
     this.anchored.push({ element, exported });
-    return `--ooo-${id}`;
+    return `--ooo-${key}`;
   }
 
   public setFocused(element: Element | null): void {
@@ -293,18 +304,29 @@ export class Renderer {
     this.manuallyPlacedBadges = [];
     this.focused = null;
     this.anchored.forEach(({ element, exported }, id) => {
-      element.removeAttribute(ANCHOR_ATTR);
-      element.part.remove(`ooo-${id}`);
+      const key = `${this.token}-${id}`;
+
+      if (element.getAttribute(ANCHOR_ATTR) === key) {
+        element.removeAttribute(ANCHOR_ATTR);
+      }
+      element.part.remove(`ooo-${key}`);
       for (const host of exported) {
-        removeExportPart(host, `ooo-${id}`);
+        removeExportPart(host, `ooo-${key}`);
       }
     });
     this.anchored = [];
-    setAnchorRules(0);
+    setAnchorRules(this.anchorSheet, this.token, 0);
     for (const { element } of this.ringEls) {
       element.removeAttribute(RING_ATTR);
     }
     this.ringEls = [];
+  }
+
+  /** clear() plus giving the document its stylesheet slot back; the renderer
+      is unusable afterwards. */
+  public dispose(): void {
+    this.clear();
+    releaseAnchorSheet(this.anchorSheet);
   }
 
   private addBadge(spec: StopSpec, anchorName: string, parent: HTMLElement): void {
@@ -375,6 +397,12 @@ export class Renderer {
       ensureRingStyles(root);
     }
   }
+}
+
+function nextInstanceToken(): number {
+  const shared = globalThis as { __oooAnchorToken?: number };
+  shared.__oooAnchorToken = (shared.__oooAnchorToken ?? 0) + 1;
+  return shared.__oooAnchorToken;
 }
 
 // CSS anchor-name only takes effect on elements that generate a principal CSS

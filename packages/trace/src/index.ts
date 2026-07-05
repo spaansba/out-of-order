@@ -9,6 +9,12 @@ import { loadPanelState, patchPanelState, type PanelState } from "./panel-state.
 
 export type MotionMode = "auto" | "on" | "off";
 
+export const EXTENSION_ACTIVE_EVENT = "ooo:extension-active";
+/** Fired by trace() at mount. A trace mounting after the extension attached
+    would miss its announcement, so it asks; the extension answers with
+    EXTENSION_ACTIVE_EVENT (synchronously) and the mount is skipped. */
+export const TRACE_ACTIVE_EVENT = "ooo:trace-active";
+
 export type { ModifierKey };
 export {
   addCopySplit,
@@ -32,6 +38,10 @@ export interface TraceOptions {
       when the host brings its own controls (e.g. the browser extension); the
       peek key keeps working. */
   controls?: boolean;
+  /** Turn off this overlay for good when the browser extension announces
+      itself (see EXTENSION_ACTIVE_EVENT). Defaults to true; the extension
+      disables it on its own instance so it doesn't kill itself. */
+  yieldToExtension?: boolean;
   /** Called after every re-analysis with the fresh result. The first call is
       synchronous, before trace() returns. */
   onResult?: (result: AuditResult) => void;
@@ -184,7 +194,41 @@ function wirePageEvents(
   };
 }
 
+/** What a killed trace hands back: mounting was skipped (or undone), every
+    control is a no-op. */
+function deadHandle(): TraceHandle {
+  return {
+    result: null,
+    visible: false,
+    peeking: false,
+    setVisible: () => {},
+    toggle: () => {},
+    setPeek: () => {},
+    setMotion: () => {},
+    destroy: () => {},
+  };
+}
+
 export function trace(options: TraceOptions = {}): TraceHandle {
+  let live: TraceHandle | null = null;
+  const yieldAc = new AbortController();
+  if (options.yieldToExtension !== false) {
+    let claimed = false;
+    document.addEventListener(
+      EXTENSION_ACTIVE_EVENT,
+      () => {
+        claimed = true;
+        yieldAc.abort();
+        live?.destroy();
+      },
+      { signal: yieldAc.signal },
+    );
+    document.dispatchEvent(new CustomEvent(TRACE_ACTIVE_EVENT));
+    if (claimed) {
+      return deadHandle();
+    }
+  }
+
   ensureStyles();
 
   const root = options.root ?? document;
@@ -272,6 +316,7 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     setPeek(true);
   }
 
+  let destroyed = false;
   const handle: TraceHandle = {
     result: null,
     get visible() {
@@ -289,14 +334,21 @@ export function trace(options: TraceOptions = {}): TraceHandle {
       }
     },
     setMotion: (mode) => motion.setMode(mode),
+    // Idempotent: the extension's takeover destroys the overlay out from under
+    // the page, which may later call destroy() itself.
     destroy: () => {
+      if (destroyed) {
+        return;
+      }
+      destroyed = true;
+      yieldAc.abort();
       motion.teardown();
       controls.teardown();
       cancelBuild();
       teardownEvents();
       mutations.destroy();
       tooltip.destroy();
-      renderer.clear();
+      renderer.dispose();
       layer.remove();
     },
   };
@@ -324,7 +376,9 @@ export function trace(options: TraceOptions = {}): TraceHandle {
 
     // The overlay's own controls are graded like page content (they stay in the
     // result), but drawing their markers would scribble on the panel itself.
-    const { stops, segments, offStops } = buildDrawModel(result, (element) => layer.contains(element));
+    const { stops, segments, offStops } = buildDrawModel(result, (element) =>
+      layer.contains(element),
+    );
     renderer.draw(stops, segments, offStops);
     // If focus already sits on a tab stop (e.g. a re-analyze mid-tabbing), fill it.
     renderer.setFocused(document.activeElement);
@@ -332,5 +386,6 @@ export function trace(options: TraceOptions = {}): TraceHandle {
 
   build();
   mutations.observe(root);
+  live = handle;
   return handle;
 }

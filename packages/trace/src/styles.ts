@@ -283,8 +283,6 @@ const overlaySheet = new CSSStyleSheet();
 overlaySheet.replaceSync(OVERLAY_CSS);
 const ringSheet = new CSSStyleSheet();
 ringSheet.replaceSync(RING_CSS);
-const anchorSheet = new CSSStyleSheet();
-
 function adopt(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
   if (root.adoptedStyleSheets.includes(sheet)) {
     return;
@@ -296,7 +294,19 @@ function adopt(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
 /** Make the full overlay stylesheet available on the document. */
 export function ensureStyles(): void {
   adopt(document, overlaySheet);
-  adopt(document, anchorSheet);
+}
+
+/** Anchor rules are per trace instance, not module state: the page's overlay
+    and the extension's can briefly coexist around a takeover, and a shared
+    sheet would let one wipe the other's anchors on clear. */
+export function createAnchorSheet(): CSSStyleSheet {
+  const sheet = new CSSStyleSheet();
+  adopt(document, sheet);
+  return sheet;
+}
+
+export function releaseAnchorSheet(sheet: CSSStyleSheet): void {
+  document.adoptedStyleSheets = document.adoptedStyleSheets.filter((other) => other !== sheet);
 }
 
 // Attribute-keyed rules rather than inline styles, so the page's style
@@ -304,12 +314,12 @@ export function ensureStyles(): void {
 // gets a ::part selector: shadow elements carry a part token instead of the
 // attribute, which is the one way a document-scope rule (and so the layer's
 // anchor() refs) can name an element across a shadow boundary.
-export function setAnchorRules(count: number): void {
-  anchorSheet.replaceSync(
-    Array.from(
-      { length: count },
-      (_, id) => `[data-ooo-anchor="${id}"], ::part(ooo-${id}) { anchor-name: --ooo-${id}; }`,
-    ).join("\n"),
+export function setAnchorRules(sheet: CSSStyleSheet, token: number, count: number): void {
+  sheet.replaceSync(
+    Array.from({ length: count }, (_, id) => {
+      const key = `${token}-${id}`;
+      return `[data-ooo-anchor="${key}"], ::part(ooo-${key}) { anchor-name: --ooo-${key}; }`;
+    }).join("\n"),
   );
 }
 

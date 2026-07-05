@@ -266,6 +266,36 @@ describe("trace", () => {
     expect(onStateChange).toHaveBeenLastCalledWith({ visible: false, peeking: false });
   });
 
+  test("the extension announcing itself kills a page-mounted trace for good", () => {
+    mount('<button>Fine</button><button tabindex="2">Jumped</button>');
+    const ringed = root.querySelector('[tabindex="2"]')!;
+    document.dispatchEvent(new CustomEvent("ooo:extension-active"));
+    expect(document.querySelector(".ooo-layer")).toBeNull();
+    expect(ringed.hasAttribute("data-ooo-ring")).toBe(false);
+  });
+
+  test("mounting while the extension is attached is skipped outright", () => {
+    // Stand in for the extension: answer the mount announcement with a claim.
+    const answer = (): void => {
+      document.dispatchEvent(new CustomEvent("ooo:extension-active"));
+    };
+    document.addEventListener("ooo:trace-active", answer);
+    try {
+      mount("<button>A</button>");
+      expect(document.querySelector(".ooo-layer")).toBeNull();
+      expect(handle!.visible).toBe(false);
+      expect(handle!.result).toBeNull();
+    } finally {
+      document.removeEventListener("ooo:trace-active", answer);
+    }
+  });
+
+  test("yieldToExtension: false ignores the extension's claim", () => {
+    mount("<button>A</button>", { yieldToExtension: false });
+    document.dispatchEvent(new CustomEvent("ooo:extension-active"));
+    expect(document.querySelector(".ooo-layer")).not.toBeNull();
+  });
+
   test("destroy removes the layer and un-marks elements", () => {
     mount("<button>A</button>");
     const button = root.querySelector("button")!;
@@ -327,6 +357,21 @@ describe("trace", () => {
     expect(getComputedStyle(button).getPropertyValue("anchor-name")).toBe("--their-menu");
     expect(button.hasAttribute("data-ooo-anchor")).toBe(false);
     expect(badgeDrift(button)).toBeLessThan(1.5);
+  });
+
+  test("the takeover survivor keeps its badges when the page overlay dies", () => {
+    // The page mounts first, the extension's instance second (attach race or a
+    // page running an older trace): they briefly coexist, then the claim kills
+    // the page's. The survivor's anchors must not die with it.
+    root = document.createElement("div");
+    root.innerHTML = '<button style="margin:200px;width:80px;height:40px">A</button>';
+    document.body.appendChild(root);
+    const pageOverlay = trace({ root });
+    handle = trace({ root, yieldToExtension: false });
+    document.dispatchEvent(new CustomEvent("ooo:extension-active"));
+    expect(pageOverlay.result).not.toBeNull();
+    expect(document.querySelectorAll(".ooo-layer")).toHaveLength(1);
+    expect(badgeDrift(root.querySelector("button")!)).toBeLessThan(1.5);
   });
 
   test("badges stay on their element across a window scroll", async () => {
