@@ -1,5 +1,8 @@
 # @out-of-order/cli
 
+[![npm downloads](https://img.shields.io/npm/dt/@out-of-order/cli.svg)](https://www.npmjs.com/package/@out-of-order/cli)
+[![bundle size](https://deno.bundlejs.com/badge?q=@out-of-order/cli)](https://bundlejs.com/?q=@out-of-order/cli)
+
 > ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
 
 Audit any URL's tab order from the command line. It drives real Chromium (via [Playwright](https://playwright.dev/)), runs the [`@out-of-order/core`](../core) analyzer against the live page, and prints the findings to stdout. Pipe them into an AI agent or gate a CI job on the exit code.
