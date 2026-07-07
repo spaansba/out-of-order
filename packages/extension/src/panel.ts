@@ -24,6 +24,7 @@ const SETTINGS_KEY = "ooo:settings";
 const FORMAT_KEY = "ooo:copy-format";
 
 let port: chrome.runtime.Port | null = null;
+let attachToken = 0;
 let currentTabId: number | null = null;
 let panelWindowId: number | null = null;
 let settings = loadSettings();
@@ -114,6 +115,7 @@ const RESTRICTED =
     fresh snapshot on every DOM change, so there is nothing to poll. */
 async function attach(tabId: number, url: string | undefined): Promise<void> {
   detach();
+  const token = ++attachToken;
   currentTabId = tabId;
   copyWrap.hidden = true;
   renderStatus(banner, null);
@@ -125,6 +127,9 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
   try {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
   } catch (error) {
+    if (token !== attachToken) {
+      return;
+    }
     if (!(await chrome.permissions.contains(ALL_SITES))) {
       showBanner(
         "info",
@@ -135,6 +140,9 @@ async function attach(tabId: number, url: string | undefined): Promise<void> {
     }
     const detail = error instanceof Error ? error.message : String(error);
     showBanner("error", `Can't audit this page. (${detail})`);
+    return;
+  }
+  if (token !== attachToken) {
     return;
   }
   const opened = chrome.tabs.connect(tabId, { name: PANEL_PORT });
