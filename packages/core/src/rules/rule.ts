@@ -4,7 +4,6 @@ export type Severity = "error" | "warning";
 
 export interface SequenceEntry {
   element: Element;
-  selector: string;
   /** Zero-based position in the tab sequence. */
   orderIndex: number;
   /** Resolved tabindex (0 if unset but focusable). */
@@ -31,7 +30,7 @@ export interface Finding {
   /** Suggested remediation. */
   fix?: string;
   /** The element the finding points at. A {@link SequenceEntry} when it is a tab
-      stop (carries orderIndex and a selector), or a bare Element when it is not. */
+      stop (carries orderIndex), or a bare Element when it is not. */
   target: SequenceEntry | Element;
   /** Other elements with the same root cause. Ringed alongside `target` but not
       reported as separate findings, so one missing fix doesn't become N violations. */

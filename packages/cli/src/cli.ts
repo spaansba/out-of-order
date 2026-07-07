@@ -16,6 +16,7 @@ import {
 type OooGlobal = {
   audit: typeof import("@out-of-order/core").audit;
   formatViolations: typeof import("@out-of-order/core").formatViolations;
+  selectorFor: typeof import("@out-of-order/core").selectorFor;
 };
 
 // "json" is CLI-only: the whole result (valid, sequence, violations), not a
@@ -300,7 +301,7 @@ try {
             let output: string;
             if (format === "json") {
               const sequence = result.sequence.map((entry) => ({
-                selector: entry.selector,
+                selector: ooo.selectorFor(entry.element),
                 orderIndex: entry.orderIndex,
                 tabIndex: entry.tabIndex,
                 rect: {

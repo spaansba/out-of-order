@@ -108,7 +108,7 @@ function serialize(issue: Issue): SerializedIssue {
 
 function byElement(entries: Entry[]): ByElement[] {
   return entries.map((entry) => ({
-    selector: entry.selector,
+    selector: selectorFor(entry.element),
     orderIndex: entry.orderIndex,
     issueCount: entry.issues.length,
     issues: entry.issues.map(serialize),
@@ -131,7 +131,7 @@ function byViolation(entries: Entry[]): ByViolation[] {
         byRule.set(issue.rule, entry);
       }
       entry.elements.push({
-        selector: violation.selector,
+        selector: selectorFor(violation.element),
         orderIndex: violation.orderIndex,
         message: issue.message,
         fix: issue.fix,
@@ -147,7 +147,7 @@ function byViolation(entries: Entry[]): ByViolation[] {
 function flat(entries: Entry[]): FlatIssue[] {
   return entries.flatMap((violation) =>
     violation.issues.map((issue) => ({
-      selector: violation.selector,
+      selector: selectorFor(violation.element),
       orderIndex: violation.orderIndex,
       ...serialize(issue),
     })),
@@ -173,7 +173,7 @@ function renderText(entries: Entry[]): string {
           );
         })
         .join("\n");
-      return `${pos}${violation.selector}\n${issues}`;
+      return `${pos}${selectorFor(violation.element)}\n${issues}`;
     })
     .join("\n\n");
 }

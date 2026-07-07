@@ -1,5 +1,5 @@
 import { tabbable, getTabIndex } from "tabbable";
-import { selectorFor, isRuleIgnored, createReads, floatingAncestor } from "./dom/index.js";
+import { isRuleIgnored, createReads, floatingAncestor } from "./dom/index.js";
 import {
   ALL_RULES,
   type Finding,
@@ -34,7 +34,6 @@ export interface Issue {
 /** One graded element */
 export interface Entry {
   element: Element;
-  selector: string;
   issues: Issue[];
   /** Zero-based position in the tab sequence, when the element is a tab stop. */
   orderIndex?: number;
@@ -137,17 +136,9 @@ function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {
   };
 }
 
-function locate(
-  finding: Finding,
-  entryFor: Map<Element, SequenceEntry>,
-): { element: Element; selector: string } {
+function locate(finding: Finding): Element {
   const { target } = finding;
-  // Rules targeting bare Elements may still hit a tab stop; recover its
-  // sequence entry so the finding lands on the in-sequence element.
-  const entry = "orderIndex" in target ? target : entryFor.get(target);
-  return entry
-    ? { element: entry.element, selector: entry.selector }
-    : { element: target as Element, selector: selectorFor(target as Element) };
+  return "orderIndex" in target ? target.element : target;
 }
 
 function computeTabSequence(container: Element, reads: ReturnType<typeof createReads>) {
@@ -158,7 +149,6 @@ function computeTabSequence(container: Element, reads: ReturnType<typeof createR
   const sequence: SequenceEntry[] = elements.map((element, orderIndex) => ({
     element,
     orderIndex,
-    selector: selectorFor(element),
     tabIndex: getTabIndex(element),
     rect: reads.rect(element),
     floatRoot: floatingAncestor(element, reads),
@@ -167,12 +157,13 @@ function computeTabSequence(container: Element, reads: ReturnType<typeof createR
   return sequence;
 }
 
+const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
+  id,
+  ...def,
+}));
+
 function assembleRules(options: AuditOptions): Rule[] {
   const customRules = options.customRules ?? [];
-  const builtins: Rule[] = Object.entries(ALL_RULES).map(([id, def]) => ({
-    id,
-    ...def,
-  }));
   const rules = [...builtins, ...customRules];
   warnDuplicateRuleIds(builtins, customRules);
   warnUnknownRules(options.rules, rules);
@@ -183,10 +174,9 @@ function collectIssues(
   rules: Rule[],
   options: AuditOptions,
   sequence: SequenceEntry[],
-  entryFor: Map<Element, SequenceEntry>,
   ctx: Parameters<Rule["run"]>[1],
-): Map<Element, { selector: string; issues: Issue[] }> {
-  const byElement = new Map<Element, { selector: string; issues: Issue[] }>();
+): Map<Element, Issue[]> {
+  const byElement = new Map<Element, Issue[]>();
   for (const rule of rules) {
     const { enabled, severity } = resolveRule(options, rule);
     if (!enabled) {
@@ -194,17 +184,17 @@ function collectIssues(
     }
 
     for (const finding of rule.run(sequence, ctx)) {
-      const { element, selector } = locate(finding, entryFor);
-      let found = byElement.get(element);
-      if (!found) {
-        found = { selector, issues: [] };
-        byElement.set(element, found);
+      const element = locate(finding);
+      let issues = byElement.get(element);
+      if (!issues) {
+        issues = [];
+        byElement.set(element, issues);
       }
       const issue = toIssue(finding, rule, severity);
       if (isRuleIgnored(element, rule.id)) {
         issue.ignored = true;
       }
-      found.issues.push(issue);
+      issues.push(issue);
     }
   }
   return byElement;
@@ -247,26 +237,24 @@ export function audit(
   };
 
   const rules = assembleRules(options);
-  const found = collectIssues(rules, options, tabbed, entryFor, ctx);
+  const found = collectIssues(rules, options, tabbed, ctx);
 
   const sequence: Entry[] = tabbed.map((entry) => ({
     element: entry.element,
-    selector: entry.selector,
     orderIndex: entry.orderIndex,
     tabIndex: entry.tabIndex,
     rect: entry.rect,
     floatRoot: entry.floatRoot,
-    issues: bySeverity(found.get(entry.element)?.issues ?? []),
+    issues: bySeverity(found.get(entry.element) ?? []),
   }));
 
   const offSequence: Entry[] = [];
-  for (const [element, { selector, issues }] of found) {
+  for (const [element, issues] of found) {
     if (entryFor.has(element)) {
       continue;
     }
     offSequence.push({
       element,
-      selector,
       floatRoot: floatingAncestor(element, reads),
       issues: bySeverity(issues),
     });
