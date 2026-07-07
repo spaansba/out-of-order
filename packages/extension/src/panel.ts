@@ -203,11 +203,7 @@ async function attachActive(): Promise<void> {
 
 grantButton.addEventListener("click", () => {
   // Must run in the click handler: permissions.request needs a user gesture.
-  void chrome.permissions.request(ALL_SITES).then((granted) => {
-    if (granted) {
-      void attachActive();
-    }
-  });
+  void chrome.permissions.request(ALL_SITES);
 });
 
 chrome.permissions.onAdded.addListener(() => void attachActive());
