@@ -28,23 +28,12 @@ export function buildSettings(
   initial: OverlaySettings,
   handlers: SettingsHandlers,
 ): SettingsView {
-  const signal = new AbortController().signal;
   const state = { ...initial };
 
-  const overlaySwitch = addSwitch(
-    container,
-    "vis",
-    "Overlay",
-    () => handlers.onOverlay(!state.overlay),
-    signal,
+  const overlaySwitch = addSwitch(container, "vis", "Overlay", () =>
+    handlers.onOverlay(!state.overlay),
   );
-  const peekSwitch = addSwitch(
-    container,
-    "peek",
-    "Peek",
-    () => handlers.onPeek(!state.peek),
-    signal,
-  );
+  const peekSwitch = addSwitch(container, "peek", "Peek", () => handlers.onPeek(!state.peek));
 
   const hint = document.createElement("p");
   hint.className = "ooo-panel-hint";
@@ -52,17 +41,11 @@ export function buildSettings(
   container.appendChild(hint);
 
   // Motion never round-trips back through syncState, so its handler owns the flip.
-  const motionSwitch = addSwitch(
-    container,
-    "motion",
-    "Motion",
-    () => {
-      state.motion = !state.motion;
-      sync();
-      handlers.onMotion(state.motion);
-    },
-    signal,
-  );
+  const motionSwitch = addSwitch(container, "motion", "Motion", () => {
+    state.motion = !state.motion;
+    sync();
+    handlers.onMotion(state.motion);
+  });
 
   const sync = (): void => {
     setSwitch(overlaySwitch, state.overlay);

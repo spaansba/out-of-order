@@ -141,7 +141,7 @@ export interface CopySplitOptions {
 export function addCopySplit(
   parent: HTMLElement,
   opts: CopySplitOptions,
-  signal: AbortSignal,
+  signal?: AbortSignal,
 ): void {
   let current = opts.format ?? "by-element";
 
@@ -179,7 +179,7 @@ export function addCopySplit(
     clearTimeout(revert);
     revert = setTimeout(() => (main.textContent = mainLabel()), 1200);
   };
-  signal.addEventListener("abort", () => clearTimeout(revert));
+  signal?.addEventListener("abort", () => clearTimeout(revert));
 
   const copy = async (): Promise<void> => {
     try {
@@ -325,7 +325,7 @@ export function addSwitch(
   name: string,
   text: string,
   onToggle: () => void,
-  signal: AbortSignal,
+  signal?: AbortSignal,
 ): HTMLButtonElement {
   const row = document.createElement("div");
   row.className = "ooo-row";
@@ -360,7 +360,7 @@ export function setSwitch(sw: HTMLButtonElement, on: boolean): void {
 
 export function listenForPeekKey(
   peekKey: ModifierKey,
-  signal: AbortSignal,
+  signal: AbortSignal | undefined,
   onTap: () => void,
 ): void {
   let armed = false;

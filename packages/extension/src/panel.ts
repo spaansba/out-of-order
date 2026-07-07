@@ -86,7 +86,7 @@ const settingsView = buildSettings(settingsPanel, settings, {
   onMotion: (on) => patchSettings({ motion: on }),
 });
 
-listenForPeekKey("Alt", new AbortController().signal, () => {
+listenForPeekKey("Alt", undefined, () => {
   if (settings.overlay) {
     patchSettings({ peek: !settings.peek });
   }
@@ -98,15 +98,11 @@ settingsToggle.addEventListener("click", () => {
 });
 
 const savedFormat = localStorage.getItem(FORMAT_KEY) as AuditFormat | null;
-addCopySplit(
-  copyWrap,
-  {
-    format: savedFormat && FORMATS.includes(savedFormat) ? savedFormat : "by-element",
-    onFormat: (format) => saveLocal(FORMAT_KEY, format),
-    getReport: requestReport,
-  },
-  new AbortController().signal,
-);
+addCopySplit(copyWrap, {
+  format: savedFormat && FORMATS.includes(savedFormat) ? savedFormat : "by-element",
+  onFormat: (format) => saveLocal(FORMAT_KEY, format),
+  getReport: requestReport,
+});
 
 const RESTRICTED =
   /^(chrome|chrome-extension|devtools|edge|about|view-source):|^https:\/\/chromewebstore\.google\.com\//;
