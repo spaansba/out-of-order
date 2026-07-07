@@ -3,6 +3,7 @@ import {
   composedParent,
   containsComposed,
   isScrollContainer,
+  selectorFor,
   type DomReads,
 } from "../dom/index.js";
 import type { Finding, RuleDef, RuleRun } from "./rule.js";
@@ -148,7 +149,7 @@ const run: RuleRun = (sequence, { reads }) => {
     }
 
     out.push({
-      message: `Element comes after "${prev.selector}" in the tab order, but sits visually before it in reading order. Tab makes a backward hop here.`,
+      message: `Element comes after "${selectorFor(prev.element)}" in the tab order, but sits visually before it in reading order. Tab makes a backward hop here.`,
       fix: `Reorder the DOM to match the visual reading order, or adjust the layout so it follows the DOM order.`,
       target: cur,
     });

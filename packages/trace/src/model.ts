@@ -1,6 +1,7 @@
 import {
   isScreenReaderOnly,
   flaggedEntries,
+  selectorFor,
   type AuditResult,
   type Entry,
   type Issue,
@@ -133,7 +134,7 @@ function makeStop(entry: Entry, issues: Issue[]): StopSpec {
     tip: () =>
       badgeTip({
         num,
-        selector: entry.selector,
+        selector: selectorFor(element),
         tabIndex: entry.tabIndex ?? null,
         issues,
         name: computeAccessibleName(element).trim(),

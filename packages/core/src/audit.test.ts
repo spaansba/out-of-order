@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { audit, flaggedEntries } from "./index.js";
+import { audit, flaggedEntries, selectorFor } from "./index.js";
 import { ALL_RULES } from "./rules/index.js";
 
 afterEach(() => {
@@ -23,7 +23,7 @@ describe("audit", () => {
     const { sequence } = audit(document.body);
     expect(sequence.map((entry) => entry.element.tagName)).toEqual(["BUTTON", "A"]);
     expect(sequence.map((entry) => entry.orderIndex)).toEqual([0, 1]);
-    expect(sequence[0]!.selector).toContain("button");
+    expect(selectorFor(sequence[0]!.element)).toContain("button");
     expect(sequence[0]!.rect!.width).toBeGreaterThan(0);
   });
 
@@ -68,7 +68,7 @@ describe("audit", () => {
     )!;
     expect(violation.element).toBe(document.querySelector("button"));
     expect(violation.orderIndex).toBe(0);
-    expect(violation.selector).not.toBe("");
+    expect(selectorFor(violation.element)).not.toBe("");
     const issue = violation.issues.find((i) => i.rule === "missing-accessible-name")!;
     expect(issue.docs).toBe(ALL_RULES["missing-accessible-name"].docs);
   });

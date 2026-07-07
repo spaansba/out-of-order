@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "vitest";
-import { audit } from "@out-of-order/core";
+import { audit, selectorFor } from "@out-of-order/core";
 import { buildSnapshot, formatReport, pageViolations } from "./snapshot.js";
 
 afterEach(() => {
@@ -22,7 +22,9 @@ test("snapshot survives JSON serialization and index-aligns with live violations
   const snapshot = buildSnapshot(result, violations);
 
   expect(violations.length).toBeGreaterThan(0);
-  expect(snapshot.violations.map((v) => v.selector)).toEqual(violations.map((v) => v.selector));
+  expect(snapshot.violations.map((v) => v.selector)).toEqual(
+    violations.map((v) => selectorFor(v.element)),
+  );
   expect(snapshot.stopCount).toBe(3);
   expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot);
 });
