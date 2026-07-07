@@ -1,5 +1,8 @@
 # @out-of-order/vitest
 
+[![npm downloads](https://img.shields.io/npm/dt/@out-of-order/vitest.svg)](https://www.npmjs.com/package/@out-of-order/vitest)
+[![bundle size](https://deno.bundlejs.com/badge?q=@out-of-order/vitest)](https://bundlejs.com/?q=@out-of-order/vitest)
+
 > ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
 
 `toHaveValidTabOrder()` matcher for [Vitest Browser Mode](https://vitest.dev/guide/browser/). Runs the [`@out-of-order/core`](../core) analyzer against a real Chromium DOM, so a passing assertion reflects what users actually experience.

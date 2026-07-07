@@ -1,5 +1,8 @@
 # @out-of-order/trace
 
+[![npm downloads](https://img.shields.io/npm/dt/@out-of-order/trace.svg)](https://www.npmjs.com/package/@out-of-order/trace)
+[![bundle size](https://deno.bundlejs.com/badge?q=@out-of-order/trace)](https://bundlejs.com/?q=@out-of-order/trace)
+
 > ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
 
 Drops a visual overlay on any live page: every tab stop gets a numbered badge,

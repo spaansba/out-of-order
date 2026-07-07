@@ -1,5 +1,8 @@
 # @out-of-order/core
 
+[![npm downloads](https://img.shields.io/npm/dt/@out-of-order/core.svg)](https://www.npmjs.com/package/@out-of-order/core)
+[![bundle size](https://deno.bundlejs.com/badge?q=@out-of-order/core)](https://bundlejs.com/?q=@out-of-order/core)
+
 > ⚠️ **Under heavy development.** Released, but the API is still changing and may break between versions.
 
 Pure focus & keyboard-accessibility analyzer. Wraps [`tabbable`](https://github.com/focus-trap/tabbable) for the focus sequence and applies a rules layer to decide whether that sequence is _valid_: correct order, every stop reachable, visible, and announced. No test-runner or framework deps, just the DOM.
