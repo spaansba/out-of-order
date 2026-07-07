@@ -1,4 +1,4 @@
-import { closestAncestor } from "./composed-tree.js";
+import { closestAncestor, composedParent } from "./composed-tree.js";
 
 /** The native HTML element each interactive ARIA role reimplements, when one
     exists. Roles with no native equivalent live in COMPOSITE_ROLES_NO_NATIVE. */
@@ -145,7 +145,7 @@ const COMPOSITE_ROLES = [
 /** The nearest ancestor that is a composite widget (per ARIA, these should expose
     a single tab stop and move between items with the arrow keys). */
 export function compositeAncestor(element: Element): Element | null {
-  return closestAncestor(element.parentElement, (node) => {
+  return closestAncestor(composedParent(element), (node) => {
     const role = explicitRole(node);
 
     return !!role && COMPOSITE_ROLES.includes(role);

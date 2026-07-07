@@ -17,7 +17,7 @@ const LINE_TOLERANCE_PX = 8;
     ancestors don't share a scroll context, so the visual-order check skips the pair
     (their on-screen relationship moves with the scrollbar). */
 function scrollAncestor(element: Element, reads: DomReads): Element | null {
-  return closestAncestor(element.parentElement, (node) => isScrollContainer(node, reads));
+  return closestAncestor(composedParent(element), (node) => isScrollContainer(node, reads));
 }
 
 /** The deepest element containing both `a` and `b` in the composed tree. */
