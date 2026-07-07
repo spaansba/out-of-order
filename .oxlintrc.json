@@ -3,6 +3,10 @@
   "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/coverage/**"],
   "rules": {
     "id-length": ["error", { "min": 1, "properties": "never" }],
-    "curly": ["error", "all"]
+    "curly": ["error", "all"],
+    "typescript/explicit-member-accessibility": [
+      "error",
+      { "overrides": { "constructors": "no-public" } }
+    ]
   }
 }

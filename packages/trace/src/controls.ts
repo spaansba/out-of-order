@@ -33,6 +33,17 @@ interface Controls {
   teardown(): void;
 }
 
+/** The panel-less variant: no UI, but the peek key keeps working. */
+export function headlessControls(peekKey: ModifierKey, onTogglePeek: () => void): Controls {
+  const abort = new AbortController();
+  listenForPeekKey(peekKey, abort.signal, onTogglePeek);
+  return {
+    syncVisible: () => {},
+    syncPeek: () => {},
+    teardown: () => abort.abort(),
+  };
+}
+
 export function setupControls(layer: HTMLElement, opts: ControlsOptions): Controls {
   const abort = new AbortController();
   const signal = abort.signal;
@@ -109,17 +120,30 @@ function buildBody(
   hint.textContent = `tap ${PEEK_KEY_LABEL[opts.peekKey]} to peek`;
   body.appendChild(hint);
 
-  addCopyButton(body, opts, signal);
+  addCopySplit(
+    body,
+    { format: opts.copyFormat, onFormat: opts.onCopyFormat, getReport: opts.getReport },
+    signal,
+  );
 
   return { body, visSwitch, peekSwitch };
 }
 
+export interface CopySplitOptions {
+  format?: AuditFormat;
+  onFormat?: (format: AuditFormat) => void;
+  getReport: (format: AuditFormat) => string | Promise<string>;
+}
+
 // A split button, GitHub-merge style: the main face copies in the current format;
-// the caret opens a menu to switch it. Picking a format only sets it (persisted so
-// it survives a same-tab navigation) and relabels the main face - the next main
-// click copies in that format.
-function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: AbortSignal): void {
-  let current = opts.copyFormat;
+// the caret opens a menu to switch it. Picking a format only sets it and relabels
+// the main face - the next main click copies in that format.
+export function addCopySplit(
+  parent: HTMLElement,
+  opts: CopySplitOptions,
+  signal: AbortSignal,
+): void {
+  let current = opts.format ?? "by-element";
 
   const wrap = document.createElement("div");
   wrap.className = "ooo-copy-split";
@@ -157,11 +181,13 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
   };
   signal.addEventListener("abort", () => clearTimeout(revert));
 
-  const copy = (): void => {
-    void navigator.clipboard.writeText(opts.getReport(current)).then(
-      () => flash("Copied"),
-      () => flash("Copy failed"),
-    );
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(await opts.getReport(current));
+      flash("Copied");
+    } catch {
+      flash("Copy failed");
+    }
   };
 
   const closeMenu = (refocus = false): void => {
@@ -208,7 +234,7 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
       (event) => {
         current = format.value;
         syncSelection();
-        opts.onCopyFormat(current);
+        opts.onFormat?.(current);
         // detail 0 → keyboard activation: hand focus back to the caret. A mouse
         // click never took it (mousedown is prevented), so leave it alone.
         closeMenu(event.detail === 0);
@@ -254,7 +280,7 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
       signal,
     });
   }
-  main.addEventListener("click", copy, { signal });
+  main.addEventListener("click", () => void copy(), { signal });
   caret.addEventListener(
     "click",
     (event) => {
@@ -294,7 +320,7 @@ function addCopyButton(parent: HTMLElement, opts: ControlsOptions, signal: Abort
   parent.appendChild(wrap);
 }
 
-function addSwitch(
+export function addSwitch(
   parent: HTMLElement,
   name: string,
   text: string,
@@ -314,7 +340,9 @@ function addSwitch(
   sw.setAttribute("role", "switch");
   // The visible label is a sibling span, invisible to the accessibility tree.
   sw.setAttribute("aria-label", text);
-  sw.innerHTML = `<span class="ooo-switch-knob"></span>`;
+  const knob = document.createElement("span");
+  knob.className = "ooo-switch-knob";
+  sw.append(knob);
   sw.addEventListener("mousedown", (event) => event.preventDefault(), {
     signal,
   });
@@ -325,12 +353,16 @@ function addSwitch(
   return sw;
 }
 
-function setSwitch(sw: HTMLButtonElement, on: boolean): void {
+export function setSwitch(sw: HTMLButtonElement, on: boolean): void {
   sw.setAttribute("aria-checked", String(on));
   sw.classList.toggle("ooo-switch--on", on);
 }
 
-function listenForPeekKey(peekKey: ModifierKey, signal: AbortSignal, onTap: () => void): void {
+export function listenForPeekKey(
+  peekKey: ModifierKey,
+  signal: AbortSignal,
+  onTap: () => void,
+): void {
   let armed = false;
   window.addEventListener(
     "keydown",

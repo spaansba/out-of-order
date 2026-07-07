@@ -308,10 +308,10 @@ try {
                 orderIndex: entry.orderIndex,
                 tabIndex: entry.tabIndex,
                 rect: {
-                  x: entry.rect.x,
-                  y: entry.rect.y,
-                  width: entry.rect.width,
-                  height: entry.rect.height,
+                  x: entry.rect!.x,
+                  y: entry.rect!.y,
+                  width: entry.rect!.width,
+                  height: entry.rect!.height,
                 },
               }));
               output = JSON.stringify(

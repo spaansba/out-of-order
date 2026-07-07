@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit } from "../index.js";
+import { audit, flaggedEntries } from "../index.js";
 import { fired } from "./test-helpers.js";
 
 afterEach(() => {
@@ -18,7 +18,7 @@ describe("duplicate-autofocus", () => {
   });
   test("04 reports one finding per extra (two extras → two findings)", () => {
     document.body.innerHTML = "<input autofocus><input autofocus><input autofocus>";
-    const dupes = audit(document.body).violations.filter((v) =>
+    const dupes = flaggedEntries(audit(document.body)).filter((v) =>
       v.issues.some((i) => i.rule === "duplicate-autofocus"),
     );
     expect(dupes).toHaveLength(2);
@@ -32,7 +32,7 @@ describe("duplicate-autofocus", () => {
   });
   test("06 winner is first in document order; the later one is flagged", () => {
     document.body.innerHTML = '<div tabindex="-1" autofocus>x</div><input autofocus>';
-    const dupes = audit(document.body).violations.filter((v) =>
+    const dupes = flaggedEntries(audit(document.body)).filter((v) =>
       v.issues.some((i) => i.rule === "duplicate-autofocus"),
     );
     expect(dupes).toHaveLength(1);

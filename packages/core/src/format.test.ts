@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit, formatViolations } from "./index.js";
+import { audit, formatViolations, flaggedEntries } from "./index.js";
 import { ALL_RULES } from "./rules/index.js";
 
 afterEach(() => {
@@ -29,7 +29,7 @@ describe("formatViolations", () => {
     expect(formatViolations(audit(document.body), "text")).toBe("No tab-order issues.");
   });
 
-  test("by-element mirrors Violation[] with selectors, no live nodes", () => {
+  test("by-element mirrors the flagged entries with selectors, no live nodes", () => {
     document.body.innerHTML = markup;
     const entries = formatViolations(audit(document.body), "by-element");
     expect(entries).toHaveLength(2);
@@ -65,7 +65,7 @@ describe("formatViolations", () => {
     document.body.innerHTML = markup;
     const result = audit(document.body);
     const flat = formatViolations(result, "flat");
-    const total = result.violations.reduce((sum, violation) => sum + violation.issues.length, 0);
+    const total = flaggedEntries(result).reduce((sum, entry) => sum + entry.issues.length, 0);
     expect(flat).toHaveLength(total);
     expect(flat[0]).toMatchObject({
       selector: expect.any(String),

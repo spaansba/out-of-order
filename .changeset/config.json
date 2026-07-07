@@ -5,8 +5,8 @@
   "fixed": [],
   "linked": [],
   "access": "public",
-  "privatePackages": { "version": false, "tag": false },
+  "privatePackages": { "version": true, "tag": false },
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": ["@out-of-order/demo"]
 }

@@ -1,5 +1,5 @@
 import { selectorFor } from "./dom/index.js";
-import type { AuditResult, Issue, Violation } from "./audit.js";
+import { flaggedEntries, type AuditResult, type Issue, type Entry } from "./audit.js";
 import type { Severity } from "./rules/index.js";
 
 /** Serializable views of an audit's violations: grouped by element or by rule,
@@ -22,7 +22,7 @@ export interface SerializedIssue {
 }
 
 /** `"by-element"` format: one entry per offending element, its issues nested. The
-    serializable twin of {@link Violation}. */
+    serializable twin of a flagged {@link Entry}. */
 export interface ByElement {
   selector: string;
   orderIndex?: number;
@@ -72,16 +72,24 @@ export function formatViolations(
   result: AuditResult,
   format: AuditFormat,
 ): string | ByElement[] | ByViolation[] | FlatIssue[] {
+  const flagged = flaggedEntries(result);
   switch (format) {
     case "text":
-      return renderText(result.violations);
+      return renderText(flagged);
     case "by-element":
-      return byElement(result.violations);
+      return byElement(flagged);
     case "by-violation":
-      return byViolation(result.violations);
+      return byViolation(flagged);
     case "flat":
-      return flat(result.violations);
+      return flat(flagged);
   }
+}
+
+/** A format rendered to a string: "text" as-is, the structured views
+    JSON-stringified. What consumers that copy or print a report want. */
+export function reportText(result: AuditResult, format: AuditFormat): string {
+  const rendered = formatViolations(result, format);
+  return typeof rendered === "string" ? rendered : JSON.stringify(rendered, null, 2);
 }
 
 const related = (issue: Issue): string[] | undefined => issue.relatedElements?.map(selectorFor);
@@ -98,18 +106,18 @@ function serialize(issue: Issue): SerializedIssue {
   };
 }
 
-function byElement(violations: Violation[]): ByElement[] {
-  return violations.map((violation) => ({
-    selector: violation.selector,
-    orderIndex: violation.orderIndex,
-    issueCount: violation.issues.length,
-    issues: violation.issues.map(serialize),
+function byElement(entries: Entry[]): ByElement[] {
+  return entries.map((entry) => ({
+    selector: entry.selector,
+    orderIndex: entry.orderIndex,
+    issueCount: entry.issues.length,
+    issues: entry.issues.map(serialize),
   }));
 }
 
-function byViolation(violations: Violation[]): ByViolation[] {
+function byViolation(entries: Entry[]): ByViolation[] {
   const byRule = new Map<Issue["rule"], ByViolation>();
-  for (const violation of violations) {
+  for (const violation of entries) {
     for (const issue of violation.issues) {
       let entry = byRule.get(issue.rule);
       if (!entry) {
@@ -138,8 +146,8 @@ function byViolation(violations: Violation[]): ByViolation[] {
   );
 }
 
-function flat(violations: Violation[]): FlatIssue[] {
-  return violations.flatMap((violation) =>
+function flat(entries: Entry[]): FlatIssue[] {
+  return entries.flatMap((violation) =>
     violation.issues.map((issue) => ({
       selector: violation.selector,
       orderIndex: violation.orderIndex,
@@ -148,11 +156,11 @@ function flat(violations: Violation[]): FlatIssue[] {
   );
 }
 
-function renderText(violations: Violation[]): string {
-  if (!violations.length) {
+function renderText(entries: Entry[]): string {
+  if (!entries.length) {
     return "No tab-order issues.";
   }
-  return violations
+  return entries
     .map((violation) => {
       const pos = violation.orderIndex !== undefined ? `#${violation.orderIndex + 1} ` : "";
       const issues = violation.issues

@@ -11,46 +11,133 @@ const RING_CSS = `
 `;
 
 const OVERLAY_CSS = `
-/* The overlay's own palette + mono voice, defined once on the root layer so every
-   badge/panel/tooltip inside inherits it. Kept local (not the demo's vars) because
-   the overlay mounts on arbitrary pages whose :root it can't reach. */
-.ooo-layer { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646;
+/* The layer must NOT be positioned: badges and hops anchor() to page elements,
+   and an anchor is only acceptable when the positioned element's containing
+   block is an ancestor of the anchor's. Keeping the layer (and .ooo-draw)
+   static makes that containing block the ICB, which contains everything. */
+.ooo-layer { width: 0; height: 0; pointer-events: none;
   --ooo-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --ooo-ink: #18191c; --ooo-ink-2: #34352d; --ooo-muted: #74756d; --ooo-muted-2: #8a8b80;
   --ooo-line: #dcd9cd; --ooo-line-2: #c6c2b4; --ooo-surface: #fffefb; --ooo-btn: #ecebe4;
   --ooo-accent: #1f4e79; --ooo-ok: #2f6a47; --ooo-ok-strong: #1f7a44;
   --ooo-warn: #9a7d1a; --ooo-bad: #a01f17; }
-.ooo-svg { position: absolute; top: 0; left: 0; overflow: visible; }
-.ooo-seg { fill: none; stroke: var(--ooo-ok); stroke-width: 2; opacity: 0.92;
-  stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 6; }
-.ooo-seg--back { stroke: var(--ooo-bad); stroke-width: 2.25; }
-.ooo-hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: none; cursor: help; }
+.ooo-draw { width: 0; height: 0; pointer-events: none; }
+
+/* position-anchor (the default anchor) rather than a named anchor() ref is
+   what buys compositor-driven scroll adjustment inside nested scrollers. */
+.ooo-badge { position: absolute; position-anchor: var(--ooo-anchor);
+  left: anchor(center); top: anchor(center); translate: -50% -50%;
+  z-index: 2147483646; box-sizing: border-box;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  --ooo-c: var(--ooo-ok);
+  color: var(--ooo-c); background: var(--ooo-surface); border: 1.5px solid var(--ooo-c);
+  font: 500 11px var(--ooo-mono);
+  pointer-events: auto; cursor: help; }
+.ooo-badge--warn { --ooo-c: var(--ooo-warn); }
+.ooo-badge--bad { --ooo-c: var(--ooo-bad); }
+.ooo-badge--off { font-size: 12px; }
+/* Badges read hollow by default, then fill in solid while their element is
+   keyboard-focused, so the badge doubles as a "you are here" cursor. */
+.ooo-badge--on { background: var(--ooo-c); color: var(--ooo-surface); }
+
+/* Autofocus indicator: small "focus lands here" disc off the badge corner. */
+.ooo-af { position: absolute; right: -8px; top: -8px; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--ooo-accent); border: 1.5px solid var(--ooo-surface);
+  box-sizing: border-box; }
+.ooo-af::after { content: ""; position: absolute; inset: 0; margin: auto;
+  width: 7px; height: 5px; background: var(--ooo-surface);
+  clip-path: polygon(0 0, 100% 0, 50% 100%); }
+
+/* Hops: the connector between consecutive badges. The box spans the two badge
+   centers; which quadrant the destination sits in (se/ne/sw/nw) is chosen in
+   JS and baked into the class, so one box replaces the old four candidates
+   (anchored boxes are the dominant layout cost on large pages). Placement
+   still rides CSS anchors, so scroll compensation is unchanged, and the box is
+   a size container: the line derives its own length (hypot) and angle (atan2)
+   from the box's aspect ratio. A reflow can flip the true quadrant out from
+   under the baked class (the stale insets then compute a negative, clamped-to-
+   zero size), so the renderer restamps it from live geometry on resize frames
+   and scroll/build settles. The -0.5px epsilon grows each axis by 1px so an
+   axis-aligned hop (centers equal on one axis) still has a non-zero box for
+   the cq math. */
+.ooo-hop { position: absolute; container-type: size; pointer-events: none;
+  z-index: 2147483646; color: var(--ooo-ok);
+  position-anchor: var(--ooo-from); }
+.ooo-hop--back { color: var(--ooo-bad); }
+.ooo-hop--se {
+  left: calc(anchor(var(--ooo-from) center) - 0.5px);
+  top: calc(anchor(var(--ooo-from) center) - 0.5px);
+  right: calc(anchor(var(--ooo-to) center) - 0.5px);
+  bottom: calc(anchor(var(--ooo-to) center) - 0.5px); }
+.ooo-hop--ne {
+  left: calc(anchor(var(--ooo-from) center) - 0.5px);
+  bottom: calc(anchor(var(--ooo-from) center) - 0.5px);
+  right: calc(anchor(var(--ooo-to) center) - 0.5px);
+  top: calc(anchor(var(--ooo-to) center) - 0.5px); }
+.ooo-hop--sw {
+  right: calc(anchor(var(--ooo-from) center) - 0.5px);
+  top: calc(anchor(var(--ooo-from) center) - 0.5px);
+  left: calc(anchor(var(--ooo-to) center) - 0.5px);
+  bottom: calc(anchor(var(--ooo-to) center) - 0.5px); }
+.ooo-hop--nw {
+  right: calc(anchor(var(--ooo-from) center) - 0.5px);
+  bottom: calc(anchor(var(--ooo-from) center) - 0.5px);
+  left: calc(anchor(var(--ooo-to) center) - 0.5px);
+  top: calc(anchor(var(--ooo-to) center) - 0.5px); }
+
+/* The line: pinned to A's corner of the surviving box, rotated toward B's
+   corner. The box is a size container, so its own aspect ratio gives the exact
+   angle (atan2) and length (hypot) in pure CSS. --ooo-angle is defined on the
+   hop but the cq units resolve at the child, against the hop's size. The 17px
+   height is the hover hit area (the visible stripe is the ::before); it may
+   overhang the box like the old SVG's overflow:visible. */
+.ooo-hop-line { position: absolute; width: hypot(100cqw, 100cqh); height: 17px;
+  translate: 0 -50%; transform-origin: 0 50%; rotate: var(--ooo-angle);
+  pointer-events: none; }
+.ooo-hop--se { --ooo-angle: atan2(100cqh, 100cqw); }
+.ooo-hop--ne { --ooo-angle: atan2(-100cqh, 100cqw); }
+.ooo-hop--sw { --ooo-angle: atan2(100cqh, -100cqw); }
+.ooo-hop--nw { --ooo-angle: atan2(-100cqh, -100cqw); }
+.ooo-hop--se .ooo-hop-line { left: 0; top: 0; }
+.ooo-hop--ne .ooo-hop-line { left: 0; top: 100%; }
+.ooo-hop--sw .ooo-hop-line { left: 100%; top: 0; }
+.ooo-hop--nw .ooo-hop-line { left: 100%; top: 100%; }
+
+/* The visible stripe, dashed via gradient. Dash period 7+6=13, matching the
+   marching animation below. */
+.ooo-hop-line::before { content: ""; position: absolute; left: 0; right: 0;
+  top: 50%; height: 2px; translate: 0 -50%; opacity: 0.92;
+  background: repeating-linear-gradient(90deg, currentColor 0 7px, transparent 7px 13px); }
+.ooo-hop--back .ooo-hop-line::before { height: 2.25px; }
 /* Only backward (red) hops are hoverable; forward (green) hops stay click-through. */
-.ooo-hit--back { pointer-events: stroke; }
+.ooo-hop--back .ooo-hop-line { pointer-events: auto; cursor: help; }
+
+/* Anchor scroll compensation only covers the anchor's own scroll chain, so
+   document-space boxes drift off fixed/sticky elements; fixed boxes track them. */
+.ooo-fix { position: fixed; }
+
+/* Seam hops (one floating end, one in-flow) are JS-placed and can't stay glued
+   mid-scroll, so they duck out fast while scrolling and ease back on settle. */
+.ooo-hop--seam { transition: opacity 0.15s ease; }
+.ooo-layer[data-ooo-shifting] .ooo-hop--seam { opacity: 0; transition-duration: 0.05s; }
 ${RING_CSS}
-/* Badges read hollow by default (white fill, coloured outline and number), then
-   fill in solid while their element is keyboard-focused, so the badge doubles as
-   a "you are here" cursor that moves as you Tab. */
-/* Every badge is hoverable (auto) so its tooltip opens on hover (the layer itself
-   is pointer-events:none). The badge is a small disc at the element's centre, so
-   it only intercepts clicks dead-centre. */
-.ooo-badge { pointer-events: auto; cursor: help; color: var(--ooo-ok); }
 /* "Peek": turn the overlay click-through (badges + backward hit-lines stop
    intercepting) and fade the drawing back, so the page beneath stays usable. Scoped
-   to .ooo-svg so the control panel, which reports the state, stays legible. */
-.ooo-layer[data-ooo-peek="on"] .ooo-svg { opacity: 0.25; }
+   to .ooo-draw so the control panel, which reports the state, stays legible. */
+.ooo-layer[data-ooo-peek="on"] .ooo-draw { opacity: 0.25; }
 .ooo-layer[data-ooo-peek="on"] .ooo-badge,
-.ooo-layer[data-ooo-peek="on"] .ooo-hit--back { pointer-events: none; }
+.ooo-layer[data-ooo-peek="on"] .ooo-hop--back .ooo-hop-line { pointer-events: none; }
 
 /* "Overlay" off hides the drawing + hit-lines but leaves the panel (the way back)
    in place; the renderer hides the on-page rings separately. */
-.ooo-layer.ooo-hidden .ooo-svg { display: none; }
+.ooo-layer.ooo-hidden .ooo-draw { display: none; }
 
 /* Control panel: a fixed-width card pinned to a corner, styled to match the demo
    chrome. It holds two identical on/off switches (overlay + click-through). Palette
    inlined: the overlay mounts on arbitrary pages and can't reach the demo's vars. */
 .ooo-panel, .ooo-panel * { box-sizing: border-box; }
-.ooo-panel { position: fixed; left: 12px; bottom: 12px; z-index: 1;
+.ooo-panel { position: fixed; left: 12px; bottom: 12px; z-index: 2147483646;
   width: 188px; pointer-events: auto; margin: 0; padding: 10px;
   display: flex; flex-direction: column; gap: 9px;
   background: #f5f4ef; border: 1px solid var(--ooo-line-2); border-radius: 3px;
@@ -113,19 +200,6 @@ ${RING_CSS}
 .ooo-copy-item::before { content: "\\2713"; width: 13px; color: var(--ooo-accent); visibility: hidden; }
 .ooo-copy-item--on { color: var(--ooo-ink); }
 .ooo-copy-item--on::before { visibility: visible; }
-.ooo-badge circle { fill: var(--ooo-surface); stroke: currentColor; stroke-width: 1.5;
-  transform-box: fill-box; transform-origin: center; }
-.ooo-badge text { fill: currentColor;
-  font: 500 11px var(--ooo-mono); }
-.ooo-badge--warn { color: var(--ooo-warn); }
-.ooo-badge--bad { color: var(--ooo-bad); }
-.ooo-badge--off text { font-size: 12px; }
-.ooo-badge--on circle { fill: currentColor; }
-.ooo-badge--on text { fill: var(--ooo-surface); }
-
-/* Autofocus indicator */
-.ooo-af circle { fill: var(--ooo-accent); stroke: var(--ooo-surface); stroke-width: 1.5; }
-.ooo-af path { fill: var(--ooo-surface); }
 
 .ooo-tip-anchor { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; anchor-name: --ooo-tip-anchor; }
 
@@ -169,6 +243,8 @@ a.ooo-tip-rule:hover > span { text-decoration: underline; text-underline-offset:
 .ooo-tip-rule-ic { flex: none; opacity: 0.55; }
 a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
 .ooo-tip-msg { display: block; margin: 0; color: var(--ooo-ink-2); font-size: 12.5px; }
+.ooo-tip-code { font-family: var(--ooo-mono); font-size: 0.88em; padding: 0.5px 3px;
+  border-radius: 2px; background: var(--ooo-btn); color: var(--ooo-ink); }
 .ooo-tip-fix { display: block; margin-top: 5px; padding-left: 9px;
   border-left: 2px solid var(--ooo-line-2); color: var(--ooo-ink-2); font-size: 12px; }
 .ooo-tip-fix-label { display: block;
@@ -191,23 +267,22 @@ a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
 
 
 /* Advance by exactly one dash period (7 + 6 = 13) per cycle so the marching dashes
-   loop seamlessly. Must stay in sync with .ooo-seg's stroke-dasharray. */
-@keyframes ooo-flow { to { stroke-dashoffset: -13; } }
+   loop seamlessly. Must stay in sync with the stripe gradient above. */
+@keyframes ooo-flow { to { background-position-x: 13px; } }
 @keyframes ooo-cast {
   0% { transform: scale(1); }
   35% { transform: scale(1.18); }
   100% { transform: scale(1); }
 }
-.ooo-layer[data-ooo-motion="play"] .ooo-seg { animation: ooo-flow 1.1s linear infinite; marker-mid: none; }
-.ooo-layer[data-ooo-motion="play"] .ooo-seg--back { animation-duration: 0.8s; }
-.ooo-layer[data-ooo-motion="play"] .ooo-badge--on circle { animation: ooo-cast 0.4s ease-out; }
+.ooo-layer[data-ooo-motion="play"] .ooo-hop-line::before { animation: ooo-flow 1.1s linear infinite; }
+.ooo-layer[data-ooo-motion="play"] .ooo-hop--back .ooo-hop-line::before { animation-duration: 0.8s; }
+.ooo-layer[data-ooo-motion="play"] .ooo-badge--on { animation: ooo-cast 0.4s ease-out; }
 `;
 
 const overlaySheet = new CSSStyleSheet();
 overlaySheet.replaceSync(OVERLAY_CSS);
 const ringSheet = new CSSStyleSheet();
 ringSheet.replaceSync(RING_CSS);
-
 function adopt(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
   if (root.adoptedStyleSheets.includes(sheet)) {
     return;
@@ -219,6 +294,33 @@ function adopt(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
 /** Make the full overlay stylesheet available on the document. */
 export function ensureStyles(): void {
   adopt(document, overlaySheet);
+}
+
+/** Anchor rules are per trace instance, not module state: the page's overlay
+    and the extension's can briefly coexist around a takeover, and a shared
+    sheet would let one wipe the other's anchors on clear. */
+export function createAnchorSheet(): CSSStyleSheet {
+  const sheet = new CSSStyleSheet();
+  adopt(document, sheet);
+  return sheet;
+}
+
+export function releaseAnchorSheet(sheet: CSSStyleSheet): void {
+  document.adoptedStyleSheets = document.adoptedStyleSheets.filter((other) => other !== sheet);
+}
+
+// Attribute-keyed rules rather than inline styles, so the page's style
+// attributes stay untouched (mirrors the data-ooo-ring pattern). Each id also
+// gets a ::part selector: shadow elements carry a part token instead of the
+// attribute, which is the one way a document-scope rule (and so the layer's
+// anchor() refs) can name an element across a shadow boundary.
+export function setAnchorRules(sheet: CSSStyleSheet, token: number, count: number): void {
+  sheet.replaceSync(
+    Array.from({ length: count }, (_, id) => {
+      const key = `${token}-${id}`;
+      return `[data-ooo-anchor="${key}"], ::part(ooo-${key}) { anchor-name: --ooo-${key}; }`;
+    }).join("\n"),
+  );
 }
 
 /** Mirror just the ring rules into a shadow root (document styles don't cross

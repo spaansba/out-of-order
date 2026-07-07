@@ -53,15 +53,15 @@ function issueItem(issue: Issue): string {
     ? `<span class="ooo-tip-ignored">Ignored via <code>data-ooo-ignore</code></span>`
     : "";
   const fix = issue.fix
-    ? `<span class="ooo-tip-fix"><span class="ooo-tip-fix-label">Possible fix</span>${escapeHtml(issue.fix)}</span>`
+    ? `<span class="ooo-tip-fix"><span class="ooo-tip-fix-label">Possible fix</span>${codeTags(issue.fix)}</span>`
     : "";
   return (
     `<li class="${cls}">${ruleLabel(issue)}` +
-    `<span class="ooo-tip-msg">${escapeHtml(stripSelectorPrefix(issue.message))}</span>${fix}${note}</li>`
+    `<span class="ooo-tip-msg">${codeTags(issue.message)}</span>${fix}${note}</li>`
   );
 }
 
-export function segTip(back: boolean, from: number, toStop: number): string {
+export function segmentTip(back: boolean, from: number, toStop: number): string {
   const flag = back
     ? `<span class="ooo-tip-flag ooo-tip-flag--back">↩ reverse</span>`
     : `<span class="ooo-tip-flag">→ forward</span>`;
@@ -104,12 +104,6 @@ function ruleLabel(issue: Issue): string {
   );
 }
 
-/** Messages start with the selector for log/test use; the tooltip already shows
-    it in the header, so trim a leading `"selector" ` to avoid repeating it. */
-function stripSelectorPrefix(message: string): string {
-  return message.replace(/^"[^"]*"\s*/, "");
-}
-
 const HTML_ESCAPES: Record<string, string> = {
   "&": "&amp;",
   "<": "&lt;",
@@ -119,4 +113,37 @@ const HTML_ESCAPES: Record<string, string> = {
 
 function escapeHtml(str: string): string {
   return str.replace(/[&<>"]/g, (char) => HTML_ESCAPES[char] ?? char);
+}
+
+// Code-like tokens in rule prose. Ordered so the most specific alternative wins at a
+// given position (role="button" is one token, not a bare word plus a quote). Only
+// unambiguous forms are listed, so plain-English words (role, title, focus) stay prose.
+const CODE_TOKEN = new RegExp(
+  [
+    /[a-zA-Z][\w-]*="[^"]*"/, // attribute with value: role="button", tabindex="0"
+    /<[a-z][\w-]*>/, // tag mention: <button>
+    /(?:aria|data)-[\w-]+/, // aria-label, data-ooo-ignore
+    /\b(?:tabindex|autofocus|inert|onclick|alt)\b/, // bare attribute names
+    /\b[a-z-]+:[a-z0-9-]+(?:\([^)]*\))?/, // css declaration: display:none, opacity:0, filter:opacity(0)
+    /:(?:hover|focus|active|focus-visible)\b/, // css pseudo-class
+    /\b(?:Enter|Space)\b/, // key names
+    /"[^"]*"/, // quoted selector
+  ]
+    .map((r) => r.source)
+    .join("|"),
+  "g",
+);
+
+// Escape rule text, then wrap code-like tokens (tags, attributes, selectors, keys) in
+// styled <code> so they read as code rather than prose.
+function codeTags(str: string): string {
+  let out = "";
+  let last = 0;
+  for (const m of str.matchAll(CODE_TOKEN)) {
+    out +=
+      escapeHtml(str.slice(last, m.index)) +
+      `<code class="ooo-tip-code">${escapeHtml(m[0])}</code>`;
+    last = m.index + m[0].length;
+  }
+  return out + escapeHtml(str.slice(last));
 }

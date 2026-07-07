@@ -360,7 +360,10 @@ const REIMPL_DEMOS: {
   {
     role: "slider",
     fake: () =>
+      // roles like slider don't take their name from content, so the fake needs an
+      // aria-label to keep missing-accessible-name from firing next to this rule
       reimplFake("slider", "Volume", {
+        "aria-label": "Volume",
         "aria-valuenow": "50",
         "aria-valuemin": "0",
         "aria-valuemax": "100",
@@ -369,12 +372,13 @@ const REIMPL_DEMOS: {
   },
   {
     role: "spinbutton",
-    fake: () => reimplFake("spinbutton", "Quantity", { "aria-valuenow": "1" }),
+    fake: () =>
+      reimplFake("spinbutton", "Quantity", { "aria-label": "Quantity", "aria-valuenow": "1" }),
     native: () => make("input", { type: "number", value: "1", "aria-label": "Quantity" }),
   },
   {
     role: "searchbox",
-    fake: () => reimplFake("searchbox", "Search"),
+    fake: () => reimplFake("searchbox", "Search", { "aria-label": "Search" }),
     native: () =>
       make("input", {
         type: "search",
@@ -384,7 +388,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "textbox",
-    fake: () => reimplFake("textbox", "Name"),
+    fake: () => reimplFake("textbox", "Name", { "aria-label": "Name" }),
     native: () =>
       make("input", {
         type: "text",
@@ -394,7 +398,7 @@ const REIMPL_DEMOS: {
   },
   {
     role: "combobox",
-    fake: () => reimplFake("combobox", "Country"),
+    fake: () => reimplFake("combobox", "Country", { "aria-label": "Country" }),
     native: () => {
       const select = make("select", { "aria-label": "Country" });
       for (const name of ["United States", "Netherlands", "Japan"]) {

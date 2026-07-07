@@ -1,5 +1,11 @@
 import { expect } from "vitest";
-import { audit, formatViolations, type AuditOptions, type AuditResult } from "@out-of-order/core";
+import {
+  audit,
+  formatViolations,
+  flaggedEntries,
+  type AuditOptions,
+  type AuditResult,
+} from "@out-of-order/core";
 
 let layoutConfirmed = false;
 
@@ -50,15 +56,14 @@ expect.extend({
     const result: AuditResult = audit(root, options);
     const { isNot } = this;
 
-    const active = result.violations.flatMap((violation) =>
-      violation.issues.filter((issue) => !issue.ignored),
-    );
+    const flagged = flaggedEntries(result);
+    const active = flagged.flatMap((entry) => entry.issues.filter((issue) => !issue.ignored));
     const errorCount = active.filter((issue) => issue.severity === "error").length;
     const warningCount = active.length - errorCount;
 
     return {
       pass: result.valid,
-      actual: result.violations,
+      actual: flagged,
       message: () => {
         if (isNot) {
           return active.length > 0

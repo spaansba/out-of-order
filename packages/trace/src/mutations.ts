@@ -42,16 +42,15 @@ export class Mutations {
     private readonly onMutated: () => void,
   ) {
     this.observer = new MutationObserver((records) => {
-      // Drop records inside our own overlay layer. Drawing badges mutates the
-      // DOM, which would otherwise retrigger analysis in an endless loop.
       if (records.every((record) => this.ignore.contains(record.target))) {
         return;
       }
+
       this.schedule();
     });
   }
 
-  observe(root: ParentNode): void {
+  public observe(root: ParentNode): void {
     // MutationObserver needs a Node; a Document must be reduced to its root.
     const target = root.nodeType === 9 ? (root as Document).documentElement : (root as Node);
     this.observer.observe(target, OBSERVE_OPTIONS);
@@ -62,7 +61,7 @@ export class Mutations {
       shadow roots, but an observer only sees the tree it's attached to, so without
       this a verdict-changing mutation inside a shadow root goes unnoticed. Safe to
       call on every re-analysis: re-observing a node just replaces its registration. */
-  observeShadows(root: ParentNode): void {
+  public observeShadows(root: ParentNode): void {
     for (const element of composedDescendants(root)) {
       if (element.shadowRoot) {
         this.observer.observe(element.shadowRoot, OBSERVE_OPTIONS);
@@ -70,7 +69,7 @@ export class Mutations {
     }
   }
 
-  destroy(): void {
+  public destroy(): void {
     if (this.raf) {
       cancelAnimationFrame(this.raf);
     }
@@ -80,7 +79,8 @@ export class Mutations {
   private schedule(): void {
     if (this.raf) {
       return;
-    } // collapse a burst of mutations into one build per frame
+    }
+
     this.raf = requestAnimationFrame(() => {
       this.raf = 0;
       // Our own redraw queued records during this frame; discard them so the next

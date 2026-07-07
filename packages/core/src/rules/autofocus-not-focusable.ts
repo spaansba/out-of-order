@@ -1,5 +1,5 @@
 import { isFocusable } from "tabbable";
-import { composedDescendants, selectorFor } from "../dom/index.js";
+import { composedDescendants } from "../dom/index.js";
 import type { Finding, RuleDef } from "./rule.js";
 
 export const autofocusNotFocusable: RuleDef = {
@@ -15,9 +15,8 @@ export const autofocusNotFocusable: RuleDef = {
         continue;
       }
 
-      const selector = selectorFor(element);
       out.push({
-        message: `"${selector}" has autofocus but isn't focusable (no tabindex, not a form control), so it's ignored on load.`,
+        message: `Element has autofocus but isn't focusable (no tabindex, not a form control), so it's ignored on load.`,
         fix: `Remove the autofocus, or make the element focusable (e.g. tabindex="-1").`,
         target: element,
       });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { audit } from "../index.js";
+import { audit, flaggedEntries } from "../index.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -16,7 +16,7 @@ describe("shadow DOM", () => {
     return host;
   };
   const firedNow = () =>
-    new Set(audit(document.body).violations.flatMap((v) => v.issues.map((i) => i.rule)));
+    new Set(flaggedEntries(audit(document.body)).flatMap((v) => v.issues.map((i) => i.rule)));
 
   test("01 a modal's own shadow controls are not leaked (contains() false positive)", () => {
     document.body.innerHTML = '<div role="dialog" aria-modal="true" id="m"></div>';

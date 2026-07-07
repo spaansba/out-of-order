@@ -13,7 +13,7 @@ export const preferNativeElement: RuleDef = {
       const tag = entry.element.tagName.toLowerCase();
       const role = entry.element.getAttribute("role");
       return {
-        message: `"${entry.selector}" is a <${tag}> with role="${role}".`,
+        message: `Element is a <${tag}> with role="${role}".`,
         fix: `Prefer a native ${native}: focus, keyboard activation (Enter/Space), and screen-reader semantics come for free, instead of being reimplemented with ARIA + JS.`,
       };
     }),
