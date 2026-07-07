@@ -1,9 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Out of Order: focus & keyboard accessibility, checked in a real browser</title>
+    <title>
+      Out of Order: focus & keyboard accessibility, checked in a real browser
+    </title>
     <meta
       name="description"
       content="Focus and keyboard-accessibility validation that runs in real browsers only. A tab-order analyzer, a live overlay, and a gallery of the bugs it catches."
@@ -16,15 +18,16 @@
         <span class="kicker">Focus &amp; keyboard accessibility</span>
         <h2>Check the tab order in a real browser, not a guess</h2>
         <p>
-          Out of Order works out the exact path the <kbd>Tab</kbd> key takes through a page, then
-          checks that the order is right and that every stop is reachable, visible, and announced.
-          It runs in real Chromium only, because that is the one place the answer is true.
+          Out of Order works out the exact path the <kbd>Tab</kbd> key takes
+          through a page, then checks that the order is right and that every
+          stop is reachable, visible, and announced. It runs in real Chromium
+          only, because that is the one place the answer is true.
         </p>
         <p>
           <strong>See it</strong> on the page with <code>trace()</code>.
           <strong>Check it</strong> in a test or CI with <code>audit()</code>.
-          <strong>Scan</strong> any URL from the terminal with the <code>out-of-order</code> CLI,
-          and pipe the findings into an AI agent.
+          <strong>Scan</strong> any URL from the terminal with the
+          <code>out-of-order</code> CLI, and pipe the findings into an AI agent.
         </p>
         <div class="cta">
           <a class="btn" href="./getting-started.html">Get started</a>
@@ -35,34 +38,39 @@
       <section class="group">
         <h2>What it checks</h2>
         <p class="note">
-          By default Out of Order runs headless: it analyzes the page and returns a plain result.
-          The <code>trace()</code> overlay is an optional layer on top, for when you want to see the
-          tab path with your own eyes. The analysis itself treats a tab order as more than a list.
+          By default Out of Order runs headless: it analyzes the page and
+          returns a plain result. The <code>trace()</code> overlay is an
+          optional layer on top, for when you want to see the tab path with your
+          own eyes. The analysis itself treats a tab order as more than a list.
           It asks four questions, and every rule answers exactly one.
         </p>
         <ul class="doc-list">
           <li>
-            <strong>Order</strong> is about whether focus follows the reading order, or hops around
-            because of a positive <code>tabindex</code> or a mismatch between the DOM and the
-            layout.
+            <strong>Order</strong> is about whether focus follows the reading
+            order, or hops around because of a positive <code>tabindex</code> or
+            a mismatch between the DOM and the layout.
           </li>
           <li>
-            <strong>Reachability</strong> is about whether the keyboard can get to every interactive
-            control, and whether it avoids the dead stops it should not land on.
+            <strong>Reachability</strong> is about whether the keyboard can get
+            to every interactive control, and whether it avoids the dead stops
+            it should not land on.
           </li>
           <li>
-            <strong>Visibility</strong> is about whether every tab stop is actually painted, or is
-            tabbable while invisible because of opacity, an off-screen position, or clipping.
+            <strong>Visibility</strong> is about whether every tab stop is
+            actually painted, or is tabbable while invisible because of opacity,
+            an off-screen position, or clipping.
           </li>
           <li>
-            <strong>Announcement</strong> is about whether every stop has an accessible name, and
-            whether it is free of the <code>aria-hidden</code> and nesting traps that a screen
-            reader chokes on.
+            <strong>Announcement</strong> is about whether every stop has an
+            accessible name, and whether it is free of the
+            <code>aria-hidden</code> and nesting traps that a screen reader
+            chokes on.
           </li>
         </ul>
         <p class="note">
-          Each rule is grounded in a specific WCAG, WAI-ARIA, or HTML-spec clause. The rules page
-          lists all of them with the clause and a live example.
+          Each rule is grounded in a specific WCAG, WAI-ARIA, or HTML-spec
+          clause. The rules page lists all of them with the clause and a live
+          example.
         </p>
         <div class="cta">
           <a class="btn" href="./rules.html">The full rule list</a>
@@ -72,9 +80,9 @@
       <section class="group">
         <h2>A drop-in overlay</h2>
         <p class="note">
-          The same analysis powers a live overlay you can drop on any page. It numbers the real tab
-          path and draws the hops between stops, turning a hop red when it runs against reading
-          order.
+          The same analysis powers a live overlay you can drop on any page. It
+          numbers the real tab path and draws the hops between stops, turning a
+          hop red when it runs against reading order.
         </p>
         <pre class="code">
 import { trace } from "@out-of-order/trace";
@@ -83,8 +91,8 @@ import { trace } from "@out-of-order/trace";
 const overlay = trace();</pre
         >
         <p class="note">
-          That is the whole integration. The overlay re-analyzes itself on every DOM mutation. The
-          two demo pages are nothing but this call.
+          That is the whole integration. The overlay re-analyzes itself on every
+          DOM mutation. The two demo pages are nothing but this call.
         </p>
         <div class="cta">
           <a class="btn" href="./playground.html">Live demo: the playground</a>
@@ -95,46 +103,50 @@ const overlay = trace();</pre
       <section class="group">
         <h2>Why real-browser only</h2>
         <p class="note">
-          Any honest focus check needs CSS layout. It has to know what is really visible, what is
-          clipped, and where each control sits on screen.
-          <code>jsdom</code> has no layout engine, so a green <code>jsdom</code> test cannot promise
-          the order holds up in a real browser. Out of Order reads live visibility and bounding
-          rects, so a passing check reflects what a keyboard user will actually get.
+          Any honest focus check needs CSS layout. It has to know what is really
+          visible, what is clipped, and where each control sits on screen.
+          <code>jsdom</code> has no layout engine, so a green
+          <code>jsdom</code> test cannot promise the order holds up in a real
+          browser. Out of Order reads live visibility and bounding rects, so a
+          passing check reflects what a keyboard user will actually get.
         </p>
       </section>
 
       <section class="group">
         <h2>What it can't see</h2>
         <p class="note">
-          A check reads the page as it is the instant it runs. It sees the live DOM and its computed
-          styles, including styles behind state selectors like <code>:focus</code>, but it never
-          fires events or runs the page's own JavaScript. Handlers bound with
-          <code>addEventListener</code> (what Vue <code>@click</code>, React <code>onClick</code>,
-          and most frameworks compile to) leave no DOM trace, so a bare
-          <code>&lt;div @click&gt;</code> with no role is invisible to it. Give custom controls a
-          real role or a native element.
+          A check reads the page as it is the instant it runs. It sees the live
+          DOM and its computed styles, including styles behind state selectors
+          like <code>:focus</code>, but it never fires events or runs the page's
+          own JavaScript. Handlers bound with
+          <code>addEventListener</code> (what Vue <code>@click</code>, React
+          <code>onClick</code>, and most frameworks compile to) leave no DOM
+          trace, so a bare <code>&lt;div @click&gt;</code> with no role is
+          invisible to it. Give custom controls a real role or a native element.
         </p>
         <p class="note">
-          So state a script only produces at runtime is invisible to it. If a handler reveals a
-          hidden element the moment it is tabbed to, the check sees only the resting state and can
-          flag the element as invisible even though a keyboard user would be fine. When that
-          happens, drive the interaction yourself, in a test or by hand, and run the check again on
+          So state a script only produces at runtime is invisible to it. If a
+          handler reveals a hidden element the moment it is tabbed to, the check
+          sees only the resting state and can flag the element as invisible even
+          though a keyboard user would be fine. When that happens, drive the
+          interaction yourself, in a test or by hand, and run the check again on
           the state you actually get. A finding you have already weighed can be
           <a href="./rules.html#approve">approved in place</a>.
         </p>
         <p class="note">
-          A few things sit in the tab order in real browsers but are left out on purpose, because
-          they cannot be reasoned about across browsers. One is an <code>&lt;iframe&gt;</code>,
-          since its own document owns its stops. Another is a keyboard-focusable scroll container,
-          since browsers disagree on it.
+          A few things sit in the tab order in real browsers but are left out on
+          purpose, because they cannot be reasoned about across browsers. One is
+          an <code>&lt;iframe&gt;</code>, since its own document owns its stops.
+          Another is a keyboard-focusable scroll container, since browsers
+          disagree on it.
         </p>
       </section>
 
       <section class="group">
         <h2>The packages</h2>
         <p class="note">
-          A small monorepo. The analyzer is pure and framework-free. Everything visual is a separate
-          layer on top of it.
+          A small monorepo. The analyzer is pure and framework-free. Everything
+          visual is a separate layer on top of it.
         </p>
         <table class="spec">
           <thead>
@@ -148,8 +160,8 @@ const overlay = trace();</pre
             <tr>
               <td><code>@out-of-order/core</code></td>
               <td>
-                The analyzer. It wraps <code>tabbable</code>, applies the rules, and returns a plain
-                result. No framework or test-runner deps.
+                The analyzer. It wraps <code>tabbable</code>, applies the rules,
+                and returns a plain result. No framework or test-runner deps.
                 <a href="./api.html#core">API &rarr;</a>
               </td>
               <td>
@@ -164,50 +176,51 @@ const overlay = trace();</pre
                 <a href="./api.html#trace">API &rarr;</a>
               </td>
               <td>
-                You want to see the tab path and findings on a live page. This is the one most
-                people want.
+                You want to see the tab path and findings on a live page. This
+                is the one most people want.
               </td>
             </tr>
             <tr>
               <td><code>@out-of-order/vitest</code></td>
               <td>
-                A <code>toHaveValidTabOrder()</code> matcher for Vitest Browser Mode, built on the
-                analyzer. Released, but the API is still settling.
+                A <code>toHaveValidTabOrder()</code> matcher for Vitest Browser
+                Mode, built on the analyzer. Released, but the API is still
+                settling.
                 <a href="./api.html#vitest">API &rarr;</a>
               </td>
               <td>
-                You already run Vitest Browser Mode and want the check as a one-line assertion in
-                your component tests.
+                You already run Vitest Browser Mode and want the check as a
+                one-line assertion in your component tests.
               </td>
             </tr>
             <tr>
               <td><code>@out-of-order/cli</code></td>
               <td>
-                Audits any URL from the terminal. Launches a headless browser, runs the analyzer,
-                and prints findings to stdout, with an exit code that fails on violations. Add
-                <code>--overlay</code> to open a real browser with the overlay drawn on the live
-                page.
+                Audits any URL from the terminal. Launches a headless browser,
+                runs the analyzer, and prints findings to stdout, with an exit
+                code that fails on violations. Add
+                <code>--overlay</code> to open a real browser with the overlay
+                drawn on the live page.
               </td>
               <td>
-                You want to check a live URL without writing code, gate CI on the exit code, or pipe
-                findings straight into an AI agent.
+                You want to check a live URL without writing code, gate CI on
+                the exit code, or pipe findings straight into an AI agent.
               </td>
             </tr>
             <tr>
               <td><code>@out-of-order/extension</code></td>
               <td>
-                A Chrome side panel that audits the current tab, built on the analyzer. Each finding
-                lists its rule, severity, message, and a possible fix, and clicking one locates the
-                element on the page.
+                A Chrome side panel that audits the current tab, built on the
+                analyzer. Each finding lists its rule, severity, message, and a
+                possible fix, and clicking one locates the element on the page.
               </td>
               <td>
-                You want to check any page you are looking at, in the browser, without writing code
-                or wiring up a project.
+                You want to check any page you are looking at, in the browser,
+                without writing code or wiring up a project.
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="note">A Playwright adapter, sharing the same core, is in progress.</p>
       </section>
     </main>
     <script type="module" src="./src/docs.ts"></script>
