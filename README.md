@@ -6,7 +6,7 @@ Focus & keyboard-accessibility validation for real browsers.
 
 Out of Order works out the path the <kbd>Tab</kbd> key takes through a page, then checks that the order is right and that every stop is reachable, visible, and announced. It runs in real Chromium, because the answer depends on real layout.
 
-**[Live site & docs](https://spaansba.github.io/out-of-order/)** · **[Playground](https://spaansba.github.io/out-of-order/playground.html)** (the bugs it catches) · **[What's tabbable](https://spaansba.github.io/out-of-order/tabbable.html)**
+**[Live site & docs](https://spaansba.github.io/out-of-order/)** · **[Playground](https://spaansba.github.io/out-of-order/playground.html)** (the bugs it catches)
 
 ## Quick start
 
