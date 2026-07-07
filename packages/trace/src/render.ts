@@ -156,14 +156,10 @@ export class Renderer {
         this.addMixedHop(from.element, to.element, segments[idx]!, draw);
         continue;
       }
-      // The .ooo-draw layer is still detached here, so reading endpoint geometry
-      // to pick the quadrant doesn't thrash layout against the DOM we append.
-      const variant = centerQuadrant(from.element, to.element);
       const hop = this.addHop(
         from.floats,
         names.get(from.element)!,
         names.get(to.element)!,
-        variant,
         segments[idx]!,
         draw,
       );
@@ -362,14 +358,12 @@ export class Renderer {
     fixed: boolean,
     fromName: string,
     toName: string,
-    variant: HopVariant,
     segment: SegmentSpec,
     parent: HTMLElement,
   ): HTMLElement {
     const hop = document.createElement("div");
-    hop.className =
-      `ooo-hop ooo-hop--${variant}` +
-      `${segment.back ? " ooo-hop--back" : ""}${fixed ? " ooo-fix" : ""}`;
+
+    hop.className = `ooo-hop${segment.back ? " ooo-hop--back" : ""}${fixed ? " ooo-fix" : ""}`;
     hop.style.setProperty("--ooo-from", fromName);
     hop.style.setProperty("--ooo-to", toName);
     const line = document.createElement("div");
