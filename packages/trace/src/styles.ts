@@ -3,6 +3,8 @@
 // namespace can't drift. Rings are the exception: they mark page elements rather
 // than overlay nodes, so they key on the data-ooo-ring attribute, never a class.
 
+import { ISSUE_CSS } from "./issue-html.js";
+
 const RING_CSS = `
 [data-ooo-ring] { outline: 1px dashed rgba(47, 106, 71, 0.5); outline-offset: 2px; }
 [data-ooo-ring="warn"] { outline: 1.5px dashed rgba(154, 125, 26, 0.8); outline-offset: 2px; }
@@ -233,29 +235,10 @@ ${RING_CSS}
 .ooo-tip-dim { color: #b0b1a6; }
 
 .ooo-tip-body { padding: 9px 12px; border-top: 1px solid var(--ooo-line); }
-.ooo-tip-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
-.ooo-tip-item { display: block; }
-.ooo-tip-rule { display: flex; align-items: center; gap: 5px; width: fit-content; margin-bottom: 3px;
-  font: 600 10px/1.4 var(--ooo-mono);
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ooo-bad); text-decoration: none; }
-.ooo-tip-rule--warn { color: var(--ooo-warn); }
-a.ooo-tip-rule:hover > span { text-decoration: underline; text-underline-offset: 2px; }
-.ooo-tip-rule-ic { flex: none; opacity: 0.55; }
-a.ooo-tip-rule:hover .ooo-tip-rule-ic { opacity: 1; }
+.ooo-tip-list { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .ooo-tip-msg { display: block; margin: 0; color: var(--ooo-ink-2); font-size: 12.5px; }
-.ooo-tip-code { font-family: var(--ooo-mono); font-size: 0.88em; padding: 0.5px 3px;
-  border-radius: 2px; background: var(--ooo-btn); color: var(--ooo-ink); }
-.ooo-tip-fix { display: block; margin-top: 5px; padding-left: 9px;
-  border-left: 2px solid var(--ooo-line-2); color: var(--ooo-ink-2); font-size: 12px; }
-.ooo-tip-fix-label { display: block;
-  font: 600 9.5px/1.6 var(--ooo-mono);
-  letter-spacing: 0.07em; text-transform: uppercase; color: var(--ooo-muted-2); }
 .ooo-tip-ok { margin: 0; color: var(--ooo-ok-strong); font-size: 12.5px; }
-.ooo-tip-item--ignored { opacity: 0.7; }
-.ooo-tip-item--ignored .ooo-tip-rule { color: var(--ooo-muted-2); }
-.ooo-tip-ignored { display: block; margin-top: 4px; color: var(--ooo-muted); font-size: 11.5px; }
-.ooo-tip-ignored code { font-family: var(--ooo-mono);
-  font-size: 11px; }
+${ISSUE_CSS}
 
 /* hop tooltips reuse the frame without the index column */
 .ooo-tip-flag { flex: none;
@@ -294,6 +277,13 @@ function adopt(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
 /** Make the full overlay stylesheet available on the document. */
 export function ensureStyles(): void {
   adopt(document, overlaySheet);
+}
+
+const issueSheet = new CSSStyleSheet();
+issueSheet.replaceSync(ISSUE_CSS);
+
+export function ensureIssueStyles(): void {
+  adopt(document, issueSheet);
 }
 
 /** Anchor rules are per trace instance, not module state: the page's overlay

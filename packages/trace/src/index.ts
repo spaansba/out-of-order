@@ -1,5 +1,8 @@
 import { audit, reportText, type AuditOptions, type AuditResult } from "@out-of-order/core";
 import { ensureStyles } from "./styles.js";
+
+export { ensureIssueStyles } from "./styles.js";
+export { issueHtml, type RenderableIssue } from "./issue-html.js";
 import { Tooltip } from "./tooltip.js";
 import { Renderer } from "./render.js";
 import { Mutations } from "./mutations.js";

@@ -1,4 +1,4 @@
-import { addSwitch, setSwitch } from "@out-of-order/trace";
+import { addSwitch, issueHtml, setSwitch } from "@out-of-order/trace";
 import type { AuditSnapshot, OverlaySettings } from "./protocol.js";
 
 export type StatusKind = "info" | "error";
@@ -109,52 +109,7 @@ export function renderSnapshot(
     locate.addEventListener("click", () => onFocus(index));
     card.append(locate);
 
-    for (const issue of violation.issues) {
-      const row = document.createElement("div");
-      row.className = issue.ignored ? "issue issue--ignored" : "issue";
-
-      const head = document.createElement("p");
-      head.className = "issue-head";
-      const chip = document.createElement("span");
-      chip.className = `chip chip--${issue.severity}`;
-      chip.textContent = issue.severity;
-      head.append(chip);
-      const rule = document.createElement(issue.docs ? "a" : "span");
-      rule.className = "issue-rule";
-      rule.textContent = issue.rule;
-      if (issue.docs) {
-        const link = rule as HTMLAnchorElement;
-        link.href = issue.docs;
-        link.target = "_blank";
-        link.rel = "noreferrer";
-      }
-      head.append(rule);
-      row.append(head);
-
-      const message = document.createElement("p");
-      message.className = "issue-msg";
-      message.textContent = issue.message;
-      row.append(message);
-
-      if (issue.fix) {
-        const fix = document.createElement("p");
-        fix.className = "issue-fix";
-        const label = document.createElement("span");
-        label.className = "issue-fix-label";
-        label.textContent = "Possible fix";
-        fix.append(label, issue.fix);
-        row.append(fix);
-      }
-
-      if (issue.ignored) {
-        const ignored = document.createElement("p");
-        ignored.className = "issue-ignored";
-        ignored.textContent = "Ignored via data-ooo-ignore";
-        row.append(ignored);
-      }
-
-      card.append(row);
-    }
+    card.insertAdjacentHTML("beforeend", violation.issues.map(issueHtml).join(""));
     return card;
   }
 }

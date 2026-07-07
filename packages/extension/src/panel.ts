@@ -1,4 +1,4 @@
-import { addCopySplit, listenForPeekKey } from "@out-of-order/trace";
+import { addCopySplit, ensureIssueStyles, listenForPeekKey } from "@out-of-order/trace";
 import type { AuditFormat } from "@out-of-order/core";
 import {
   DEFAULT_SETTINGS,
@@ -9,6 +9,8 @@ import {
   type PanelMessage,
 } from "./protocol.js";
 import { buildSettings, renderSnapshot, renderStatus, type StatusKind } from "./panel-view.js";
+
+ensureIssueStyles();
 
 const banner = mustFind<HTMLElement>("#status");
 const grantButton = mustFind<HTMLButtonElement>("#grant");
