@@ -380,11 +380,21 @@ export function trace(options: TraceOptions = {}): TraceHandle {
     );
     renderer.draw(stops, segments, offStops);
     // If focus already sits on a tab stop (e.g. a re-analyze mid-tabbing), fill it.
-    renderer.setFocused(document.activeElement);
+    renderer.setFocused(deepActiveElement());
   }
 
   build();
   mutations.observe(root);
   live = handle;
   return handle;
+}
+
+/** document.activeElement stops at a shadow host; descend the activeElement
+    chain so focus inside an open shadow root resolves to the real element. */
+function deepActiveElement(): Element | null {
+  let active = document.activeElement;
+  while (active?.shadowRoot?.activeElement) {
+    active = active.shadowRoot.activeElement;
+  }
+  return active;
 }

@@ -521,4 +521,23 @@ describe("trace", () => {
     handle = null;
     expect(shadow.querySelector("button")!.part.length).toBe(0);
   });
+
+  test("keeps the you-are-here fill on a shadow-hosted stop across a rebuild", async () => {
+    mount("<button>Light</button>");
+    const host = document.createElement("div");
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = "<button>A</button>";
+    root.appendChild(host);
+    await vi.waitFor(() => expect(numbered()).toHaveLength(2), { timeout: 2000 });
+    const inner = shadow.querySelector("button")!;
+    inner.focus();
+    // A light-DOM insert triggers a rebuild without disturbing the shadow focus.
+    // document.activeElement is now the shadow host, not `inner`, so the re-fill
+    // must descend the shadowRoot.activeElement chain to keep the badge lit.
+    root.insertAdjacentHTML("afterbegin", "<button>Z</button>");
+    await vi.waitFor(() => expect(numbered()).toHaveLength(3), { timeout: 2000 });
+    const filled = [...numbered()].find((b) => b.classList.contains("ooo-badge--on"));
+    expect(filled).toBeDefined();
+    expect(badgeDrift(inner, filled!)).toBeLessThan(1.5);
+  });
 });
