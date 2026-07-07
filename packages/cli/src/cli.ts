@@ -6,8 +6,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium, type Browser } from "playwright";
 import {
+  AUDIT_FORMATS,
   DEFAULT_SEVERITY,
-  type AuditFormat,
   type AuditOptions,
   type RuleId,
   type RuleOverride,
@@ -18,15 +18,9 @@ type OooGlobal = {
   formatViolations: typeof import("@out-of-order/core").formatViolations;
 };
 
-const CORE_FORMATS = [
-  "text",
-  "by-element",
-  "by-violation",
-  "flat",
-] as const satisfies readonly AuditFormat[];
 // "json" is CLI-only: the whole result (valid, sequence, violations), not a
 // violations reshape, so core's formatViolations doesn't know it.
-const FORMATS = [...CORE_FORMATS, "json"] as const;
+const FORMATS = [...AUDIT_FORMATS, "json"] as const;
 type CliFormat = (typeof FORMATS)[number];
 
 const USAGE = `out-of-order <url> [options]

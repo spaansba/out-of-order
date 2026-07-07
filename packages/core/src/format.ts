@@ -1,10 +1,10 @@
 import { selectorFor } from "./dom/index.js";
-import { flaggedEntries, type AuditResult, type Issue, type Entry } from "./audit.js";
+import { flaggedEntries, bySeverity, type AuditResult, type Issue, type Entry } from "./audit.js";
 import type { Severity } from "./rules/index.js";
 
-/** Serializable views of an audit's violations: grouped by element or by rule,
-    flattened to one entry per issue, or a human-readable text block. */
-export type AuditFormat = "text" | "by-element" | "by-violation" | "flat";
+export const AUDIT_FORMATS = ["text", "by-element", "by-violation", "flat"] as const;
+
+export type AuditFormat = (typeof AUDIT_FORMATS)[number];
 
 /** A rule failure with its element references flattened to selector strings, so it
     survives serialization (e.g. `JSON.stringify`) unlike {@link Issue}, which holds
@@ -141,9 +141,7 @@ function byViolation(entries: Entry[]): ByViolation[] {
       entry.elementCount = entry.elements.length;
     }
   }
-  return [...byRule.values()].sort((a, b) =>
-    a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1,
-  );
+  return bySeverity([...byRule.values()]);
 }
 
 function flat(entries: Entry[]): FlatIssue[] {

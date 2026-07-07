@@ -210,9 +210,8 @@ function collectIssues(
   return byElement;
 }
 
-// Errors before warnings, stable within a severity.
-function bySeverity(issues: Issue[]): Issue[] {
-  return issues.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
+export function bySeverity<T extends { severity: Severity }>(items: T[]): T[] {
+  return items.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
 }
 
 function hasUnignoredError(entries: Entry[]): boolean {

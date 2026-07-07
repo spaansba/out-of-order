@@ -1,8 +1,7 @@
 import { addCopySplit, ensureIssueStyles, listenForPeekKey } from "@out-of-order/trace";
-import type { AuditFormat } from "@out-of-order/core";
+import { AUDIT_FORMATS, type AuditFormat } from "@out-of-order/core";
 import {
   DEFAULT_SETTINGS,
-  FORMATS,
   PANEL_PORT,
   type ContentMessage,
   type OverlaySettings,
@@ -102,7 +101,7 @@ settingsToggle.addEventListener("click", () => {
 
 const savedFormat = localStorage.getItem(FORMAT_KEY) as AuditFormat | null;
 addCopySplit(copyWrap, {
-  format: savedFormat && FORMATS.includes(savedFormat) ? savedFormat : "by-element",
+  format: savedFormat && AUDIT_FORMATS.includes(savedFormat) ? savedFormat : "by-element",
   onFormat: (format) => saveLocal(FORMAT_KEY, format),
   getReport: requestReport,
 });

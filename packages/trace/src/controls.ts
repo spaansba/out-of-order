@@ -1,13 +1,11 @@
-import type { AuditFormat } from "@out-of-order/core";
+import { AUDIT_FORMATS, type AuditFormat } from "@out-of-order/core";
 
 export type ModifierKey = "Alt" | "Control" | "Shift" | "Meta";
 
-const COPY_FORMATS: { value: AuditFormat; label: string }[] = [
-  { value: "text", label: "Text" },
-  { value: "by-element", label: "By element" },
-  { value: "by-violation", label: "By violation" },
-  { value: "flat", label: "Flat" },
-];
+const formatLabel = (format: AuditFormat): string => {
+  const spaced = format.replace("-", " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
 
 const PEEK_KEY_LABEL: Record<ModifierKey, string> = {
   Alt: "Alt",
@@ -166,10 +164,8 @@ export function addCopySplit(
   menu.setAttribute("aria-label", "Copy format");
   menu.hidden = true;
 
-  const labelFor = (value: AuditFormat): string =>
-    COPY_FORMATS.find((format) => format.value === value)?.label ?? value;
   const mainLabel = (): string => {
-    const label = labelFor(current).toLowerCase();
+    const label = formatLabel(current).toLowerCase();
     return label.startsWith("by ") ? `Copy ${label}` : `Copy as ${label}`;
   };
 
@@ -199,7 +195,7 @@ export function addCopySplit(
   };
 
   const itemButtons: HTMLButtonElement[] = [];
-  const selectedIndex = (): number => COPY_FORMATS.findIndex((f) => f.value === current);
+  const selectedIndex = (): number => AUDIT_FORMATS.findIndex((f) => f === current);
   const openMenu = (focusIdx?: number): void => {
     menu.hidden = false;
     caret.setAttribute("aria-expanded", "true");
@@ -217,7 +213,7 @@ export function addCopySplit(
     }
   };
 
-  for (const format of COPY_FORMATS) {
+  for (const format of AUDIT_FORMATS) {
     const item = document.createElement("button");
     item.type = "button";
     // Roving focus, per the ARIA menu pattern (and our own composite-roving-tabindex
@@ -225,14 +221,14 @@ export function addCopySplit(
     item.tabIndex = -1;
     item.className = "ooo-copy-item";
     item.setAttribute("role", "menuitemradio");
-    item.textContent = format.label;
+    item.textContent = formatLabel(format);
     item.addEventListener("mousedown", (event) => event.preventDefault(), {
       signal,
     });
     item.addEventListener(
       "click",
       (event) => {
-        current = format.value;
+        current = format;
         syncSelection();
         opts.onFormat?.(current);
         // detail 0 → keyboard activation: hand focus back to the caret. A mouse
@@ -241,7 +237,7 @@ export function addCopySplit(
       },
       { signal },
     );
-    items.set(format.value, item);
+    items.set(format, item);
     itemButtons.push(item);
     menu.appendChild(item);
   }
