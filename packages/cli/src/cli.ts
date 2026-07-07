@@ -248,9 +248,11 @@ try {
   const page = await context.newPage();
   if (!isLogin) {
     if (values.overlay && rules) {
-      await page.addInitScript({
-        content: `globalThis.__oooAuditOptions = { rules: ${JSON.stringify(rules)} };`,
-      });
+      await page.addInitScript((rules) => {
+        (globalThis as { __oooAuditOptions?: { rules: typeof rules } }).__oooAuditOptions = {
+          rules,
+        };
+      }, rules);
     }
     const bundle = values.overlay ? "inject-overlay.global.js" : "inject.global.js";
     await page.addInitScript({ content: readFileSync(join(here, bundle), "utf8") });
