@@ -124,7 +124,8 @@ export function isNativelyFocusable(element: Element): boolean {
     // Only the first <summary> child of a <details> is focusable.
     const parent = element.parentElement;
     return (
-      parent?.tagName.toLowerCase() === "details" && parent.querySelector("summary") === element
+      parent?.tagName.toLowerCase() === "details" &&
+      parent.querySelector(":scope > summary") === element
     );
   }
   return false;
