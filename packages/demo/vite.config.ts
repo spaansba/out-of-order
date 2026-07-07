@@ -86,6 +86,7 @@ export default defineConfig({
         start: resolve(__dirname, "getting-started.html"),
         rules: resolve(__dirname, "rules.html"),
         api: resolve(__dirname, "api.html"),
+        privacy: resolve(__dirname, "privacy.html"),
       },
     },
   },
