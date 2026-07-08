@@ -1,5 +1,13 @@
 # @out-of-order/cli
 
+## 0.3.1
+
+### Patch Changes
+
+- [`3ee7fbc`](https://github.com/spaansba/out-of-order/commit/3ee7fbc5863cebf01eda398eac67a8c412d3ff03) Thanks [@spaansba](https://github.com/spaansba)! - Export a single runtime `AUDIT_FORMATS` (values + labels) from core and derive the type `AuditFormat` from it. The extension, trace, and cli format lists were each a hand-maintained copy of the same four formats with no compile-time link to the type, so adding or renaming a format meant editing four places. They now derive from `AUDIT_FORMATS`.
+
+- [`8bed68e`](https://github.com/spaansba/out-of-order/commit/8bed68eae15eabdf421b580e972b80cac10b204e) Thanks [@spaansba](https://github.com/spaansba)! - Thread overlay rule overrides through Playwright's `addInitScript` argument instead of hand-building a JS source string. The overlay path previously interpolated `JSON.stringify(rules)` into script text, a separate serialization path from the structured arg the non-overlay `page.evaluate` uses. Both now use Playwright's own serialization.
+
 ## 0.3.0
 
 ### Minor Changes

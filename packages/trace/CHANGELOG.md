@@ -1,5 +1,20 @@
 # @out-of-order/trace
 
+## 0.5.0
+
+### Minor Changes
+
+- [`3104b8d`](https://github.com/spaansba/out-of-order/commit/3104b8d77df173845e36b3b064b2f0289404c159) Thanks [@spaansba](https://github.com/spaansba)! - Make the `AbortSignal` parameter optional on `addCopySplit`, `addSwitch`, and `listenForPeekKey` so callers without a teardown path can omit it. The extension panel no longer allocates throwaway `AbortController`s.
+
+### Patch Changes
+
+- [`3ee7fbc`](https://github.com/spaansba/out-of-order/commit/3ee7fbc5863cebf01eda398eac67a8c412d3ff03) Thanks [@spaansba](https://github.com/spaansba)! - Export a single runtime `AUDIT_FORMATS` (values + labels) from core and derive the type `AuditFormat` from it. The extension, trace, and cli format lists were each a hand-maintained copy of the same four formats with no compile-time link to the type, so adding or renaming a format meant editing four places. They now derive from `AUDIT_FORMATS`.
+
+- [`eb1fd4a`](https://github.com/spaansba/out-of-order/commit/eb1fd4a765622c2975066c4aaf644969125cfe03) Thanks [@spaansba](https://github.com/spaansba)! - Keep the "you are here" badge filled after a re-analysis when focus sits inside an open shadow root. The re-fill on rebuild passed `document.activeElement`, which retargets to the shadow host, so the badge lookup missed and the fill cleared. It now descends the `shadowRoot.activeElement` chain to the real focused element, matching the live `onFocusIn` path.
+
+- Updated dependencies [[`3ee7fbc`](https://github.com/spaansba/out-of-order/commit/3ee7fbc5863cebf01eda398eac67a8c412d3ff03), [`bfca4c6`](https://github.com/spaansba/out-of-order/commit/bfca4c626d5dbba5e13f5ab02fdcc61e4625d69a), [`ac93118`](https://github.com/spaansba/out-of-order/commit/ac93118f11002dde8fb363e513b4cef334158eb4), [`3ee7fbc`](https://github.com/spaansba/out-of-order/commit/3ee7fbc5863cebf01eda398eac67a8c412d3ff03), [`bc33025`](https://github.com/spaansba/out-of-order/commit/bc33025caffddb1f07be6d2fb51212bafe462c24)]:
+  - @out-of-order/core@0.3.1
+
 ## 0.4.0
 
 ### Minor Changes
