@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "types": ["vite/client"],
     "paths": {
       "@out-of-order/core": ["../core/src/index.ts"],
       "@out-of-order/trace": ["../trace/src/index.ts"]
