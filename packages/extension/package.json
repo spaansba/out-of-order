@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Chrome side panel that audits the current tab's keyboard tab order: findings with fix suggestions, click to locate elements on the page.",
   "keywords": [
