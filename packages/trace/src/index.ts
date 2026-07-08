@@ -9,8 +9,11 @@ import { Mutations } from "./mutations.js";
 import { buildDrawModel, resultSignature } from "./model.js";
 import { headlessControls, setupControls, type ModifierKey } from "./controls.js";
 import { loadPanelState, patchPanelState, type PanelState } from "./panel-state.js";
+import { setupMotion, type MotionMode } from "./motion.js";
+import { wirePageEvents } from "./page-events.js";
+import { leadingThrottle, deepActiveElement } from "./util.js";
 
-export type MotionMode = "auto" | "on" | "off";
+export type { MotionMode };
 
 export const EXTENSION_ACTIVE_EVENT = "ooo:extension-active";
 /** Fired by trace() at mount. A trace mounting after the extension attached
@@ -75,126 +78,6 @@ function createLayer(): HTMLElement {
   layer.dataset.oooPeek = "off";
   document.body.appendChild(layer);
   return layer;
-}
-
-interface MotionControl {
-  setMode(mode: MotionMode): void;
-  teardown(): void;
-}
-
-// Reflect the motion setting onto the layer, honouring prefers-reduced-motion in
-// "auto". Owns the media-query listener so a system change re-applies live.
-function setupMotion(layer: HTMLElement, initial: MotionMode): MotionControl {
-  let motion = initial;
-  const reduceQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const ac = new AbortController();
-  const apply = (): void => {
-    const animate = motion === "on" || (motion === "auto" && !reduceQuery.matches);
-    layer.dataset.oooMotion = animate ? "play" : "still";
-  };
-  apply();
-  reduceQuery.addEventListener("change", apply, { signal: ac.signal });
-
-  return {
-    setMode(mode) {
-      motion = mode;
-      apply();
-    },
-    teardown: () => ac.abort(),
-  };
-}
-
-function leadingThrottle(
-  fn: () => void,
-  interval: number,
-): { call: () => void; cancel: () => void } {
-  let cooldown = 0;
-  let pending = false;
-  const call = (): void => {
-    if (cooldown) {
-      pending = true;
-      return;
-    }
-    fn();
-    cooldown = window.setTimeout(() => {
-      cooldown = 0;
-      if (pending) {
-        pending = false;
-        call();
-      }
-    }, interval);
-  };
-  return { call, cancel: () => clearTimeout(cooldown) };
-}
-
-function wirePageEvents(
-  layer: HTMLElement,
-  renderer: Renderer,
-  requestBuild: () => void,
-): () => void {
-  const ac = new AbortController();
-  const { signal } = ac;
-
-  let scrollSettle = 0;
-
-  // When the page moves, the overlay's fixed-positioned layer doesn't move with it, so redraw the seams
-  const onViewportShift = (): void => {
-    if (!renderer.hasLiveGeometry) {
-      return;
-    }
-
-    if (!layer.dataset.oooShifting) {
-      layer.dataset.oooShifting = "on";
-    }
-
-    clearTimeout(scrollSettle);
-    scrollSettle = window.setTimeout(() => {
-      renderer.placeManual();
-      delete layer.dataset.oooShifting;
-    }, 150);
-  };
-
-  let resizeSettle = 0;
-  let resizeRaf = 0;
-
-  // Mid-drag, CSS-anchored badges and hops follow their anchors natively; the
-  // per-frame pass only re-derives what JS owns (seam boxes, hop quadrant
-  // classes), which resize reflow keeps in sync since it happens on the main
-  // thread (unlike compositor scroll). The audit is the expensive part and its
-  // verdicts only matter once layout stops moving, so it waits for the drag to
-  // settle instead of running during it.
-  const onResize = (): void => {
-    if (renderer.hasLiveGeometry && !resizeRaf) {
-      resizeRaf = requestAnimationFrame(() => {
-        resizeRaf = 0;
-        renderer.placeManual();
-      });
-    }
-    clearTimeout(resizeSettle);
-    resizeSettle = window.setTimeout(requestBuild, 150);
-  };
-
-  window.addEventListener("resize", onResize, { signal });
-
-  window.addEventListener("scroll", onViewportShift, { capture: true, passive: true, signal });
-
-  // composedPath, not target: focus inside an open shadow root is retargeted to
-  // the host by the time it reaches the document.
-  const onFocusIn = (event: FocusEvent): void => {
-    const target = event.composedPath()[0];
-    renderer.setFocused(target instanceof Element ? target : null);
-  };
-
-  const onFocusOut = (): void => renderer.setFocused(null);
-  document.addEventListener("focusin", onFocusIn, { signal });
-  document.addEventListener("focusout", onFocusOut, { signal });
-
-  return () => {
-    ac.abort();
-    clearTimeout(scrollSettle);
-    clearTimeout(resizeSettle);
-    cancelAnimationFrame(resizeRaf);
-  };
 }
 
 /** What a killed trace hands back: mounting was skipped (or undone), every
@@ -387,14 +270,4 @@ export function trace(options: TraceOptions = {}): TraceHandle {
   mutations.observe(root);
   live = handle;
   return handle;
-}
-
-/** document.activeElement stops at a shadow host; descend the activeElement
-    chain so focus inside an open shadow root resolves to the real element. */
-function deepActiveElement(): Element | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) {
-    active = active.shadowRoot.activeElement;
-  }
-  return active;
 }

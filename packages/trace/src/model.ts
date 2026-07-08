@@ -12,7 +12,7 @@ import {
   computeAccessibleDescription,
   getRole,
 } from "dom-accessibility-api";
-import type { StopSpec, SegmentSpec } from "./render.js";
+import type { StopSpec, SegmentSpec } from "./specs.js";
 import { badgeTip, segmentTip } from "./tip-content.js";
 
 export interface DrawModel {
