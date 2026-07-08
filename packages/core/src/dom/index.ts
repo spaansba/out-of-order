@@ -4,6 +4,7 @@ export {
   composedParent,
   containsComposed,
 } from "./composed-tree.js";
+export { focusRevealSelectors, isRevealedOnFocus } from "./focus-reveal.js";
 export { isRuleIgnored } from "./ignore.js";
 export { createReads, directReads } from "./reads.js";
 export type { DomReads } from "./reads.js";
@@ -20,6 +21,7 @@ export {
 } from "./semantics.js";
 export {
   floatingAncestor,
+  hiddenReason,
   inAriaHidden,
   isDisplayed,
   isInert,

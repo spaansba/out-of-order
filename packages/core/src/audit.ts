@@ -8,67 +8,12 @@ import {
   type SequenceEntry,
   type Severity,
 } from "./rules/index.js";
-
-export type RuleOverride = Severity | "off";
-
-type AnyRuleId = RuleId | (string & {});
-
-/** A single rule failure on one element. */
-export interface Issue {
-  /** Stable rule identifier. */
-  rule: AnyRuleId;
-  /** How serious this finding is. */
-  severity: Severity;
-  /** Human-readable description of what's wrong. */
-  message: string;
-  /** Suggested remediation, when the rule has one. */
-  fix?: string;
-  /** Spec link for the rule (WCAG, WAI-ARIA, or ARIA APG). */
-  docs?: string;
-  /** Other elements sharing this issue's root cause. */
-  relatedElements?: Element[];
-  /** Approved (silenced) by a `data-ooo-ignore` on the element */
-  ignored?: boolean;
-}
-
-/** One graded element */
-export interface Entry {
-  element: Element;
-  issues: Issue[];
-  /** Zero-based position in the tab sequence, when the element is a tab stop. */
-  orderIndex?: number;
-  /** Resolved tabindex, when the element is a tab stop. */
-  tabIndex?: number;
-  /** Bounding rect at analysis time, when the element is a tab stop. */
-  rect?: DOMRect;
-  /** The fixed/sticky ancestor-or-self the element rides in, or null in flow. */
-  floatRoot?: Element | null;
-}
-
-export interface AuditResult {
-  /** True when no enabled rule produced an `error` severity finding. */
-  valid: boolean;
-  /** Every tab stop in the exact order tabbing reaches them, each carrying its
-      issues */
-  sequence: Entry[];
-  /** Flagged elements that aren't tab stops at all (interactive but not
-      focusable); each always carries at least one issue. */
-  offSequence: Entry[];
-}
+import { warnDuplicateRuleIds, warnUnknownRules } from "./rules/validate.js";
+import type { AuditOptions, AuditResult, Entry, Issue } from "./types.js";
 
 /** Every flagged element (tab stops first, then off-sequence), one row each.  */
 export function flaggedEntries(result: AuditResult): Entry[] {
   return [...result.sequence, ...result.offSequence].filter((entry) => entry.issues.length > 0);
-}
-
-export interface AuditOptions {
-  /** Per-rule overrides. Every rule runs at its default severity unless listed
-      here: set `"off"` to disable it, or `"error"`/`"warning"` to
-      re-grade it. See {@link RuleOverride}. */
-  rules?: Partial<Record<RuleId, RuleOverride>>;
-  /** Extra rules, run alongside the built-ins. Overridable via `rules` like any
-      built-in. */
-  customRules?: Rule[];
 }
 
 /** Fold a rule's caller override against its default into a final decision: is it
@@ -85,44 +30,6 @@ function resolveRule(options: AuditOptions, rule: Rule): { enabled: boolean; sev
   }
 
   return { enabled: true, severity: setting };
-}
-
-const warnedDuplicateRuleIds = new Set<string>();
-
-function warnDuplicateRuleIds(builtins: Rule[], customRules: Rule[]): void {
-  if (customRules.length === 0) {
-    return;
-  }
-  const builtinIds = new Set(builtins.map((rule) => rule.id));
-  for (const rule of customRules) {
-    if (!builtinIds.has(rule.id) || warnedDuplicateRuleIds.has(rule.id)) {
-      continue;
-    }
-    warnedDuplicateRuleIds.add(rule.id);
-    console.warn(
-      `[out-of-order] Custom rule "${rule.id}" reuses a built-in rule id; ` +
-        `both run and report the same element twice. Rename the custom rule.`,
-    );
-  }
-}
-
-const warnedUnknownRules = new Set<string>();
-
-function warnUnknownRules(overrides: AuditOptions["rules"], known: Rule[]): void {
-  if (!overrides) {
-    return;
-  }
-  const ids = new Set(known.map((rule) => rule.id));
-  for (const key of Object.keys(overrides)) {
-    if (ids.has(key) || warnedUnknownRules.has(key)) {
-      continue;
-    }
-    warnedUnknownRules.add(key);
-    console.warn(
-      `[out-of-order] Unknown rule "${key}" in audit options; it has no effect. ` +
-        `Known rules: ${[...ids].join(", ")}.`,
-    );
-  }
 }
 
 function toIssue(finding: Finding, rule: Rule, severity: Severity): Issue {

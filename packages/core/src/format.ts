@@ -1,5 +1,6 @@
 import { selectorFor } from "./dom/index.js";
-import { flaggedEntries, bySeverity, type AuditResult, type Issue, type Entry } from "./audit.js";
+import { flaggedEntries, bySeverity } from "./audit.js";
+import type { AuditResult, Issue, Entry } from "./types.js";
 import type { Severity } from "./rules/index.js";
 
 export const AUDIT_FORMATS = ["text", "by-element", "by-violation", "flat"] as const;
