@@ -35,7 +35,9 @@ export function isDisplayed(element: Element, reads: DomReads = directReads): bo
 }
 
 export function inAriaHidden(element: Element): boolean {
-  return closestAncestor(element, (node) => node.getAttribute("aria-hidden") === "true") !== null;
+  return (
+    closestAncestor(element, (node) => node.getAttribute("aria-hidden")?.trim().toLowerCase() === "true") !== null
+  );
 }
 
 export function isInert(element: Element): boolean {
