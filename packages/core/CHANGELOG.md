@@ -1,5 +1,19 @@
 # @out-of-order/core
 
+## 0.3.2
+
+### Patch Changes
+
+- [#18](https://github.com/spaansba/out-of-order/pull/18) [`b3c0d5a`](https://github.com/spaansba/out-of-order/commit/b3c0d5af0a6f5f2e96bdec0d01087368e535f138) Thanks [@spaansba](https://github.com/spaansba)! - `aria-hidden-focusable` now normalizes the `aria-hidden` value before matching, so `aria-hidden="TRUE"` and `aria-hidden=" true "` are treated as hidden. `inAriaHidden` previously did an exact `=== "true"` check, letting uppercase or whitespace-padded values slip through unflagged.
+
+- [#17](https://github.com/spaansba/out-of-order/pull/17) [`364bf13`](https://github.com/spaansba/out-of-order/commit/364bf1308f395dc31bd479399a3b488613e575d8) Thanks [@spaansba](https://github.com/spaansba)! - `missing-accessible-name` now flags an unlabeled `contenteditable` editing host. A bare `<div contenteditable>` is a real editable textbox and a tab stop, but `isInteractive` only knew native controls and interactive ARIA roles, so every interactive-gated rule skipped it (adding `role="textbox"` made the same box flag). `isInteractive` now recognizes the editing host, keyed on the `contenteditable` attribute rather than the inherited `.isContentEditable` property so descendants of an editable region aren't each counted as a control.
+
+- [#16](https://github.com/spaansba/out-of-order/pull/16) [`94ba981`](https://github.com/spaansba/out-of-order/commit/94ba98188ff5f403922b1a22718a6887f28d32fb) Thanks [@spaansba](https://github.com/spaansba)! - `clickable-not-focusable` no longer flags disabled controls. A `<div role="button" aria-disabled="true">` is meant to be unfocusable, so leaving it out of the tab order is correct, not a keyboard-reachability gap. The rule read role/onclick but never checked `aria-disabled`, so it rang intentionally disabled controls and told you to make them keyboard-reachable. Added an `isAriaDisabled` helper (exported from the package root) and an early skip in the rule.
+
+- [`8d99b5c`](https://github.com/spaansba/out-of-order/commit/8d99b5ca832fecea604571f0f2d4ed6f46aaf478) Thanks [@spaansba](https://github.com/spaansba)! - Internal cleanup: removed the `src/dom/index.ts` re-export barrel so each consumer imports helpers straight from the defining submodule, and dropped now-dead exports it was hiding (`isContentEditingHost` is private again, and the unused `RuleContext` / `RuleRun` type re-exports are gone). No change to the package's public API.
+
+- [`a70898e`](https://github.com/spaansba/out-of-order/commit/a70898e1dec0973766e0ea291ace181eab456aaa) Thanks [@spaansba](https://github.com/spaansba)! - `tabindex-on-noninteractive` now flags a static-content role carrying `tabindex="0"` (e.g. `<div role="note" tabindex="0">`). The rule passed any explicit role other than `presentation`/`none`, so non-interactive document-structure roles slipped through even though they add a dead stop to the tab order. It now passes only interactive roles (already cleared by `isInteractive`) and focusable-container roles like `tabpanel`, flagging the static-content roles.
+
 ## 0.3.1
 
 ### Patch Changes
