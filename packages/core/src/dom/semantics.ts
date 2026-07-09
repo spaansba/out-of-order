@@ -62,6 +62,49 @@ export function isInteractive(element: Element): boolean {
   return !!role && INTERACTIVE_ROLES.includes(role);
 }
 
+/** Roles that don't justify a tab stop: presentation/none strip semantics, the rest
+    describe static content or structure. Interactive roles are cleared by
+    isInteractive, and focusable-container roles (e.g. tabpanel) are deliberately
+    absent, so a tabindex="0" on one of these is a dead stop in the tab order. */
+const NONINTERACTIVE_ROLES = [
+  "presentation",
+  "none",
+  "note",
+  "article",
+  "definition",
+  "term",
+  "heading",
+  "img",
+  "math",
+  "list",
+  "listitem",
+  "figure",
+  "caption",
+  "paragraph",
+  "mark",
+  "blockquote",
+  "code",
+  "emphasis",
+  "strong",
+  "insertion",
+  "deletion",
+  "subscript",
+  "superscript",
+  "time",
+  "directory",
+  "separator",
+  "tooltip",
+  "status",
+  "alert",
+  "log",
+  "timer",
+  "marquee",
+];
+
+export function isNoninteractiveRole(role: string): boolean {
+  return NONINTERACTIVE_ROLES.includes(role);
+}
+
 export function hasExplicitName(element: Element): boolean {
   return (
     (element.getAttribute("aria-label") || "").trim() !== "" ||

@@ -1,4 +1,9 @@
-import { explicitRole, isInteractive, isNativelyFocusable } from "../dom/semantics.js";
+import {
+  explicitRole,
+  isInteractive,
+  isNativelyFocusable,
+  isNoninteractiveRole,
+} from "../dom/semantics.js";
 import { isScrollContainer } from "../dom/visibility.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
@@ -24,7 +29,7 @@ export const tabindexOnNoninteractive: RuleDef = {
         return null;
       }
       const role = explicitRole(element);
-      if (role && role !== "presentation" && role !== "none") {
+      if (role && !isNoninteractiveRole(role)) {
         return null;
       }
       // A keyboard-scrollable region legitimately takes tabindex="0", even when it

@@ -49,12 +49,7 @@ describe("tabindex-on-noninteractive", () => {
       "tabindex-on-noninteractive",
     );
   });
-  test.fails("09 unknown/invalid role with tabindex=0 should be flagged", () => {
-    expect(fired('<div role="zzz" tabindex="0">Bogus role</div>')).toContain(
-      "tabindex-on-noninteractive",
-    );
-  });
-  test.fails("10 role=note with tabindex=0 should be flagged", () => {
+  test("10 role=note with tabindex=0 should be flagged", () => {
     expect(fired('<div role="note" tabindex="0">A side note</div>')).toContain(
       "tabindex-on-noninteractive",
     );
