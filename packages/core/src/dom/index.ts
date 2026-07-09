@@ -12,6 +12,7 @@ export {
   compositeAncestor,
   explicitRole,
   hasExplicitName,
+  isAriaDisabled,
   isFocusManaged,
   isInteractive,
   isNativelyFocusable,

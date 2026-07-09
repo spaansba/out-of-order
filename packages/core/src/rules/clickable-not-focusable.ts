@@ -1,6 +1,7 @@
 import {
   composedDescendants,
   composedParent,
+  isAriaDisabled,
   isDisplayed,
   isFocusManaged,
   isInert,
@@ -36,6 +37,10 @@ export const clickableNotFocusable: RuleDef = {
       }
 
       if (!looksClickable(element)) {
+        continue;
+      }
+
+      if (isAriaDisabled(element)) {
         continue;
       }
 
