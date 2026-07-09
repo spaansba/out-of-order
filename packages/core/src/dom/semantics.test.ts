@@ -40,4 +40,14 @@ describe("isInteractive", () => {
     expect(isInteractive(el('<div role="button link">x</div>'))).toBe(true);
     expect(isInteractive(el('<div role=" presentation button ">x</div>'))).toBe(false);
   });
+
+  test("a contenteditable editing host counts, its editable descendants do not", () => {
+    expect(isInteractive(el("<div contenteditable></div>"))).toBe(true);
+    expect(isInteractive(el('<div contenteditable="true"></div>'))).toBe(true);
+    expect(isInteractive(el('<div contenteditable="plaintext-only"></div>'))).toBe(true);
+    expect(isInteractive(el('<div contenteditable="false"></div>'))).toBe(false);
+    document.body.innerHTML = "<div contenteditable><p>inner</p></div>";
+    const inner = document.body.querySelector("p")!;
+    expect(isInteractive(inner)).toBe(false);
+  });
 });
