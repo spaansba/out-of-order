@@ -46,12 +46,12 @@ describe("aria-hidden-focusable", () => {
       "aria-hidden-focusable",
     );
   });
-  test.fails("09 REGRESSION (CI-1): uppercase aria-hidden=TRUE should fail but currently passes", () => {
+  test("09 uppercase aria-hidden=TRUE fails", () => {
     expect(fired('<div aria-hidden="TRUE"><button>Buy now</button></div>')).toContain(
       "aria-hidden-focusable",
     );
   });
-  test.fails("10 REGRESSION (CI-2): whitespace aria-hidden=' true ' should fail but currently passes", () => {
+  test("10 whitespace aria-hidden=' true ' fails", () => {
     expect(fired('<div aria-hidden=" true "><button>Buy now</button></div>')).toContain(
       "aria-hidden-focusable",
     );
