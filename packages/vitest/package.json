@@ -1,6 +1,6 @@
 {
   "name": "@out-of-order/vitest",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "toHaveValidTabOrder() matcher for Vitest Browser Mode.",
   "keywords": [
     "a11y",
