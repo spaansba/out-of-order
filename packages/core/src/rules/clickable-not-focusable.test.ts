@@ -77,9 +77,14 @@ describe("clickable-not-focusable", () => {
       "clickable-not-focusable",
     );
   });
-  test.fails("12 EDGE aria-disabled clickable - arguably should pass (currently fails - false positive)", () => {
+  test("12 aria-disabled clickable is not flagged", () => {
     expect(
       fired('<div role="button" aria-disabled="true" onclick="save()">Save</div>'),
     ).not.toContain("clickable-not-focusable");
+  });
+  test("12b aria-disabled=false clickable still fails", () => {
+    expect(
+      fired('<div role="button" aria-disabled="false" onclick="save()">Save</div>'),
+    ).toContain("clickable-not-focusable");
   });
 });

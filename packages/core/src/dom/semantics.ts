@@ -86,6 +86,10 @@ export function looksClickable(element: Element): boolean {
   return element.hasAttribute("onclick");
 }
 
+export function isAriaDisabled(element: Element): boolean {
+  return element.getAttribute("aria-disabled") === "true";
+}
+
 /** If `element` reimplements a native control via an interactive role on a generic
     tag, the native element to use instead; else null. Native interactive tags (and a
     merely-redundant role on one) return null; there's nothing to swap. */
