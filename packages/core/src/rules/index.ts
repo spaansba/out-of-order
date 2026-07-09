@@ -14,15 +14,7 @@ import { redundantTabindex } from "./redundant-tabindex.js";
 import { tabindexOnNoninteractive } from "./tabindex-on-noninteractive.js";
 import { visualOrderMismatch } from "./visual-order-mismatch.js";
 
-export type {
-  Finding,
-  Rule,
-  RuleContext,
-  RuleDef,
-  RuleRun,
-  SequenceEntry,
-  Severity,
-} from "./rule.js";
+export type { Finding, Rule, RuleDef, SequenceEntry, Severity } from "./rule.js";
 
 export const ALL_RULES = {
   "no-positive-tabindex": noPositiveTabindex,

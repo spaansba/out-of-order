@@ -1,5 +1,5 @@
 import { isFocusable } from "tabbable";
-import { composedDescendants } from "../dom/index.js";
+import { composedDescendants } from "../dom/composed-tree.js";
 import type { RuleDef } from "./rule.js";
 
 /** autofocus applies to any *focusable* element (even tabindex="-1" non-stops), and

@@ -1,4 +1,4 @@
-import { selectorFor } from "./dom/index.js";
+import { selectorFor } from "./dom/selector.js";
 import { flaggedEntries, bySeverity, type AuditResult, type Issue, type Entry } from "./audit.js";
 import type { Severity } from "./rules/index.js";
 

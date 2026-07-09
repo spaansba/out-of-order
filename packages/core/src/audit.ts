@@ -1,5 +1,7 @@
 import { tabbable, getTabIndex } from "tabbable";
-import { isRuleIgnored, createReads, floatingAncestor } from "./dom/index.js";
+import { isRuleIgnored } from "./dom/ignore.js";
+import { createReads } from "./dom/reads.js";
+import { floatingAncestor } from "./dom/visibility.js";
 import {
   ALL_RULES,
   type Finding,

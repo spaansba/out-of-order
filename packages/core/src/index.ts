@@ -5,11 +5,8 @@ export { formatViolations, reportText, AUDIT_FORMATS } from "./format.js";
 export type { AuditFormat, ByElement, ByViolation, FlatIssue, SerializedIssue } from "./format.js";
 export { DEFAULT_SEVERITY } from "./rules/index.js";
 export type { Rule, Finding, RuleId, SequenceEntry, Severity } from "./rules/index.js";
-export {
-  floatingAncestor,
-  isInteractive,
-  isScreenReaderOnly,
-  selectorFor,
-  isRuleIgnored,
-  composedDescendants,
-} from "./dom/index.js";
+export { composedDescendants } from "./dom/composed-tree.js";
+export { isRuleIgnored } from "./dom/ignore.js";
+export { selectorFor } from "./dom/selector.js";
+export { isInteractive } from "./dom/semantics.js";
+export { floatingAncestor, isScreenReaderOnly } from "./dom/visibility.js";

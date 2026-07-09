@@ -1,5 +1,5 @@
 import { isFocusable } from "tabbable";
-import { composedDescendants } from "../dom/index.js";
+import { composedDescendants } from "../dom/composed-tree.js";
 import type { Finding, RuleDef } from "./rule.js";
 
 export const autofocusNotFocusable: RuleDef = {

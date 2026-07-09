@@ -1,12 +1,6 @@
-import {
-  composedDescendants,
-  composedParent,
-  isAriaDisabled,
-  isDisplayed,
-  isFocusManaged,
-  isInert,
-  looksClickable,
-} from "../dom/index.js";
+import { composedDescendants, composedParent } from "../dom/composed-tree.js";
+import { isAriaDisabled, isFocusManaged, looksClickable } from "../dom/semantics.js";
+import { isDisplayed, isInert } from "../dom/visibility.js";
 import type { Finding, RuleDef } from "./rule.js";
 
 export const clickableNotFocusable: RuleDef = {

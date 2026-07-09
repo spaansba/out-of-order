@@ -1,10 +1,6 @@
-import {
-  composedDescendants,
-  containsComposed,
-  isDisplayed,
-  isInert,
-  type DomReads,
-} from "../dom/index.js";
+import { composedDescendants, containsComposed } from "../dom/composed-tree.js";
+import type { DomReads } from "../dom/reads.js";
+import { isDisplayed, isInert } from "../dom/visibility.js";
 import type { RuleDef } from "./rule.js";
 
 /** The first genuinely-modal, on-screen container in `root`: a `<dialog>:modal`

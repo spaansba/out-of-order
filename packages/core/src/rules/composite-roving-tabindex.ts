@@ -1,4 +1,4 @@
-import { compositeAncestor, explicitRole } from "../dom/index.js";
+import { compositeAncestor, explicitRole } from "../dom/semantics.js";
 import type { Finding, RuleDef, SequenceEntry } from "./rule.js";
 
 export const compositeRovingTabindex: RuleDef = {

@@ -1,4 +1,6 @@
-import { composedParent, isInteractive, selectorFor } from "../dom/index.js";
+import { composedParent } from "../dom/composed-tree.js";
+import { isInteractive } from "../dom/semantics.js";
+import { selectorFor } from "../dom/selector.js";
 import type { Finding, RuleDef } from "./rule.js";
 
 export const nestedInteractive: RuleDef = {

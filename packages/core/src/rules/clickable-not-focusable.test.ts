@@ -83,8 +83,8 @@ describe("clickable-not-focusable", () => {
     ).not.toContain("clickable-not-focusable");
   });
   test("12b aria-disabled=false clickable still fails", () => {
-    expect(
-      fired('<div role="button" aria-disabled="false" onclick="save()">Save</div>'),
-    ).toContain("clickable-not-focusable");
+    expect(fired('<div role="button" aria-disabled="false" onclick="save()">Save</div>')).toContain(
+      "clickable-not-focusable",
+    );
   });
 });

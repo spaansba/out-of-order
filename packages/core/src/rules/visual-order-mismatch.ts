@@ -1,11 +1,7 @@
-import {
-  closestAncestor,
-  composedParent,
-  containsComposed,
-  isScrollContainer,
-  selectorFor,
-  type DomReads,
-} from "../dom/index.js";
+import { closestAncestor, composedParent, containsComposed } from "../dom/composed-tree.js";
+import type { DomReads } from "../dom/reads.js";
+import { selectorFor } from "../dom/selector.js";
+import { isScrollContainer } from "../dom/visibility.js";
 import type { Finding, RuleDef, RuleRun } from "./rule.js";
 
 /** px tolerance for treating two stops as the same visual line. Elements on one line

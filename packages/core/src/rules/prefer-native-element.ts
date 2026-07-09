@@ -1,4 +1,4 @@
-import { nativeReplacement } from "../dom/index.js";
+import { nativeReplacement } from "../dom/semantics.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 export const preferNativeElement: RuleDef = {

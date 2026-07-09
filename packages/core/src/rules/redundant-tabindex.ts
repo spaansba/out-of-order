@@ -1,4 +1,4 @@
-import { isNativelyFocusable } from "../dom/index.js";
+import { isNativelyFocusable } from "../dom/semantics.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 function focusableBecause(element: Element): string {

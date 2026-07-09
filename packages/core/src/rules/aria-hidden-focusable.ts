@@ -1,4 +1,4 @@
-import { inAriaHidden } from "../dom/index.js";
+import { inAriaHidden } from "../dom/visibility.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 export const ariaHiddenFocusable: RuleDef = {

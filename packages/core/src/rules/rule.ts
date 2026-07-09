@@ -16,7 +16,7 @@ export interface SequenceEntry {
 }
 
 /** Everything a rule may need beyond the sequence itself. */
-export interface RuleContext {
+interface RuleContext {
   /** The analyzed root element (lets rules look beyond the tab sequence). */
   container: Element;
   inSequence: Set<Element>;

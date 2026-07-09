@@ -1,5 +1,5 @@
 import { computeAccessibleName } from "dom-accessibility-api";
-import { hasExplicitName, isInteractive } from "../dom/index.js";
+import { hasExplicitName, isInteractive } from "../dom/semantics.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 export const missingAccessibleName: RuleDef = {

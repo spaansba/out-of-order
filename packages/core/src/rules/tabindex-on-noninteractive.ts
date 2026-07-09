@@ -1,9 +1,5 @@
-import {
-  explicitRole,
-  isInteractive,
-  isNativelyFocusable,
-  isScrollContainer,
-} from "../dom/index.js";
+import { explicitRole, isInteractive, isNativelyFocusable } from "../dom/semantics.js";
+import { isScrollContainer } from "../dom/visibility.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 export const tabindexOnNoninteractive: RuleDef = {

@@ -1,9 +1,6 @@
-import {
-  closestAncestor,
-  composedParent,
-  isScreenReaderOnly,
-  type DomReads,
-} from "../dom/index.js";
+import { closestAncestor, composedParent } from "../dom/composed-tree.js";
+import type { DomReads } from "../dom/reads.js";
+import { isScreenReaderOnly } from "../dom/visibility.js";
 import { flagEntries, type RuleDef } from "./rule.js";
 
 /** Resolved opacity is 0 on the element or any ancestor (so it paints nothing).

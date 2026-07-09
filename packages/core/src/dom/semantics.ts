@@ -33,7 +33,7 @@ export function explicitRole(element: Element): string | null {
   return element.getAttribute("role")?.trim().split(/\s+/)[0] || null;
 }
 
-export function isContentEditingHost(element: Element): boolean {
+function isContentEditingHost(element: Element): boolean {
   const value = element.getAttribute("contenteditable")?.toLowerCase();
 
   return value === "" || value === "true" || value === "plaintext-only";
