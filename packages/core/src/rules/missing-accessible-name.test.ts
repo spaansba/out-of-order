@@ -62,4 +62,14 @@ describe("missing-accessible-name", () => {
   test("12 empty button is correctly flagged (true-positive control)", () => {
     expect(fired("<button></button>")).toContain("missing-accessible-name");
   });
+  test("13 bare contenteditable editing host is flagged (un-roled editor)", () => {
+    expect(fired("<div contenteditable>Enter your name</div>")).toContain(
+      "missing-accessible-name",
+    );
+  });
+  test("14 contenteditable with an aria-label is named", () => {
+    expect(fired('<div contenteditable aria-label="Comment"></div>')).not.toContain(
+      "missing-accessible-name",
+    );
+  });
 });

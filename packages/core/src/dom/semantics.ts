@@ -33,7 +33,17 @@ export function explicitRole(element: Element): string | null {
   return element.getAttribute("role")?.trim().split(/\s+/)[0] || null;
 }
 
+export function isContentEditingHost(element: Element): boolean {
+  const value = element.getAttribute("contenteditable")?.toLowerCase();
+
+  return value === "" || value === "true" || value === "plaintext-only";
+}
+
 export function isInteractive(element: Element): boolean {
+  if (isContentEditingHost(element)) {
+    return true;
+  }
+
   const tag = element.tagName.toLowerCase();
   // An <a> is a link (role=link, focusable) only with an href; without one it has
   // no implicit role and isn't focusable. A href-less <a> may still be interactive

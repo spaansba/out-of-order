@@ -13,6 +13,7 @@ export {
   explicitRole,
   hasExplicitName,
   isAriaDisabled,
+  isContentEditingHost,
   isFocusManaged,
   isInteractive,
   isNativelyFocusable,
