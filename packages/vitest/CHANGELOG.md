@@ -1,5 +1,12 @@
 # @out-of-order/vitest
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [[`b3c0d5a`](https://github.com/spaansba/out-of-order/commit/b3c0d5af0a6f5f2e96bdec0d01087368e535f138), [`364bf13`](https://github.com/spaansba/out-of-order/commit/364bf1308f395dc31bd479399a3b488613e575d8), [`94ba981`](https://github.com/spaansba/out-of-order/commit/94ba98188ff5f403922b1a22718a6887f28d32fb), [`8d99b5c`](https://github.com/spaansba/out-of-order/commit/8d99b5ca832fecea604571f0f2d4ed6f46aaf478), [`a70898e`](https://github.com/spaansba/out-of-order/commit/a70898e1dec0973766e0ea291ace181eab456aaa)]:
+  - @out-of-order/core@0.3.2
+
 ## 0.2.4
 
 ### Patch Changes
