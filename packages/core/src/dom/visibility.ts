@@ -1,4 +1,4 @@
-import { closestAncestor } from "./composed-tree.js";
+import { closestAncestor, composedParent } from "./composed-tree.js";
 import { directReads, type DomReads } from "./reads.js";
 
 /** The intentional ".sr-only"/"visually-hidden" utility: tiny + clipped. We must
@@ -34,9 +34,25 @@ export function isDisplayed(element: Element, reads: DomReads = directReads): bo
   );
 }
 
+export function isRenderedForFocus(element: Element, reads: DomReads = directReads): boolean {
+  const check = (element as HTMLElement).checkVisibility;
+  if (typeof check === "function") {
+    return check.call(element);
+  }
+  return (
+    closestAncestor(
+      composedParent(element),
+      (node) => reads.style(node).contentVisibility === "hidden",
+    ) === null
+  );
+}
+
 export function inAriaHidden(element: Element): boolean {
   return (
-    closestAncestor(element, (node) => node.getAttribute("aria-hidden")?.trim().toLowerCase() === "true") !== null
+    closestAncestor(
+      element,
+      (node) => node.getAttribute("aria-hidden")?.trim().toLowerCase() === "true",
+    ) !== null
   );
 }
 
