@@ -1,5 +1,12 @@
 # @out-of-order/trace
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`071cbee`](https://github.com/spaansba/out-of-order/commit/071cbee1a8e9b7ced0b3b78c1736284fed053e5c)]:
+  - @out-of-order/core@0.3.3
+
 ## 0.5.1
 
 ### Patch Changes

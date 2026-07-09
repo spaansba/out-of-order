@@ -1,5 +1,11 @@
 # @out-of-order/core
 
+## 0.3.3
+
+### Patch Changes
+
+- [#21](https://github.com/spaansba/out-of-order/pull/21) [`071cbee`](https://github.com/spaansba/out-of-order/commit/071cbee1a8e9b7ced0b3b78c1736284fed053e5c) Thanks [@spaansba](https://github.com/spaansba)! - The tab sequence no longer includes elements inside `content-visibility: hidden` subtrees (including `hidden="until-found"`). The browser's Tab key skips these, so they were phantom stops that inflated the sequence and produced false `hidden-while-focusable` errors. Genuinely tabbable-but-invisible elements (`opacity: 0`, off-screen positioning) are still reported, and `content-visibility: auto` content stays in the sequence.
+
 ## 0.3.2
 
 ### Patch Changes
