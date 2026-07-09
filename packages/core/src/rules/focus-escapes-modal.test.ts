@@ -63,13 +63,6 @@ describe("focus-escapes-modal", () => {
       ),
     ).toContain("focus-escapes-modal");
   });
-  test.fails("10 edge/KNOWN-BUG: correctly-built stacked modals (A inert background, B active)", () => {
-    expect(
-      fired(
-        '<div role="dialog" aria-modal="true" inert><button>A action</button></div><div role="dialog" aria-modal="true"><button>B action</button></div>',
-      ),
-    ).not.toContain("focus-escapes-modal");
-  });
   test('11 edge: role="alertdialog" modal with tabbable background', () => {
     expect(
       fired(

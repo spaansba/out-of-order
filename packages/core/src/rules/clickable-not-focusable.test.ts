@@ -72,7 +72,7 @@ describe("clickable-not-focusable", () => {
   test("10b href-less link without handlers passes", () => {
     expect(fired("<a>Save</a>")).not.toContain("clickable-not-focusable");
   });
-  test.fails("11 BUG standalone role=button tabindex=-1 should fail (currently passes - false negative)", () => {
+  test("11 standalone role=button tabindex=-1 fails", () => {
     expect(fired('<div role="button" tabindex="-1" onclick="save()">Save</div>')).toContain(
       "clickable-not-focusable",
     );

@@ -210,15 +210,7 @@ export function compositeAncestor(element: Element): Element | null {
   });
 }
 
-/** Reachable by keyboard via something other than Tab (negative/roving tabindex, an
-    aria-activedescendant ancestor, or a composite widget), so it's deliberately out
-    of the Tab sequence, not unreachable. Read the tabindex *attribute*, not the
-    .tabIndex IDL property, which is -1 for everything non-focusable. */
 export function isFocusManaged(element: Element): boolean {
-  const tabindex = element.getAttribute("tabindex");
-  if (tabindex !== null && Number(tabindex) < 0) {
-    return true;
-  }
   if (compositeAncestor(element)) {
     return true;
   }
