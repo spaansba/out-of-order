@@ -51,6 +51,26 @@ describe("audit", () => {
     expect(sequence[0]!.element.tagName).toBe("BUTTON");
   });
 
+  test("drops content-visibility:hidden subtrees from the sequence", () => {
+    document.body.innerHTML =
+      '<a href="#kept">Kept</a>' +
+      '<div style="content-visibility: hidden"><a href="#skipped">Skipped</a></div>' +
+      '<div hidden="until-found"><a href="#until-found">Until found</a></div>' +
+      '<div style="content-visibility: auto"><a href="#auto">Auto</a></div>';
+    const { sequence } = audit(document.body);
+    expect(sequence.map((entry) => (entry.element as HTMLAnchorElement).hash)).toEqual([
+      "#kept",
+      "#auto",
+    ]);
+  });
+
+  test("keeps an opacity:0 stop and still flags it hidden-while-focusable", () => {
+    document.body.innerHTML = '<a href="#ghost" style="opacity: 0">Ghost</a>';
+    const { sequence } = audit(document.body);
+    expect(sequence).toHaveLength(1);
+    expect(sequence[0]!.issues.map((issue) => issue.rule)).toContain("hidden-while-focusable");
+  });
+
   test("disabling a rule drops only that rule's issues", () => {
     document.body.innerHTML = '<button>Fine</button><button tabindex="3">Jumped</button>';
     const fired = (options?: Parameters<typeof audit>[1]) =>

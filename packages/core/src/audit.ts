@@ -1,7 +1,7 @@
 import { tabbable, getTabIndex } from "tabbable";
 import { isRuleIgnored } from "./dom/ignore.js";
 import { createReads } from "./dom/reads.js";
-import { floatingAncestor } from "./dom/visibility.js";
+import { floatingAncestor, isRenderedForFocus } from "./dom/visibility.js";
 import {
   ALL_RULES,
   type Finding,
@@ -146,7 +146,7 @@ function locate(finding: Finding): Element {
 function computeTabSequence(container: Element, reads: ReturnType<typeof createReads>) {
   const elements = tabbable(container, {
     getShadowRoot: true,
-  });
+  }).filter((element) => isRenderedForFocus(element, reads));
 
   const sequence: SequenceEntry[] = elements.map((element, orderIndex) => ({
     element,
